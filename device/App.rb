@@ -1,8 +1,3 @@
-require 'rubygems'
-require 'bundler'
-
-Bundler.require
-
 require 'net/http'
 require 'uri'
 require 'json'
@@ -25,6 +20,8 @@ else
   throw StandardError.new('failed to get oauth token')
 end
 
+puts "access_token.length = #{access_token.length}"
+
 # use the access token to obtain a protected resource
 resource_uri = URI.parse('http://127.0.0.1:9394/')
 req = Net::HTTP::Get.new(resource_uri.to_s)
@@ -34,5 +31,5 @@ res = Net::HTTP.start(resource_uri.hostname, resource_uri.port) do |http|
   http.request(req)
 end
 
-puts res.code
+puts "HTTP #{res.code}"
 puts res.body

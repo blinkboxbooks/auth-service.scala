@@ -1,8 +1,3 @@
-require 'rubygems'
-require 'bundler'
-
-Bundler.require
-
 require 'sinatra/base'
 require 'openssl'
 require 'json'
@@ -37,11 +32,9 @@ class AuthServer < Sinatra::Base
   def create_access_token(expires_in)
     issued_at = Time.now
     claims = JSON.generate({
-      iss: 'blinkboxbooks',                           # issuer
-      aud: 'blinkboxbooks',                           # audience
       sub: 'urn:blinkboxbooks:id:user:18273',         # user id
       iat: issued_at.to_i,                            # issued at
-      exp: (issued_at + expires_in).to_i,                   # expires
+      exp: (issued_at + expires_in).to_i,             # expires
       jti: '15b29d70-4e54-4286-be17-e9ba97d45194',    # token identifier
       bbb_dcc: 'GB',             # detected country code
       bbb_rcc: 'GB',             # registered country code

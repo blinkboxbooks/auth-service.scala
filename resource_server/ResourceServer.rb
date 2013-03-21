@@ -1,8 +1,3 @@
-require 'rubygems'
-require 'bundler'
-
-Bundler.require
-
 require 'sinatra/base'
 require 'openssl'
 require '../lib/jwt'
