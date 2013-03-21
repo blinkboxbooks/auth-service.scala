@@ -1,3 +1,8 @@
+require 'rubygems'
+require 'bundler'
+
+Bundler.require
+
 require 'net/http'
 require 'uri'
 require 'json'
