@@ -17,10 +17,11 @@ when 200
   access_token = res_data['access_token']
   expires_in = res_data['expires_in']
 else
-  throw StandardError.new('failed to get oauth token')
+  throw StandardError.new("failed to get oauth token (code #{res.code}): #{res.body}")
 end
 
 puts "access_token.length = #{access_token.length}"
+puts "access_token = #{access_token}"
 
 # use the access token to obtain a protected resource
 resource_uri = URI.parse('http://127.0.0.1:9394/')

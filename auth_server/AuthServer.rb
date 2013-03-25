@@ -1,7 +1,7 @@
 require 'sinatra/base'
 require 'openssl'
 require 'json'
-require '../lib/jwt'
+require 'sandal'
 
 class AuthServer < Sinatra::Base
 
@@ -42,12 +42,19 @@ class AuthServer < Sinatra::Base
       bbb_did: 716352,           # device identifier
       bbb_dcl: 27                # device class
     })
-    encoded_claims = JWT.base64_encode(claims)
 
-    jws_key = OpenSSL::PKey::RSA.new(File.read('./keys/auth_server_priv.pem'))
-    jws_token = JWT.signed_token(encoded_claims, jws_key, { kid: 'bbb-as-1' })
-    jwe_key = OpenSSL::PKey::RSA.new(File.read('./keys/resource_server_pub.pem'))
-    JWT.encrypted_token(jws_token, jwe_key, { cty: 'JWT', kid: 'bbb-rs-1' })
+    jws_key = OpenSSL::PKey::EC.new(File.read('./keys/auth_server_ec_priv.pem'))
+    jws_signer = Sandal::Sig::ES256.new(jws_key)
+    jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/ec/1' })
+
+    # TODO: Uncomment to use an RSA signed token instead of an ECDSA one
+    # jws_key = OpenSSL::PKey::RSA.new(File.read('./keys/auth_server_rsa_priv.pem'))
+    # jws_signer = Sandal::Sig::RS256.new(jws_key)
+    # jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/rsa/1' })
+
+    jwe_key = OpenSSL::PKey::RSA.new(File.read('./keys/resource_server_rsa_pub.pem'))
+    jwe_encrypter = Sandal::Enc::AES128CBC.new(jwe_key)
+    Sandal.encrypt_token(jws_token, jwe_encrypter, { cty: 'JWT', kid: '/bbb/svcs/rsa/1' })
   end
 
 end

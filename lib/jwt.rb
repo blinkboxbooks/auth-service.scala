@@ -5,12 +5,13 @@ require 'json'
 module JWT
 
   # creates a signed token
-  def self.signed_token(payload, private_key, header_fields)
-    alg = 'RS256'
+  def self.signed_token(header, payload, private_key = nil)
+    alg = header[:alg]
+    throw ArgumentError.new('The header must contain an "alg" parameter.') unless alg
+    throw ArgumentError.new('The header must not contain an "enc" parameter.') if header[:enc]
 
     # create the header
-    header = JSON.generate({ alg: alg }.merge(header_fields))
-    encoded_header = base64_encode(header)
+    encoded_header = base64_encode(JSON.generate(header))
 
     # sign the header and payload
     digest = OpenSSL::Digest::SHA256.new
@@ -164,7 +165,7 @@ if __FILE__ == $0
 
   # sign and encrypt
   jws_key = OpenSSL::PKey::RSA.new(File.read('../auth_server/keys/auth_server_priv.pem'))
-  jws_token = JWT.signed_token(encoded_claims, jws_key, { kid: 'bbb-as-1' })
+  jws_token = JWT.signed_token({ alg: 'RS256', kid: 'bbb-as-1' }, encoded_claims, jws_key)
   jwe_key = OpenSSL::PKey::RSA.new(File.read('../auth_server/keys/resource_server_pub.pem'))
   jwe_token = JWT.encrypted_token(jws_token, jwe_key, { cty: 'JWT', kid: 'bbb-rs-1' })
 
