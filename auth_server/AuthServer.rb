@@ -45,16 +45,16 @@ class AuthServer < Sinatra::Base
 
     jws_key = OpenSSL::PKey::EC.new(File.read('./keys/auth_server_ec_priv.pem'))
     jws_signer = Sandal::Sig::ES256.new(jws_key)
-    jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/ec/1' })
+    jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/sig/ec/1' })
 
     # TODO: Uncomment to use an RSA signed token instead of an ECDSA one
     # jws_key = OpenSSL::PKey::RSA.new(File.read('./keys/auth_server_rsa_priv.pem'))
     # jws_signer = Sandal::Sig::RS256.new(jws_key)
-    # jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/rsa/1' })
+    # jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/sig/rsa/1' })
 
     jwe_key = OpenSSL::PKey::RSA.new(File.read('./keys/resource_server_rsa_pub.pem'))
     jwe_encrypter = Sandal::Enc::AES128CBC.new(jwe_key)
-    Sandal.encrypt_token(jws_token, jwe_encrypter, { cty: 'JWT', kid: '/bbb/svcs/rsa/1' })
+    Sandal.encrypt_token(jws_token, jwe_encrypter, { cty: 'JWT', kid: '/bbb/svcs/enc/rsa/1' })
   end
 
 end
