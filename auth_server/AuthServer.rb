@@ -6,41 +6,74 @@ require 'sandal'
 class AuthServer < Sinatra::Base
 
   get '/oauth2/token' do
-    grant_type = params[:grant_type]
-    case grant_type
-    when 'password'
-      handle_password_flow(params)
-    else
-      halt 400
-    end
+    handle_token_request(params)
+  end
+
+  post '/oauth2/token' do
+    handle_token_request(params)
   end
 
   private
 
+  def handle_token_request(params)
+    grant_type = params[:grant_type]
+    if grant_type.nil?
+      halt 400, JSON.generate({ 'error' => 'invalid_request', 'error_description' => 'The grant_type parameter is required.' })
+    end
+
+    case grant_type
+    when 'password'
+      handle_password_flow(params)
+    when 'refresh_token'
+      handle_refresh_token_flow(params)
+    else
+      halt 400, JSON.generate({ 'error' => 'unsupported_grant_type', 'error_description' => 'Use the "password" grant_type.' })
+    end
+  end
+
   def handle_password_flow(params)
     username = params[:username]
     password = params[:password]
-    halt 401 unless username == 'greg@blinkbox.com' && password == '1234$abcd'
+    if username.nil? || password.nil?
+      halt 400, JSON.generate({ 'error' => 'invalid_request', 'error_description' => 'The username and password parameters are required.' })
+    end
+    unless username == 'greg@blinkbox.com' && password == '1234$abcd'
+      halt 400, JSON.generate({ 'error' => 'invalid_grant', 'error_description' => 'The username and/or password is incorrect.' })
+    end
 
-    expires_in = 3600
+    expires_in = 1200
     JSON.generate({
-      access_token: create_access_token(expires_in),
-      expires_in: expires_in
+      'access_token' => create_access_token(expires_in),
+      'token_type' => 'bearer',
+      'expires_in' => expires_in,
+      'refresh_token' => Sandal::Util.base64_encode(SecureRandom.random_bytes(32))
+    })
+  end
+
+  def handle_refresh_token_flow(params)
+    refresh_token = params[:refresh_token]
+    if refresh_token.nil?
+      halt 400, JSON.generate({ 'error' => 'invalid_request', 'error_description' => 'The refresh_token parameter is required.' })
+    end
+    puts refresh_token.length
+    unless refresh_token.length == 43 # just checking the length saves us actually storing it...
+      halt 400, JSON.generate({ 'error' => 'invalid_grant', 'error_description' => 'The refresh_token is invalid.' })
+    end
+
+    expires_in = 1200
+    JSON.generate({
+      'access_token' => create_access_token(expires_in),
+      'token_type' => 'bearer',
+      'expires_in' => expires_in
     })
   end
 
   def create_access_token(expires_in)
     issued_at = Time.now
     claims = JSON.generate({
-      sub: 'urn:blinkboxbooks:id:user:18273',         # user id
-      iat: issued_at.to_i,                            # issued at
-      exp: (issued_at + expires_in).to_i,             # expires
-      jti: '15b29d70-4e54-4286-be17-e9ba97d45194',    # token identifier
-      bbb_dcc: 'GB',             # detected country code
-      bbb_rcc: 'GB',             # registered country code
-      bbb_rol: [1, 2, 8, 13],    # user roles
-      bbb_did: 716352,           # device identifier
-      bbb_dcl: 27                # device class
+      'sub' => 'user@example.org',
+      'iat' => issued_at.to_i,
+      'exp' => (issued_at + expires_in).to_i,
     })
 
     jws_key = OpenSSL::PKey::EC.new(File.read('./keys/auth_server_ec_priv.pem'))
