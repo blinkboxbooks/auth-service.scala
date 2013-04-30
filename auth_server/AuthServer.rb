@@ -4,6 +4,9 @@ require 'json'
 require 'sandal'
 
 class AuthServer < Sinatra::Base
+  include Sandal::Util
+
+  ACCESS_TOKEN_LIFETIME = 1800
 
   get '/oauth2/token' do
     handle_token_request(params)
@@ -41,12 +44,11 @@ class AuthServer < Sinatra::Base
       halt 400, JSON.generate({ 'error' => 'invalid_grant', 'error_description' => 'The username and/or password is incorrect.' })
     end
 
-    expires_in = 1200
     JSON.generate({
-      'access_token' => create_access_token(expires_in),
+      'access_token' => create_access_token,
       'token_type' => 'bearer',
-      'expires_in' => expires_in,
-      'refresh_token' => Sandal::Util.base64_encode(SecureRandom.random_bytes(32))
+      'expires_in' => ACCESS_TOKEN_LIFETIME,
+      'refresh_token' => jwt_base64_encode(SecureRandom.random_bytes(32))
     })
   end
 
@@ -60,34 +62,36 @@ class AuthServer < Sinatra::Base
       halt 400, JSON.generate({ 'error' => 'invalid_grant', 'error_description' => 'The refresh_token is invalid.' })
     end
 
-    expires_in = 1200
     JSON.generate({
-      'access_token' => create_access_token(expires_in),
+      'access_token' => create_access_token,
       'token_type' => 'bearer',
-      'expires_in' => expires_in
+      'expires_in' => ACCESS_TOKEN_LIFETIME
     })
   end
 
-  def create_access_token(expires_in)
+  def create_access_token()
     issued_at = Time.now
     claims = JSON.generate({
-      'sub' => 'user@example.org',
+      'sub' => 'urn:blinkboxbooks:id:user:18374',
       'iat' => issued_at.to_i,
-      'exp' => (issued_at + expires_in).to_i,
+      'exp' => (issued_at + ACCESS_TOKEN_LIFETIME).to_i,
+      'tid' => SecureRandom.uuid,
+      'bbb/uid' => 18374,
+      'bbb/cid' => 'urn:blinkboxbooks:id:device:294859'
     })
 
-    jws_key = OpenSSL::PKey::EC.new(File.read('./keys/auth_server_ec_priv.pem'))
-    jws_signer = Sandal::Sig::ES256.new(jws_key)
-    jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/sig/ec/1' })
+    signer = Sandal::Sig::ES256.new(File.read('./keys/auth_server_ec_priv.pem'))
+    jws_token = Sandal.encode_token(claims, signer, { kid: '/bbb/auth/sig/ec/1' })
 
     # TODO: Uncomment to use an RSA signed token instead of an ECDSA one
-    # jws_key = OpenSSL::PKey::RSA.new(File.read('./keys/auth_server_rsa_priv.pem'))
-    # jws_signer = Sandal::Sig::RS256.new(jws_key)
-    # jws_token = Sandal.encode_token(claims, jws_signer, { kid: '/bbb/auth/sig/rsa/1' })
+    # signer = Sandal::Sig::RS256.new(File.read('./keys/auth_server_rsa_priv.pem'))
+    # jws_token = Sandal.encode_token(claims, signer, { kid: '/bbb/auth/sig/rsa/1' })
 
-    jwe_key = OpenSSL::PKey::RSA.new(File.read('./keys/resource_server_rsa_pub.pem'))
-    jwe_encrypter = Sandal::Enc::AES128CBC.new(jwe_key)
-    Sandal.encrypt_token(jws_token, jwe_encrypter, { cty: 'JWT', kid: '/bbb/svcs/enc/rsa/1' })
+    #key = OpenSSL::Cipher.new('aes-128-cbc').encrypt.random_key
+    key = File.read('./keys/shared_aes128.key').encode('utf-8')
+    alg = Sandal::Enc::Alg::Direct.new(key)
+    encrypter = Sandal::Enc::A128CBC_HS256.new(alg)
+    Sandal.encrypt_token(jws_token, encrypter, { cty: 'JWT', kid: '/bbb/svcs/enc/a128/1' })
   end
 
 end
