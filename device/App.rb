@@ -26,7 +26,7 @@ puts "access_token.length = #{access_token.length}, segment_lengths = #{segment_
 puts res.body
 
 # use the access token to obtain a protected resource
-resource_uri = URI.parse('http://127.0.0.1:9394/')
+resource_uri = URI.parse('http://127.0.0.1:9394/my')
 req = Net::HTTP::Get.new(resource_uri.to_s)
 req['Authorization'] = "Bearer #{access_token}"
 
@@ -37,11 +37,11 @@ end
 puts "HTTP #{res.code}"
 puts res.body
 
-token_uri.query = URI.encode_www_form({
-  grant_type: 'refresh_token',
-  refresh_token: refresh_token
-})
-res = Net::HTTP.get_response(token_uri) # => String
+# token_uri.query = URI.encode_www_form({
+#   grant_type: 'refresh_token',
+#   refresh_token: refresh_token
+# })
+# res = Net::HTTP.get_response(token_uri) # => String
 
-puts "HTTP #{res.code}"
-puts res.body
+# puts "HTTP #{res.code}"
+# puts res.body
