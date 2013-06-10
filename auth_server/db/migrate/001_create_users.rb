@@ -6,7 +6,7 @@ class CreateUsers < ActiveRecord::Migration
       t.string :first_name, limit: 50
       t.string :last_name, limit: 50
       t.string :email, limit: 320
-      t.binary :password_hash, limit: 256
+      t.string :password_hash, limit: 128
     end
     add_index :users, :email, name: 'ix__users__email', unique: true
   end

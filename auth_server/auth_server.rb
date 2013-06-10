@@ -6,37 +6,6 @@ require "scrypt"
 require "./environment"
 require "./lib/auth_server/model"
 
-# email = "greg@blinkbox.com"
-# user = User.find_by_email(email)
-# unless user
-#   user = User.new(email: email, first_name: "Greg", last_name: "Beech")
-#   user.save
-# end
-
-# if user.devices.count == 0
-#   user.devices << Device.new do |device|
-#     device.name = "Greg"s iPad"
-#     device.client_secret = SecureRandom.random_bytes(32)
-#     device.client_access_token = SecureRandom.random_bytes(32)
-#   end
-#   user.save
-# end
-
-# if user.refresh_tokens.count == 0
-#   user.refresh_tokens << RefreshToken.new do |refresh_token|
-#     refresh_token.token = SecureRandom.random_bytes(32)
-#     refresh_token.expires_at = Time.now + (60 * 60 * 24 * 90)
-#     refresh_token.access_token = AccessToken.new
-#   end
-#   user.save
-# end
-
-# p user.devices
-# p user.refresh_tokens
-# p user.refresh_tokens.first.created_at
-
-
-
 class AuthServer < Sinatra::Base
   include Sandal::Util
 
@@ -70,41 +39,15 @@ class AuthServer < Sinatra::Base
 
   def handle_token_request(params)
     case params[:grant_type]
+    when "urn:blinkboxbooks:oauth:grant-type:registration"
+      handle_registration_flow(params)
     when "password"
       handle_password_flow(params)
     when "refresh_token"
       handle_refresh_token_flow(params)
-    when "urn:blinkboxbooks:oauth:grant-type:registration"
-      handle_registration_flow(params)
     else
       invalid_request "The grant type '#{params[:grant_type]}' is not supported"
     end
-  end
-
-  def handle_password_flow(params)
-    email, password = params[:username], params[:password]
-    if email.nil? || password.nil?
-      invalid_request "The 'username' and 'password' parameters are required for the 'password' grant type"
-    end
-
-    user = User.find_by_email(email)
-    unless user && SCrypt::Password.new(user.password_hash) == password
-      invalid_grant "The email and/or password is incorrect."
-    end
-
-    # if client_id
-    #   device_id = client_id.match(/urn:blinkboxbooks:id:device:(\d+)/)[0] rescue nil
-    #   client_secret = jwt_base64_decode(params[:client_secret]) rescue nil
-    #   unless device_id && client_secret
-    #     halt 400, MultiJson.dump({ "error" => "invalid_request", "error_description" => "The client_id and/or client_secret is incorrect." })
-    #   end
-    #   device = Device.find_by_id(device_id)
-    #   unless device && device.client_secret == jwt_base64_decode(client_secret)
-    #     halt 400, MultiJson.dump({ "error" => "invalid_request", "error_description" => "The client_id and/or client_secret is incorrect." })
-    #   end
-    # end
-
-    issue_new_tokens(user)
   end
 
   def handle_registration_flow(params)
@@ -126,6 +69,20 @@ class AuthServer < Sinatra::Base
     issue_new_tokens(user)
   end
 
+  def handle_password_flow(params)
+    email, password = params[:username], params[:password]
+    if email.nil? || password.nil?
+      invalid_request "The 'username' and 'password' parameters are required for the 'password' grant type"
+    end
+
+    user = User.find_by_email(email)
+    unless user && SCrypt::Password.new(user.password_hash) == password
+      invalid_grant "The email and/or password is incorrect."
+    end
+
+    issue_new_tokens(user)
+  end
+
   def handle_refresh_token_flow(params)
     token_value = params[:refresh_token]
     if token_value.nil?
@@ -140,8 +97,6 @@ class AuthServer < Sinatra::Base
     elsif refresh_token.revoked
       invalid_grant "The refresh token has been revoked"
     end
-
-    # TODO: Check device etc.
 
     if refresh_token.updated_at > (Time.now - (3600 * 24))
       issue_new_access_token(refresh_token)
@@ -181,10 +136,12 @@ class AuthServer < Sinatra::Base
       "sub" => "urn:blinkboxbooks:id:user:#{refresh_token.user.id}",
       "iat" => issued_at.to_i,
       "exp" => (issued_at + ACCESS_TOKEN_LIFETIME).to_i,
-      "tid" => refresh_token.access_token.id.to_s,
+      "jti" => refresh_token.access_token.id.to_s,
       "bbb/uid" => refresh_token.user.id,
     })
-    claims["bbb/cid"] = "urn:blinkboxbooks:id:device:#{refresh_token.device.id}" if refresh_token.device
+    if refresh_token.device
+      claims["bbb/cid"] = "urn:blinkboxbooks:id:device:#{refresh_token.device.id}"
+    end
 
     signer = Sandal::Sig::ES256.new(File.read("./keys/auth_server_ec_priv.pem"))
     jws_token = Sandal.encode_token(claims, signer, { "kid" => "/bbb/auth/sig/ec/1" })

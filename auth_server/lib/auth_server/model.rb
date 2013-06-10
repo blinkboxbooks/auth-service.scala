@@ -7,7 +7,7 @@ class User < ActiveRecord::Base
   validates :first_name, length: { within: 1..50 }
   validates :last_name, length: { within: 1..50 }
   validates :email, format: { with: /.+@.+\..+/ }
-  validates :password_hash, length: { within: 64..256 }
+  validates :password_hash, length: { within: 64..128 }
 end
 
 class RefreshToken < ActiveRecord::Base
