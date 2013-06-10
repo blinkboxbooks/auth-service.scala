@@ -6,9 +6,9 @@ class CreateDevices < ActiveRecord::Migration
       t.integer :user_id
       t.string :name, limit: 50
       t.binary :client_secret, limit: 32
-      t.binary :client_access_token, limit: 32
+      t.string :client_access_token, limit: 50
     end
-    add_index :devices, :client_access_token, name: 'ix__devices__client_access_token'
+    add_index :devices, :client_access_token, name: 'ix__devices__client_access_token', unique: true
   end
 
   def self.down

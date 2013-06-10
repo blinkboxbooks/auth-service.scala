@@ -1,4 +1,3 @@
-require_relative "common_transforms"
 
 module KnowsAboutServers
   def servers

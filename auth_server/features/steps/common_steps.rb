@@ -1,6 +1,10 @@
 
+Then(/^the response contains an access token$/) do
+  check_response_tokens(refresh_token: :optional)
+end
+
 Then(/^the response contains an access token and a refresh token$/) do
-  check_response_access_tokens
+  check_response_tokens
 end
 
 Then(/^the response indicates that the request was invalid$/) do

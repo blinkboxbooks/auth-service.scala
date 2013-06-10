@@ -5,10 +5,11 @@ class CreateRefreshTokens < ActiveRecord::Migration
       t.timestamps
       t.integer :user_id
       t.integer :device_id
-      t.binary :token, limit: 32
+      t.string :token, limit: 50
       t.datetime :expires_at
+      t.boolean :revoked
     end
-    add_index :refresh_tokens, :token, name: 'ix__refresh_tokens__token'
+    add_index :refresh_tokens, :token, name: 'ix__refresh_tokens__token', unique: true
   end
 
   def self.down

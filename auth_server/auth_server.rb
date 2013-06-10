@@ -2,40 +2,9 @@ require "sinatra/base"
 require "openssl"
 require "multi_json"
 require "sandal"
-require "active_record"
 require "scrypt"
-require "./environment.rb"
-
-class User < ActiveRecord::Base
-  has_many :refresh_tokens
-  has_many :devices
-
-  validates :first_name, length: { within: 1..50 }
-  validates :last_name, length: { within: 1..50 }
-  validates :email, format: { with: /.+@.+\..+/ }
-  validates :password_hash, length: { within: 64..256 }
-end
-
-class RefreshToken < ActiveRecord::Base
-  belongs_to :user
-  belongs_to :device
-  has_one :access_token, dependent: :destroy
-
-  validates :token, length: { is: 32 }
-end
-
-class AccessToken < ActiveRecord::Base
-  belongs_to :refresh_token
-end
-
-class Device < ActiveRecord::Base
-  belongs_to :user
-  has_one :refresh_token, dependent: :destroy
-
-  validates :name, length: { within: 1..50 }
-  validates :client_secret, length: { is: 32 }
-  validates :client_access_token, length: { is: 32 }
-end
+require "./environment"
+require "./lib/auth_server/model"
 
 # email = "greg@blinkbox.com"
 # user = User.find_by_email(email)
@@ -135,7 +104,7 @@ class AuthServer < Sinatra::Base
     #   end
     # end
 
-    issue_tokens(user)
+    issue_new_tokens(user)
   end
 
   def handle_registration_flow(params)
@@ -154,7 +123,7 @@ class AuthServer < Sinatra::Base
       invalid_request "An account with that email address already exists"
     end
     
-    issue_tokens(user)
+    issue_new_tokens(user)
   end
 
   def handle_refresh_token_flow(params)
@@ -162,34 +131,51 @@ class AuthServer < Sinatra::Base
     if token_value.nil?
       invalid_request "The 'refresh_token' parameter is required for the 'refresh_token' grant type"
     end
-    refresh_token = RefreshToken.get_by_token(token_value)
+
+    refresh_token = RefreshToken.find_by_token(token_value)
     if refresh_token.nil?
-      invalid_request "The refresh token is invalid"
+      invalid_grant "The refresh token is invalid"
+    elsif refresh_token.expires_at < Time.now
+      invalid_grant "The refresh token has expired"
+    elsif refresh_token.revoked
+      invalid_grant "The refresh token has been revoked"
     end
 
     # TODO: Check device etc.
 
-    # TODO: Handle the flow
+    if refresh_token.updated_at > (Time.now - (3600 * 24))
+      issue_new_access_token(refresh_token)
+    else
+      issue_new_tokens(refresh_token.user)
+    end
   end
 
-  def issue_tokens(user, device = nil)
+  def issue_new_tokens(user, device = nil)
     refresh_token = RefreshToken.new do |token|
       token.user = user
       token.device = device
-      token.token = SecureRandom.random_bytes(32)
-      token.access_token = AccessToken.new
+      token.token = jwt_base64_encode(SecureRandom.random_bytes(32))
+      token.expires_at = Time.now + (3600 * 24 * 90)
     end
-    refresh_token.save
+    issue_new_access_token(refresh_token)
+  end
 
+  def issue_new_access_token(refresh_token)
+    refresh_token.access_token = AccessToken.new
+    refresh_token.save!
+    format_token_response(refresh_token)
+  end
+
+  def format_token_response(refresh_token)
     MultiJson.dump({
-      "access_token" => create_access_token(refresh_token),
+      "access_token" => format_access_token(refresh_token),
       "token_type" => "bearer",
       "expires_in" => ACCESS_TOKEN_LIFETIME,
-      "refresh_token" => jwt_base64_encode(SecureRandom.random_bytes(32))
+      "refresh_token" => refresh_token.token
     })
   end
 
-  def create_access_token(refresh_token)
+  def format_access_token(refresh_token)
     issued_at = Time.now
     claims = MultiJson.dump({
       "sub" => "urn:blinkboxbooks:id:user:#{refresh_token.user.id}",

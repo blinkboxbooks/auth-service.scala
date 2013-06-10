@@ -1,7 +1,3 @@
-require "base64"
-require "multi_json"
-require "securerandom"
-require_relative "step_helpers"
 
 def generate_registration_details
   @registration_details = {
@@ -21,7 +17,7 @@ end
 Given(/^I have registered an account$/) do
   generate_registration_details
   submit_registration_request
-  check_response_access_tokens
+  check_response_tokens
 end
 
 Given(/^I have provided valid registration details$/) do
