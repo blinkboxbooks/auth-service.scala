@@ -13,6 +13,17 @@ def generate_registration_details
   }
 end
 
+def submit_registration_request
+  @registration_details.should_not be nil
+  post_request("/oauth2/token", @registration_details)
+end
+
+Given(/^I have registered an account$/) do
+  generate_registration_details
+  submit_registration_request
+  check_response_access_tokens
+end
+
 Given(/^I have provided valid registration details$/) do
   generate_registration_details
 end
@@ -27,36 +38,10 @@ Given(/^I have provided valid registration details, except (.+) which is "(.*)"$
   @registration_details[oauth_param_name(name)] = value
 end
 
-Given(/^the (.+) has the value "(.*)"/) do |name, value|
-  name = oauth_param_name(name)
-  (@registration_details ||= {})[name.to_sym] = value
-end
-
-def submit_registration_request
-  post_request("/oauth2/token", @registration_details)
-end
-
 When(/^I provide the same registration details I previously registered with$/) do
   # nothing to do
 end
 
 When(/^I submit the registration request$/) do
-  post_request("/oauth2/token", @registration_details)
-end
-
-def check_response_access_tokens
-  @response.code.to_i.should == 200
-  oauth_response = MultiJson.load(@response.body)
-  oauth_response["access_token"].should_not be nil
-  oauth_response["refresh_token"].should_not be nil
-end
-
-Then(/^the response contains an access token and a refresh token$/) do
-  check_response_access_tokens
-end
-
-Given(/^I have registered an account$/) do
-  generate_registration_details
   submit_registration_request
-  check_response_access_tokens
 end

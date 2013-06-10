@@ -21,11 +21,9 @@ end
 
 Given(/^the password is (missing|incorrect)$/) do |error_type|
   case error_type
-  when "missing"
-    @credentials.delete("password")
-  when "incorrect"
-    @credentials["password"] = random_password
-  end    
+  when "missing" then @credentials.delete("password")
+  when "incorrect" then @credentials["password"] = random_password
+  end
 end
 
 When(/^I submit the authentication request$/) do

@@ -1,3 +1,4 @@
+
 def oauth_param_name(readable_name)
   param_name = readable_name.downcase
   param_name = "username" if ["email", "email address"].include?(readable_name)
@@ -25,4 +26,11 @@ def post_request(path, body)
     # p e.page.body
     @response = e.page
   end
+end
+
+def check_response_access_tokens
+  @response.code.to_i.should == 200
+  oauth_response = MultiJson.load(@response.body)
+  oauth_response["access_token"].should_not be nil
+  oauth_response["refresh_token"].should_not be nil
 end
