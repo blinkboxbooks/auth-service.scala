@@ -1,6 +1,6 @@
 require "sinatra/base"
 require "openssl"
-require "json"
+require "multi_json"
 require "sandal"
 require "active_record"
 require "scrypt"
@@ -74,7 +74,22 @@ class AuthServer < Sinatra::Base
   ACCESS_TOKEN_LIFETIME = 1800
   MIN_PASSWORD_LENGTH = 6
 
-  get "/oauth2/token" do
+  helpers do
+    def oauth_error(code, description)
+      content_type :json
+      halt 400, MultiJson.dump({ "error" => code, "error_description" => description })
+    end
+
+    def invalid_grant(description)
+      oauth_error "invalid_grant", description
+    end
+
+    def invalid_request(description)
+      oauth_error "invalid_request", description
+    end
+  end
+
+  get "/oauth2/token" do # discouraged, but required by the spec
     handle_token_request(params)
   end
 
@@ -82,10 +97,51 @@ class AuthServer < Sinatra::Base
     handle_token_request(params)
   end
 
-  post "/user" do
+  private
+
+  def handle_token_request(params)
+    case params[:grant_type]
+    when "password"
+      handle_password_flow(params)
+    when "refresh_token"
+      handle_refresh_token_flow(params)
+    when "urn:blinkboxbooks:oauth:grant-type:registration"
+      handle_registration_flow(params)
+    else
+      invalid_request "The grant type '#{params[:grant_type]}' is not supported"
+    end
+  end
+
+  def handle_password_flow(params)
+    email, password = params[:username], params[:password]
+    if email.nil? || password.nil?
+      invalid_request "The 'username' and 'password' parameters are required for the 'password' grant type"
+    end
+
+    user = User.find_by_email(email)
+    unless user && SCrypt::Password.new(user.password_hash) == password
+      invalid_grant "The email and/or password is incorrect."
+    end
+
+    # if client_id
+    #   device_id = client_id.match(/urn:blinkboxbooks:id:device:(\d+)/)[0] rescue nil
+    #   client_secret = jwt_base64_decode(params[:client_secret]) rescue nil
+    #   unless device_id && client_secret
+    #     halt 400, MultiJson.dump({ "error" => "invalid_request", "error_description" => "The client_id and/or client_secret is incorrect." })
+    #   end
+    #   device = Device.find_by_id(device_id)
+    #   unless device && device.client_secret == jwt_base64_decode(client_secret)
+    #     halt 400, MultiJson.dump({ "error" => "invalid_request", "error_description" => "The client_id and/or client_secret is incorrect." })
+    #   end
+    # end
+
+    issue_tokens(user)
+  end
+
+  def handle_registration_flow(params)
     first_name, last_name, email, password = params[:first_name], params[:last_name], params[:username], params[:password]
     if password.nil? || password.length < MIN_PASSWORD_LENGTH
-      halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => "password must be at least #{MIN_PASSWORD_LENGTH} characters" })
+      invalid_request "Validation failed: Password is too short (minimum is #{MIN_PASSWORD_LENGTH} characters)"
     end
     
     password_hash = SCrypt::Password.create(password)
@@ -93,67 +149,22 @@ class AuthServer < Sinatra::Base
     begin
       user.save!
     rescue ActiveRecord::RecordInvalid => e
-      halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => e.message })
+      invalid_request e.message
+    rescue ActiveRecord::RecordNotUnique => e
+      invalid_request "An account with that email address already exists"
     end
     
     issue_tokens(user)
   end
 
-  private
-
-  def handle_token_request(params)
-    grant_type = params[:grant_type]
-    if grant_type.nil?
-      halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => "grant_type is required." })
-    end
-
-    case grant_type
-    when "password"
-      handle_password_flow(params)
-    when "refresh_token"
-      handle_refresh_token_flow(params)
-    else
-      halt 400, JSON.generate({ "error" => "unsupported_grant_type", "error_description" => "Use the 'password' grant_type." })
-    end
-  end
-
-  def handle_password_flow(params)
-    username = params[:username]
-    password = params[:password]
-    client_id = params[:client_id]
-
-    if username.nil? || password.nil?
-      halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => "The username and password parameters are required." })
-    end
-
-    user = User.find_by_email(username)
-    unless user && password == "1234$abcd" # hard-coded password for now
-      halt 400, JSON.generate({ "error" => "invalid_grant", "error_description" => "The username and/or password is incorrect." })
-    end
-
-    if client_id
-      device_id = client_id.match(/urn:blinkboxbooks:id:device:(\d+)/)[0] rescue nil
-      client_secret = jwt_base64_decode(params[:client_secret]) rescue nil
-      unless device_id && client_secret
-        halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => "The client_id and/or client_secret is incorrect." })
-      end
-      device = Device.find_by_id(device_id)
-      unless device && device.client_secret == jwt_base64_decode(client_secret)
-        halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => "The client_id and/or client_secret is incorrect." })
-      end
-    end
-
-    issue_tokens(user, device)
-  end
-
   def handle_refresh_token_flow(params)
     token_value = params[:refresh_token]
     if token_value.nil?
-      halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => "The refresh_token parameter is required." })
+      invalid_request "The 'refresh_token' parameter is required for the 'refresh_token' grant type"
     end
     refresh_token = RefreshToken.get_by_token(token_value)
     if refresh_token.nil?
-      halt 400, JSON.generate({ "error" => "invalid_request", "error_description" => "The refresh_token parameter is invalid." })
+      invalid_request "The refresh token is invalid"
     end
 
     # TODO: Check device etc.
@@ -170,7 +181,7 @@ class AuthServer < Sinatra::Base
     end
     refresh_token.save
 
-    JSON.generate({
+    MultiJson.dump({
       "access_token" => create_access_token(refresh_token),
       "token_type" => "bearer",
       "expires_in" => ACCESS_TOKEN_LIFETIME,
@@ -180,7 +191,7 @@ class AuthServer < Sinatra::Base
 
   def create_access_token(refresh_token)
     issued_at = Time.now
-    claims = JSON.generate({
+    claims = MultiJson.dump({
       "sub" => "urn:blinkboxbooks:id:user:#{refresh_token.user.id}",
       "iat" => issued_at.to_i,
       "exp" => (issued_at + ACCESS_TOKEN_LIFETIME).to_i,

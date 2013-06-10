@@ -8,47 +8,41 @@ Feature: Registration
     Given that the auth server is at "http://localhost:9393/"
   
   Scenario: Registering with all the required information
-    Given I have provided the details required to register
+    Given I have provided valid registration details
     When I submit the registration request
     Then the response contains an access token and a refresh token
 
-  Scenario Outline: Registering with missing details
-    Given I have provided the details required to register
-    But the <required detail> is missing
+  Scenario: Trying to register with an email address that is already registered
+    Given I have registered an account
+    When I provide the same registration details I previously registered with
+    And I submit the registration request
+    Then the response indicates that the request was invalid
+
+  Scenario Outline: Trying to register with missing details
+    Given I have provided valid registration details, except <detail> which is missing
     When I submit the registration request
-    Then the response contains an error of type "invalid_request"
+    Then the response indicates that the request was invalid
 
-    Examples:
-      | required detail |
-      | first_name      |
-      | last_name       |
-      | username        |
-      | password        |
+    Examples: Required details
+      These details are required for registration
+      | detail        |
+      | first name    |
+      | last name     |
+      | email address |
+      | password      |
 
-  Scenario Outline: Registering with an invalid email address
-    Given I have provided the details required to register
-    But the email address has the value <invalid value>
+  Scenario Outline: Trying to register with invalid details
+    Given I have provided valid registration details, except <detail> which is "<value>"
     When I submit the registration request
-    Then the response contains an error of type "invalid_request"
+    Then the response indicates that the request was invalid
 
-    Examples: Malformed addresses should not be accepted
-      | invalid value    |
-      | no.at.symbol.com |
-      | no@dots          |
+    Examples: Malformed email address
+      The email address must have at least an @ symbol with a . after it      
+      | detail        | value        |
+      | email address | no.at.symbol |
+      | email address | no@dots      |
 
-  Scenario Outline: Registering with an invalid password
-    Given I have provided the details required to register
-    But the password has the value <invalid value>
-    When I submit the registration request
-    Then the response contains an error of type "invalid_request"
-
-    Examples: Passwords under six characters are not allowed
-      | invalid value    |
-      | abcd             |
-      | aA9!w            |
-
-  # Scenario: Registering with an invalid email address
-  #   Given I have provided the details required to register
-  #   But the email address is invalid
-  #   When I submit the registration request
-  #   Then the response contains an error of type "invalid_request"
+    Examples: Password too short
+      The password must be at least six characters in length
+      | detail   | value |
+      | password | aY9!w |
