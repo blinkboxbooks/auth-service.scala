@@ -4,6 +4,7 @@ class CreateAccessTokens < ActiveRecord::Migration
     create_table :access_tokens do |t|
       t.timestamps
       t.integer :refresh_token_id
+      t.datetime :expires_at
     end
   end
 

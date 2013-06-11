@@ -10,6 +10,7 @@ class AuthServer < Sinatra::Base
   include Sandal::Util
 
   ACCESS_TOKEN_LIFETIME = 1800
+  REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90
   MIN_PASSWORD_LENGTH = 6
 
   helpers do
@@ -110,13 +111,15 @@ class AuthServer < Sinatra::Base
       token.user = user
       token.device = device
       token.token = jwt_base64_encode(SecureRandom.random_bytes(32))
-      token.expires_at = Time.now + (3600 * 24 * 90)
+      token.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
     end
     issue_new_access_token(refresh_token)
   end
 
   def issue_new_access_token(refresh_token)
-    refresh_token.access_token = AccessToken.new
+    refresh_token.access_token = AccessToken.new do |token|
+      token.expires_at = Time.now + ACCESS_TOKEN_LIFETIME
+    end
     refresh_token.save!
     format_token_response(refresh_token)
   end
@@ -135,7 +138,7 @@ class AuthServer < Sinatra::Base
     claims = MultiJson.dump({
       "sub" => "urn:blinkboxbooks:id:user:#{refresh_token.user.id}",
       "iat" => issued_at.to_i,
-      "exp" => (issued_at + ACCESS_TOKEN_LIFETIME).to_i,
+      "exp" => refresh_token.access_token.expires_at.to_i,
       "jti" => refresh_token.access_token.id.to_s,
       "bbb/uid" => refresh_token.user.id,
     })
