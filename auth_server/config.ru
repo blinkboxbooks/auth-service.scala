@@ -1,3 +1,3 @@
-require './auth_server'
+require './lib/auth_server'
 
 run AuthServer.new

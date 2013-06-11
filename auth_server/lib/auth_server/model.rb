@@ -10,6 +10,15 @@ class User < ActiveRecord::Base
   validates :password_hash, presence: true
 end
 
+class Device < ActiveRecord::Base
+  belongs_to :user
+  has_one :refresh_token, dependent: :destroy
+
+  validates :name, length: { within: 1..50 }
+  validates :client_secret, presence: true
+  validates :client_access_token, presence: true, uniqueness: true
+end
+
 class RefreshToken < ActiveRecord::Base
   belongs_to :user
   belongs_to :device
@@ -23,13 +32,4 @@ class AccessToken < ActiveRecord::Base
   belongs_to :refresh_token
   
   validates :expires_at, presence: true
-end
-
-class Device < ActiveRecord::Base
-  belongs_to :user
-  has_one :refresh_token, dependent: :destroy
-
-  validates :name, length: { within: 1..50 }
-  validates :client_secret, presence: true
-  validates :client_access_token, presence: true, uniqueness: true
 end
