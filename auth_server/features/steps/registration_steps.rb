@@ -1,19 +1,4 @@
 
-def generate_registration_details
-  @registration_details = {
-    "grant_type" => "urn:blinkboxbooks:oauth:grant-type:registration",
-    "first_name" => "John",
-    "last_name" => "Doe",
-    "username" => random_email,
-    "password" => random_password
-  }
-end
-
-def submit_registration_request
-  @registration_details.should_not be nil
-  post_request("/oauth2/token", @registration_details)
-end
-
 Given(/^I have registered an account$/) do
   generate_registration_details
   submit_registration_request
@@ -24,14 +9,14 @@ Given(/^I have provided valid registration details$/) do
   generate_registration_details
 end
 
-Given(/^I have provided valid registration details, except (.+) which is missing$/) do |name|
+Given(/^I have provided valid registration details, except (#{CAPTURE_OAUTH_PARAM}) which is missing$/) do |name|
   generate_registration_details
-  @registration_details.delete(oauth_param_name(name))
+  @registration_details.delete(name)
 end
 
-Given(/^I have provided valid registration details, except (.+) which is "(.*)"$/) do |name, value|
+Given(/^I have provided valid registration details, except (#{CAPTURE_OAUTH_PARAM}) which is "(.*)"$/) do |name, value|
   generate_registration_details
-  @registration_details[oauth_param_name(name)] = value
+  @registration_details[name] = value
 end
 
 When(/^I provide the same registration details I previously registered with$/) do

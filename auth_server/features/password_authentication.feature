@@ -5,8 +5,7 @@ Feature: Password authentication
   So that I can use services that require my identity
 
   Background:
-    Given that the auth server is at "http://localhost:9393/"
-    And I have registered an account
+    Given I have registered an account
 
   Scenario: Authenticating with valid credentials
     Given I have provided my email address and password

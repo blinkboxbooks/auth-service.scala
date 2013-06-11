@@ -3,9 +3,6 @@ Feature: Registration
   As a user
   I want to be able to register an account
   So that I can use services that require my identity
-
-  Background:
-    Given that the auth server is at "http://localhost:9393/"
   
   Scenario: Registering with all the required information
     Given I have provided valid registration details

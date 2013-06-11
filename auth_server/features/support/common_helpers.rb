@@ -1,10 +1,4 @@
 
-def oauth_param_name(readable_name)
-  param_name = readable_name.downcase
-  param_name = "username" if ["email", "email address"].include?(readable_name)
-  param_name.tr(" ", "_")
-end
-
 def random_email
   chars = [*("A".."Z"), *("a".."z"), *("0".."9")]
   "#{chars.sample(32).join}@example.org"
@@ -16,7 +10,7 @@ def random_password
 end
 
 def post_request(path, body)
-  url = servers["auth"].clone
+  url = servers[:auth].clone
   url.path = path
   headers = { "Content-Type" => "application/x-www-form-urlencoded" }
   body = URI.encode_www_form(body)

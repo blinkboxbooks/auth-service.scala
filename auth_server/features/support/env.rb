@@ -1,6 +1,14 @@
 require "mechanize"
-require_relative "./common_transforms"
-require_relative "./step_helpers"
+
+module KnowsAboutTheEnvironment
+  def servers
+    @servers ||= {
+      auth: URI.parse(ENV["AUTH_SERVER"] || "http://localhost:9393/")
+    }
+  end
+end
+
+World(KnowsAboutTheEnvironment)
 
 Before do 
   @agent = Mechanize.new

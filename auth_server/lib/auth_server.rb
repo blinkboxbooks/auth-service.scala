@@ -1,10 +1,13 @@
 require "sinatra/base"
-require "openssl"
+require "active_record"
 require "multi_json"
 require "sandal"
 require "scrypt"
 require "./environment"
-require "./lib/auth_server/model"
+require "./lib/auth_server/access_token"
+require "./lib/auth_server/device"
+require "./lib/auth_server/refresh_token"
+require "./lib/auth_server/user"
 
 class AuthServer < Sinatra::Base
   include Sandal::Util
@@ -26,6 +29,10 @@ class AuthServer < Sinatra::Base
     def invalid_request(description)
       oauth_error "invalid_request", description
     end
+  end
+
+  post "oauth2/client" do
+    handle_client_request(params)
   end
 
   get "/oauth2/token" do # discouraged, but required by the spec
@@ -57,14 +64,11 @@ class AuthServer < Sinatra::Base
       invalid_request "Validation failed: Password is too short (minimum is #{MIN_PASSWORD_LENGTH} characters)"
     end
     
-    password_hash = SCrypt::Password.create(password)
-    user = User.new(first_name: first_name, last_name: last_name, email: email, password_hash: password_hash) 
+    user = User.new(first_name: first_name, last_name: last_name, email: email, password: password)
     begin
       user.save!
     rescue ActiveRecord::RecordInvalid => e
       invalid_request e.message
-    rescue ActiveRecord::RecordNotUnique => e
-      invalid_request "An account with that email address already exists"
     end
     
     issue_new_tokens(user)
@@ -76,8 +80,8 @@ class AuthServer < Sinatra::Base
       invalid_request "The 'username' and 'password' parameters are required for the 'password' grant type"
     end
 
-    user = User.find_by_email(email)
-    unless user && SCrypt::Password.new(user.password_hash) == password
+    user = User.authenticate(email, password)
+    unless user
       invalid_grant "The email and/or password is incorrect."
     end
 
@@ -99,7 +103,7 @@ class AuthServer < Sinatra::Base
       invalid_grant "The refresh token has been revoked"
     end
 
-    if refresh_token.updated_at > (Time.now - (3600 * 24))
+    if refresh_token.age < (3600 * 24)
       issue_new_access_token(refresh_token)
     else
       issue_new_tokens(refresh_token.user)

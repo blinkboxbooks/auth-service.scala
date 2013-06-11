@@ -1,17 +1,4 @@
 
-def provide_credentials(include_password = true)
-  @credentials = {
-    "grant_type" => "password",
-    "username" => @registration_details["username"]
-  }
-  @credentials["password"] = @registration_details["password"] if include_password
-end
-
-def submit_authentication_request
-  @registration_details.should_not be nil
-  post_request("/oauth2/token", @credentials)
-end
-
 Given(/^I have authenticated with my email address and password$/) do
   provide_credentials
   submit_authentication_request
@@ -19,7 +6,7 @@ Given(/^I have authenticated with my email address and password$/) do
 end
 
 Given(/^I have provided my email address$/) do
-  provide_credentials(false)
+  provide_credentials(include_password: false)
 end
 
 Given(/^I have provided my email address and password$/) do
@@ -52,8 +39,4 @@ Then(/^the response indicates that my credentials are incorrect$/) do
   @response.code.to_i.should == 400
   oauth_response = MultiJson.load(@response.body)
   oauth_response["error"].should == "invalid_grant"
-end
-
-Then(/^the response contains a new access token$/) do
-  pending # express the regexp above with the code you wish you had
 end
