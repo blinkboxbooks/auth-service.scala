@@ -31,11 +31,23 @@ Given(/^I have provided my refresh token$/) do
   }
 end
 
+Given(/^I have not provided a refresh token$/) do
+  @credentials = {
+    "grant_type" => "refresh_token"
+  }
+end
+
+Given(/^I have provided an incorrect refresh token$/) do  @credentials = {
+    "grant_type" => "refresh_token",
+    "refresh_token" => "somerandomgroupofcharacters"
+  }
+end
+
 When(/^I submit the (?:authentication|access token refresh) request$/) do
   submit_authentication_request
 end
 
-Then(/^the response indicates that my credentials are incorrect$/) do
+Then(/^the response indicates that my (?:credentials are|refresh token is) incorrect$/) do
   @response.code.to_i.should == 400
   oauth_response = MultiJson.load(@response.body)
   oauth_response["error"].should == "invalid_grant"

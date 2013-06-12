@@ -31,7 +31,7 @@ class ResourceServer < Sinatra::Base
 
   before "/" do
     if @user["cid"].nil?
-      halt 401, "Device id is required"
+      halt 401, "Client id is required"
     end
   end
 

@@ -8,6 +8,6 @@ def provide_credentials(include_password = true)
 end
 
 def submit_authentication_request
-  @registration_details.should_not be nil
-  post_request("/oauth2/token", @credentials)
+  @credentials.should_not be nil
+  post_www_form_request("/oauth2/token", @credentials)
 end

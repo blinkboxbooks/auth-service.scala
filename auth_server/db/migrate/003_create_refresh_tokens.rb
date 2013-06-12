@@ -4,7 +4,7 @@ class CreateRefreshTokens < ActiveRecord::Migration
     create_table :refresh_tokens do |t|
       t.timestamps
       t.integer :user_id
-      t.integer :device_id
+      t.integer :client_id
       t.string :token, limit: 50
       t.datetime :expires_at
       t.boolean :revoked

@@ -4,35 +4,48 @@ require "multi_json"
 require "sandal"
 require "scrypt"
 require "./environment"
+require "./lib/sinatra/authorization"
+require "./lib/sinatra/oauth_helper"
 require "./lib/auth_server/access_token"
-require "./lib/auth_server/device"
+require "./lib/auth_server/client"
 require "./lib/auth_server/refresh_token"
 require "./lib/auth_server/user"
 
 class AuthServer < Sinatra::Base
-  include Sandal::Util
+  helpers Sinatra::OAuthHelper
+  register Sinatra::Authorization
 
   ACCESS_TOKEN_LIFETIME = 1800
   REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90
+  REFRESH_TOKEN_REISSUE_INTERVAL = 3600 * 24 * 7
   MIN_PASSWORD_LENGTH = 6
 
-  helpers do
-    def oauth_error(code, description)
-      content_type :json
-      halt 400, MultiJson.dump({ "error" => code, "error_description" => description })
+  require_user_authorization_for "/oauth2/client"
+  
+  post "/oauth2/client" do
+    begin
+      data = MultiJson.load(request.body.read)
+    rescue MultiJson::LoadError
+      invalid_request "The request body is not valid JSON"
     end
 
-    def invalid_grant(description)
-      oauth_error "invalid_grant", description
+    client = Client.new do |c|
+      c.name = data["client_name"] || "Unknown Client (#{Time.now.strftime("%d %b %Y")})"
+      c.user = current_user
+      c.client_secret = Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(32))
+      c.registration_access_token = Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(32))
     end
+    client.save!
 
-    def invalid_request(description)
-      oauth_error "invalid_request", description
-    end
-  end
-
-  post "oauth2/client" do
-    handle_client_request(params)
+    json({
+      "client_id" => "urn:blinkboxbooks:id:client:#{client.id}",
+      "client_id_issued_at" => client.created_at.to_i,
+      "client_secret" => client.client_secret,
+      "client_secret_expires_at" => 0,
+      "registration_access_token" => client.registration_access_token,
+      "registration_client_uri" => "#{base_url}/oauth2/client/#{client.id}",
+      "client_name" => client.name
+    })
   end
 
   get "/oauth2/token" do # discouraged, but required by the spec
@@ -71,7 +84,7 @@ class AuthServer < Sinatra::Base
       invalid_request e.message
     end
     
-    issue_new_tokens(user)
+    issue_refresh_token(user)
   end
 
   def handle_password_flow(params)
@@ -85,7 +98,7 @@ class AuthServer < Sinatra::Base
       invalid_grant "The email and/or password is incorrect."
     end
 
-    issue_new_tokens(user)
+    issue_refresh_token(user)
   end
 
   def handle_refresh_token_flow(params)
@@ -103,41 +116,39 @@ class AuthServer < Sinatra::Base
       invalid_grant "The refresh token has been revoked"
     end
 
-    if refresh_token.age < (3600 * 24)
-      issue_new_access_token(refresh_token)
+    if refresh_token.age > REFRESH_TOKEN_REISSUE_INTERVAL
+      issue_refresh_token(refresh_token.user)
     else
-      issue_new_tokens(refresh_token.user)
+      issue_access_token(refresh_token)
     end
   end
 
-  def issue_new_tokens(user, device = nil)
+  def issue_refresh_token(user, client = nil)
     refresh_token = RefreshToken.new do |token|
       token.user = user
-      token.device = device
-      token.token = jwt_base64_encode(SecureRandom.random_bytes(32))
+      token.client = client
+      token.token = Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(32))
       token.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
     end
-    issue_new_access_token(refresh_token)
+    issue_access_token(refresh_token, include_refresh_token: true)
   end
 
-  def issue_new_access_token(refresh_token)
+  def issue_access_token(refresh_token, include_refresh_token = false)
     refresh_token.access_token = AccessToken.new do |token|
       token.expires_at = Time.now + ACCESS_TOKEN_LIFETIME
     end
     refresh_token.save!
-    format_token_response(refresh_token)
-  end
 
-  def format_token_response(refresh_token)
-    MultiJson.dump({
-      "access_token" => format_access_token(refresh_token),
+    response_body = {
+      "access_token" => build_access_token(refresh_token),
       "token_type" => "bearer",
-      "expires_in" => ACCESS_TOKEN_LIFETIME,
-      "refresh_token" => refresh_token.token
-    })
+      "expires_in" => ACCESS_TOKEN_LIFETIME
+    }
+    response_body["refresh_token"] = refresh_token.token if include_refresh_token
+    json response_body
   end
 
-  def format_access_token(refresh_token)
+  def build_access_token(refresh_token)
     issued_at = Time.now
     claims = MultiJson.dump({
       "sub" => "urn:blinkboxbooks:id:user:#{refresh_token.user.id}",
@@ -146,8 +157,8 @@ class AuthServer < Sinatra::Base
       "jti" => refresh_token.access_token.id.to_s,
       "bbb/uid" => refresh_token.user.id,
     })
-    if refresh_token.device
-      claims["bbb/cid"] = "urn:blinkboxbooks:id:device:#{refresh_token.device.id}"
+    if refresh_token.client
+      claims["bbb/cid"] = "urn:blinkboxbooks:id:client:#{refresh_token.client.id}"
     end
 
     signer = Sandal::Sig::ES256.new(File.read("./keys/auth_server_ec_priv.pem"))

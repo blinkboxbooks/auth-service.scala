@@ -11,5 +11,5 @@ end
 
 def submit_registration_request
   @registration_details.should_not be nil
-  post_request("/oauth2/token", @registration_details)
+  post_www_form_request("/oauth2/token", @registration_details)
 end
