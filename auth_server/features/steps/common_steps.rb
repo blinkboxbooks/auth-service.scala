@@ -3,8 +3,8 @@ Given(/^I have (not )?provided my access token$/) do |no_token|
   @request_headers ||= {}
   if no_token
     @request_headers.delete("Authorization")
-  elsif
-    @request_headers["Authorization"] = "Bearer #{@oauth_response["access_token"]}"
+  else
+    provide_access_token
   end
 end
 

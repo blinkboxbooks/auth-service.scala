@@ -2,6 +2,10 @@ module Sinatra
   module Authorization
 
     module Helpers
+      def current_client
+        request[:current_client]
+      end
+      
       def current_user
         request[:current_user]
       end
@@ -11,12 +15,24 @@ module Sinatra
       app.helpers Sinatra::Authorization::Helpers
     end
 
+    def require_client_authorization_for(url_pattern, message = "Client authorisation is required")
+      
+      before url_pattern do
+        registration_access_token = request.bearer_token
+        unless registration_access_token.nil?
+          request[:current_client] = Client.find_by_registration_access_token(registration_access_token)
+        end
+        if request[:current_client].nil?
+          halt 401, message
+        end
+      end
+    end
+
     def require_user_authorization_for(url_pattern, message = "User authorisation is required")
       before url_pattern do
-        auth_header = request.env["HTTP_AUTHORIZATION"]
-        unless auth_header.nil?
-          auth_scheme, access_token = auth_header.split(" ", 2)
-          if auth_scheme == "Bearer"
+        access_token = request.bearer_token
+        unless access_token.nil?
+          begin
             claims = Sandal.decode_token(access_token) do |header|
               case header["kid"]
               when "/bbb/auth/sig/ec/1"
@@ -28,11 +44,11 @@ module Sinatra
               else
                 throw Sandal::TokenError.new("Key #{header["kid"]} is unknown.")
               end
-            end rescue nil
+            end
+            request[:current_user] = User.find_by_id(claims["bbb/uid"])
+          rescue Sandal::TokenError
           end
         end
-
-        request[:current_user] = User.find_by_id(claims["bbb/uid"]) unless claims.nil?
         if request[:current_user].nil?
           halt 401, message
         end

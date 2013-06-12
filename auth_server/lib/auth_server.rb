@@ -4,6 +4,7 @@ require "multi_json"
 require "sandal"
 require "scrypt"
 require "./environment"
+require "./lib/sinatra/request"
 require "./lib/sinatra/authorization"
 require "./lib/sinatra/oauth_helper"
 require "./lib/auth_server/access_token"
@@ -21,7 +22,8 @@ class AuthServer < Sinatra::Base
   MIN_PASSWORD_LENGTH = 6
 
   require_user_authorization_for "/oauth2/client"
-  
+  require_client_authorization_for "/oauth2/client/*"
+
   post "/oauth2/client" do
     begin
       data = MultiJson.load(request.body.read)
@@ -37,15 +39,15 @@ class AuthServer < Sinatra::Base
     end
     client.save!
 
-    json({
-      "client_id" => "urn:blinkboxbooks:id:client:#{client.id}",
-      "client_id_issued_at" => client.created_at.to_i,
-      "client_secret" => client.client_secret,
-      "client_secret_expires_at" => 0,
-      "registration_access_token" => client.registration_access_token,
-      "registration_client_uri" => "#{base_url}/oauth2/client/#{client.id}",
-      "client_name" => client.name
-    })
+    return_client_information(client)
+  end
+
+  get "/oauth2/client/:client_id" do |client_id|
+    unless current_client.id == client_id.to_i
+      halt 403, "You cannot access another client's information"
+    end
+
+    return_client_information(current_client)
   end
 
   get "/oauth2/token" do # discouraged, but required by the spec
@@ -57,6 +59,18 @@ class AuthServer < Sinatra::Base
   end
 
   private
+
+  def return_client_information(client)
+    json({
+      "client_id" => "urn:blinkboxbooks:id:client:#{client.id}",
+      "client_id_issued_at" => client.created_at.to_i,
+      "client_secret" => client.client_secret,
+      "client_secret_expires_at" => 0,
+      "registration_access_token" => client.registration_access_token,
+      "registration_client_uri" => "#{base_url}/oauth2/client/#{client.id}",
+      "client_name" => client.name
+    })
+  end
 
   def handle_token_request(params)
     case params[:grant_type]

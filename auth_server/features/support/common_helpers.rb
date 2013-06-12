@@ -9,6 +9,11 @@ def random_password
   char_groups.map { |chars| chars.to_a.sample(5) }.flatten.shuffle.join
 end
 
+def provide_access_token
+  @request_headers ||= {}
+  @request_headers["Authorization"] = "Bearer #{@oauth_response["access_token"]}"
+end
+
 def post_www_form_request(path, body, additional_headers = {})
   url = servers[:auth].clone
   url.path = path
@@ -20,7 +25,7 @@ def post_www_form_request(path, body, additional_headers = {})
     # p @response.body
   rescue Mechanize::ResponseCodeError => e
     @response = e.page
-    p e.page.body
+    # p e.page.body
   end
 end
 
