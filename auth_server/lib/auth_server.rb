@@ -22,7 +22,7 @@ class AuthServer < Sinatra::Base
   MIN_PASSWORD_LENGTH = 6
 
   require_user_authorization_for "/oauth2/client"
-  require_client_authorization_for "/oauth2/client/*"
+  require_client_authorization_for %r{/oauth2/client/(\d+)(?:/.*)?}
 
   post "/oauth2/client" do
     begin
@@ -42,11 +42,7 @@ class AuthServer < Sinatra::Base
     return_client_information(client)
   end
 
-  get "/oauth2/client/:client_id" do |client_id|
-    unless current_client.id == client_id.to_i
-      halt 403, "You cannot access another client's information"
-    end
-
+  get %r{/oauth2/client/(\d+)} do
     return_client_information(current_client)
   end
 
@@ -168,7 +164,7 @@ class AuthServer < Sinatra::Base
       "sub" => "urn:blinkboxbooks:id:user:#{refresh_token.user.id}",
       "iat" => issued_at.to_i,
       "exp" => refresh_token.access_token.expires_at.to_i,
-      "jti" => refresh_token.access_token.id.to_s,
+      "jti" => "urn:blinkboxbooks:oauth:access-token:#{refresh_token.access_token.id}",
       "bbb/uid" => refresh_token.user.id,
     })
     if refresh_token.client

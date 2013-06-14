@@ -30,3 +30,7 @@ end
 Then(/^the response indicates that I am unauthorised$/) do
   @response.code.to_i.should == 401
 end
+
+Then(/^the response indicates that this is forbidden$/) do
+  @response.code.to_i.should == 403
+end

@@ -23,6 +23,14 @@ Given(/^the client details I have provided are malformed$/) do
   @client_info = "this doesn't parse as json!"
 end
 
+Given(/^I have provided the access token for a different client$/) do
+  old_registration_access_token = @client_response["registration_access_token"]
+  provide_access_token
+  submit_client_registration_request
+  @request_headers["Authorization"] = "Bearer #{old_registration_access_token}"
+  check_client_information_response
+end
+
 When(/^I submit the client registration request$/) do
   submit_client_registration_request
 end

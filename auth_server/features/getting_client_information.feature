@@ -17,3 +17,8 @@ Feature: Registering a client
     Given I have not provided my client access token
     When I submit the client information request
     Then the response indicates that I am unauthorised
+
+  Scenario: Trying to get client information for a different client
+    Given I have provided the access token for a different client
+    When I submit the client information request
+    Then the response indicates that this is forbidden
