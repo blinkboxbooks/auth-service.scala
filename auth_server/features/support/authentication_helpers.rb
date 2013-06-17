@@ -1,10 +1,13 @@
 
-def provide_credentials(include_password = true)
-  @credentials = {
-    "grant_type" => "password",
-    "username" => @registration_details["username"]
-  }
-  @credentials["password"] = @registration_details["password"] if include_password
+def provide_credentials
+  @credentials ||= {}
+  @credentials["grant_type"] = "password"
+  @credentials["username"] = @registration_details["username"]
+  @credentials["password"] = @registration_details["password"]
+  unless @client_response.nil?
+    @credentials["client_id"] = @client_response["client_id"]
+    @credentials["client_secret"] = @client_response["client_secret"]
+  end
 end
 
 def submit_authentication_request

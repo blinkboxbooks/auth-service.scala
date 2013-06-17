@@ -30,4 +30,22 @@ Feature: Password authentication
     When I submit the authentication request
     Then the response indicates that my credentials are incorrect
 
-  
+  Scenario: Authenticating with valid credentials and client credentials
+    Given I have registered a client
+    And I have provided my email address and password
+    When I submit the authentication request
+    Then the response contains an access token and a refresh token
+
+  Scenario: Trying to authenticate with valid credentials but a missing client secret
+    Given I have registered a client
+    And I have provided my email address and password
+    But the client secret is missing
+    When I submit the authentication request
+    Then the response indicates that the client credentials are incorrect
+
+  Scenario: Trying to authenticate with valid credentials but an incorrect client secret
+    Given I have registered a client
+    And I have provided my email address and password
+    But the client secret is incorrect
+    When I submit the authentication request
+    Then the response indicates that the client credentials are incorrect

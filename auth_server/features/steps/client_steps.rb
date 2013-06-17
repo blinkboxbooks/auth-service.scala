@@ -56,3 +56,10 @@ end
 Then(/^a client name should have been created for me$/) do
   @client_response["client_name"].should_not be nil
 end
+
+Then(/^the response indicates that the client credentials are incorrect$/) do
+  @response.code.to_i.should === 400..401
+  @response["WWW-Authenticate"].should_not be nil if @response.code.to_i == 401
+  error_response = MultiJson.load(@response.body)
+  error_response["error"].should == "invalid_client"
+end

@@ -15,12 +15,12 @@ module Sinatra
       halt 400, MultiJson.dump({ "error" => code, "error_description" => description })
     end
 
-    def invalid_grant(description)
-      oauth_error "invalid_grant", description
-    end
-
-    def invalid_request(description)
-      oauth_error "invalid_request", description
+    def method_missing(method_sym, *args)
+      if method_sym =~ /invalid_\w+/
+        oauth_error(method_sym.to_s, *args)
+      else
+        super
+      end
     end
 
   end

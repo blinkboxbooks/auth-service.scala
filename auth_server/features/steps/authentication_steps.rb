@@ -6,7 +6,8 @@ Given(/^I have authenticated with my email address and password$/) do
 end
 
 Given(/^I have provided my email address$/) do
-  provide_credentials(include_password: false)
+  provide_credentials
+  @credentials.delete("password")
 end
 
 Given(/^I have provided my email address and password$/) do
@@ -43,12 +44,19 @@ Given(/^I have provided an incorrect refresh token$/) do  @credentials = {
   }
 end
 
+Given(/^the client secret is (missing|incorrect)$/) do |error_type|
+  case error_type
+  when "missing" then @credentials.delete("client_secret")
+  when "incorrect" then @credentials["client_secret"] = random_password
+  end
+end
+
 When(/^I submit the (?:authentication|access token refresh) request$/) do
   submit_authentication_request
 end
 
 Then(/^the response indicates that my (?:credentials are|refresh token is) incorrect$/) do
   @response.code.to_i.should == 400
-  oauth_response = MultiJson.load(@response.body)
-  oauth_response["error"].should == "invalid_grant"
+  error_response = MultiJson.load(@response.body)
+  error_response["error"].should == "invalid_grant"
 end

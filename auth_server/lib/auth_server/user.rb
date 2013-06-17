@@ -8,6 +8,8 @@ class User < ActiveRecord::Base
   validates :email, format: { with: /.+@.+\..+/ }, uniqueness: true
   validates :password_hash, presence: true
 
+  serialize :roles, Array
+
   def initialize(*params)
     self.password = params.delete("password")
     super

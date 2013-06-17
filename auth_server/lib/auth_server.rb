@@ -104,11 +104,16 @@ class AuthServer < Sinatra::Base
     end
 
     user = User.authenticate(email, password)
-    unless user
-      invalid_grant "The email and/or password is incorrect."
+    invalid_grant "The username and/or password is incorrect." if user.nil?
+
+    client_id, client_secret = params[:client_id], params[:client_secret]
+    unless client_id.nil?
+      client = Client.authenticate(client_id, client_secret)
+      invalid_client "The client id and/or client secret is incorrect." if client.nil?
+      invalid_client "You are not authorised to use this client." unless client.user == user # TODO: Need test for this
     end
 
-    issue_refresh_token(user)
+    issue_refresh_token(user, client)
   end
 
   def handle_refresh_token_flow(params)
@@ -127,7 +132,7 @@ class AuthServer < Sinatra::Base
     end
 
     if refresh_token.age > REFRESH_TOKEN_REISSUE_INTERVAL
-      issue_refresh_token(refresh_token.user)
+      issue_refresh_token(refresh_token.user, refresh_token.client)
     else
       issue_access_token(refresh_token)
     end
@@ -159,17 +164,15 @@ class AuthServer < Sinatra::Base
   end
 
   def build_access_token(refresh_token)
-    issued_at = Time.now
-    claims = MultiJson.dump({
+    access_token = refresh_token.access_token
+    claims = {
       "sub" => "urn:blinkboxbooks:id:user:#{refresh_token.user.id}",
-      "iat" => issued_at.to_i,
-      "exp" => refresh_token.access_token.expires_at.to_i,
-      "jti" => "urn:blinkboxbooks:oauth:access-token:#{refresh_token.access_token.id}",
+      "iat" => access_token.created_at.to_i,
+      "exp" => access_token.expires_at.to_i,
+      "jti" => "urn:blinkboxbooks:oauth:access-token:#{access_token.id}",
       "bbb/uid" => refresh_token.user.id,
-    })
-    if refresh_token.client
-      claims["bbb/cid"] = "urn:blinkboxbooks:id:client:#{refresh_token.client.id}"
-    end
+    }
+    claims["bbb/cid"] = "urn:blinkboxbooks:id:client:#{refresh_token.client.id}" if refresh_token.client
 
     signer = Sandal::Sig::ES256.new(File.read("./keys/auth_server_ec_priv.pem"))
     jws_token = Sandal.encode_token(claims, signer, { "kid" => "/bbb/auth/sig/ec/1" })
