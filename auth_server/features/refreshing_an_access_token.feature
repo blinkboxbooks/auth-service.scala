@@ -13,7 +13,7 @@ Feature: Refreshing an access token
     Then the response contains an access token 
 
   Scenario: Trying to refresh an access token without a refresh token
-    Given I have not provided a refresh token
+    Given I have not provided my refresh token
     When I submit the access token refresh request
     Then the response indicates that the request was invalid
 

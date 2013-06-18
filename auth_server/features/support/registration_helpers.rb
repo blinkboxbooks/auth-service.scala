@@ -13,3 +13,9 @@ def submit_user_registration_request
   @registration_details.should_not be nil
   post_www_form_request("/oauth2/token", @registration_details)
 end
+
+def register_new_user
+  generate_user_registration_details
+  submit_user_registration_request
+  check_response_tokens
+end

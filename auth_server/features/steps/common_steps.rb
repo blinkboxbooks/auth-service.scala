@@ -17,14 +17,12 @@ Then(/^the response contains an access token$/) do
   check_response_tokens(refresh_token: :optional)
 end
 
-Then(/^the response contains an access token and a refresh token$/) do
-  check_response_tokens
-end
+Then(/^the response contains an access token and a refresh token$/, :check_response_tokens)
 
 Then(/^the response indicates that the request was invalid$/) do
   @response.code.to_i.should == 400
-  error_response = MultiJson.load(@response.body)
-  error_response["error"].should == "invalid_request"
+  @response_json = MultiJson.load(@response.body)
+  @response_json["error"].should == "invalid_request"
 end
 
 Then(/^the response indicates that I am unauthorised$/) do

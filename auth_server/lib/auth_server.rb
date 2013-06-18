@@ -110,7 +110,7 @@ class AuthServer < Sinatra::Base
     unless client_id.nil?
       client = Client.authenticate(client_id, client_secret)
       invalid_client "The client id and/or client secret is incorrect." if client.nil?
-      invalid_client "You are not authorised to use this client." unless client.user == user # TODO: Need test for this
+      invalid_client "You are not authorised to use this client." unless client.user == user
     end
 
     issue_refresh_token(user, client)

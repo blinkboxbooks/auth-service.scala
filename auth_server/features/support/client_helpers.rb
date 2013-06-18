@@ -13,3 +13,9 @@ def check_client_information_response
   @client_response["registration_access_token"].should_not be nil
   @client_response["registration_client_uri"].should_not be nil
 end
+
+def register_new_client
+  provide_access_token
+  submit_client_registration_request
+  check_client_information_response
+end

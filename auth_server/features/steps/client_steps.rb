@@ -1,9 +1,5 @@
 
-Given(/^I have registered a client$/) do
-  provide_access_token
-  submit_client_registration_request
-  check_client_information_response
-end
+Given(/^I have registered a client$/, :register_new_client)
 
 Given(/^I have (not )?provided my client access token$/) do |no_token|
   @request_headers ||= {}
@@ -31,9 +27,7 @@ Given(/^I have provided the access token for a different client$/) do
   check_client_information_response
 end
 
-When(/^I submit the client registration request$/) do
-  submit_client_registration_request
-end
+When(/^I submit the client registration request$/, :submit_client_registration_request)
 
 When(/^I submit the client information request$/) do
   begin
@@ -45,9 +39,7 @@ When(/^I submit the client information request$/) do
   end
 end
 
-Then(/^the response contains client information, including a client secret$/) do
-  check_client_information_response
-end
+Then(/^the response contains client information, including a client secret$/, :check_client_information_response)
 
 Then(/^the client name should match the provided name$/) do
   @client_response["client_name"].should == @client_info["client_name"]
@@ -60,6 +52,6 @@ end
 Then(/^the response indicates that the client credentials are incorrect$/) do
   @response.code.to_i.should === 400..401
   @response["WWW-Authenticate"].should_not be nil if @response.code.to_i == 401
-  error_response = MultiJson.load(@response.body)
-  error_response["error"].should == "invalid_client"
+  @response_json = MultiJson.load(@response.body)
+  @response_json["error"].should == "invalid_client"
 end
