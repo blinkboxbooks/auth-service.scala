@@ -19,7 +19,7 @@ module Sinatra
       before url_pattern do |client_id|
         registration_access_token = request.bearer_token
         unless registration_access_token.nil?
-          request[:current_client] = Client.find_by_registration_access_token(registration_access_token)
+          request[:current_client] = Blinkbox::Zuul::Server::Client.find_by_registration_access_token(registration_access_token)
         end
         if request[:current_client].nil?
           halt 401, "Client authorisation is required"
@@ -47,7 +47,7 @@ module Sinatra
                 throw Sandal::TokenError.new("Key #{header["kid"]} is unknown.")
               end
             end
-            request[:current_user] = User.find_by_id(claims["bbb/uid"])
+            request[:current_user] = Blinkbox::Zuul::Server::User.find_by_id(claims["bbb/uid"])
           rescue Sandal::TokenError
           end
         end
