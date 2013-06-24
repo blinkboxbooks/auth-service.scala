@@ -1,3 +1,4 @@
+$: << "./lib"
 require 'sinatra/activerecord/rake'
-require './environment.rb'
+require 'blinkbox/zuul/server/environment'
 

@@ -1,3 +1,4 @@
-require './lib/auth_server'
+$: << "./lib"
+require 'blinkbox/zuul/server'
 
-run AuthServer.new
+run Blinkbox::Zuul::Server.new
