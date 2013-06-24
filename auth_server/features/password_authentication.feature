@@ -51,8 +51,7 @@ Feature: Password authentication
     Then the response indicates that the client credentials are incorrect
 
   Scenario: Trying to authenticate with valid credentials but another user's client credentials
-    Given I have registered a client
-    And I have provided my email address, password and client credentials
+    Given I have provided my email address and password
     But I have provided another user's client credentials
     When I submit the authentication request
     Then the response indicates that the client credentials are incorrect

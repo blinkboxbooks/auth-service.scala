@@ -131,11 +131,20 @@ class AuthServer < Sinatra::Base
       invalid_grant "The refresh token has been revoked"
     end
 
-    if refresh_token.age > REFRESH_TOKEN_REISSUE_INTERVAL
-      issue_refresh_token(refresh_token.user, refresh_token.client)
-    else
-      issue_access_token(refresh_token)
+    client_id, client_secret = params[:client_id], params[:client_secret]
+    unless client_id.nil?
+      client = Client.authenticate(client_id, client_secret)
+      invalid_client "The client id and/or client secret is incorrect." if client.nil?
+      invalid_client "Your client is not authorised to use this refresh token." unless client.user == refresh_token.user
     end
+    if refresh_token.client.nil?
+      refresh_token.client = client
+    elsif refresh_token.client != client
+      invalid_client "Your client is not authorised to use this refresh token."
+    end
+
+    refresh_token.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
+    issue_access_token(refresh_token)
   end
 
   def issue_refresh_token(user, client = nil)

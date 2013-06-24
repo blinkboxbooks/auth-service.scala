@@ -29,11 +29,12 @@ def post_www_form_request(path, body, additional_headers = {})
   headers.merge!(@request_headers) if defined?(@request_headers)
   body = URI.encode_www_form(body) unless body.is_a?(String)
   begin
+    p body
     @response = @agent.request_with_entity(:post, url, body, headers)
     # p @response.body
   rescue Mechanize::ResponseCodeError => e
     @response = e.page
-    # p e.page.body
+    p e.page.body
   end
 end
 
@@ -54,11 +55,18 @@ end
 
 def check_response_tokens(refresh_token = :required)
   @response.code.to_i.should == 200
-  @oauth_response = MultiJson.load(@response.body)
-  @oauth_response["access_token"].should_not be nil
-  @oauth_response["token_type"].downcase.should == "bearer"
-  @oauth_response["expires_in"].to_i.should > 0
+  body = MultiJson.load(@response.body)
+  body["access_token"].should_not be nil
+  body["token_type"].downcase.should == "bearer"
+  body["expires_in"].to_i.should > 0
   if refresh_token == :required
-    @oauth_response["refresh_token"].should_not be nil
+    body["refresh_token"].should_not be nil
+  end
+
+  # merge here so that we keep the old refresh token if a new one wasn't issued
+  if @oauth_response
+    @oauth_response.merge!(body)
+  else
+    @oauth_response = body
   end
 end

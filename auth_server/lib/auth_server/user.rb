@@ -20,6 +20,7 @@ class User < ActiveRecord::Base
   end
 
   def self.authenticate(email, password)
+    return nil if email.nil? || password.nil?
     user = User.find_by_email(email)
     if user && SCrypt::Password.new(user.password_hash) == password then user else nil end
   end
