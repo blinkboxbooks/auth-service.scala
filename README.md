@@ -1,12 +1,21 @@
-# Pre-Setup (Windows)
+# Zuul authentication server
 
-- Install Ruby 1.9.3 from [RubyInstaller](http://rubyinstaller.org/downloads/)
-- Install the appropriate DevKit (the TDM one) from the same place. Note: The folder you extract it to is where it will live.
+## Pre-Setup
+
+### OS X Only
+
+- Install RVM
+- Make sure you're using Ruby 2.0.0
+
+### Windows Only
+
+- Install Ruby 2.0.0 from [RubyInstaller](http://rubyinstaller.org/downloads/)
+- Install the appropriate DevKit from the same place. Note: The folder you extract it to is where it will live.
 - Go to the DevKit folder and run `ruby dk.rb init`
 - Review the config.yml file
 - Run `ruby dk.rb install`
 
-# Installing dependencies
+## Installing dependencies
 
 Ensure you have bundler installed, as it is used to load dependencies:
 
@@ -16,7 +25,7 @@ The first time you run each of the apps you can install the dependencies from th
 
     bundle install
 
-# Running the apps
+## Running the apps
 
 Start the OAuth server:
 

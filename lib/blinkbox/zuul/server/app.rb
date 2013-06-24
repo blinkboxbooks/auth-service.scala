@@ -15,7 +15,7 @@ module Blinkbox::Zuul::Server
     register Sinatra::Authorization
 
     ACCESS_TOKEN_LIFETIME = 1800
-    REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90sh
+    REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90
     MIN_PASSWORD_LENGTH = 6
 
     require_user_authorization_for "/oauth2/client"

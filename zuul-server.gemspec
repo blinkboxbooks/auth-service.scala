@@ -17,12 +17,12 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.extra_rdoc_files = ["README.md"]
 
-  s.add_runtime_dependency "activerecord", "~> 3.2.13"
+  s.add_runtime_dependency "activerecord", "~> 3.2"
   s.add_runtime_dependency "multi_json", "~> 1.7"
-  s.add_runtime_dependency "sandal", "~> 0.5.1"
-  s.add_runtime_dependency "scrypt", "~> 1.1.0"
-  s.add_runtime_dependency "sinatra", "~> 1.2.2"
-  s.add_runtime_dependency "sinatra-activerecord", "~> 1.2.2"
+  s.add_runtime_dependency "sandal", "~> 0.5"
+  s.add_runtime_dependency "scrypt", "~> 1.1"
+  s.add_runtime_dependency "sinatra", "~> 1.2"
+  s.add_runtime_dependency "sinatra-activerecord", "~> 1.2"
 
   s.add_development_dependency "bundler"
   s.add_development_dependency "coveralls"
