@@ -1,3 +1,11 @@
+# Pre-Setup (Windows)
+
+- Install Ruby 1.9.3 from [RubyInstaller](http://rubyinstaller.org/downloads/)
+- Install the appropriate DevKit (the TDM one) from the same place. Note: The folder you extract it to is where it will live.
+- Go to the DevKit folder and run `ruby dk.rb init`
+- Review the config.yml file
+- Run `ruby dk.rb install`
+
 # Installing dependencies
 
 Ensure you have bundler installed, as it is used to load dependencies:
