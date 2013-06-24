@@ -54,7 +54,7 @@ module Blinkbox::Zuul::Server
 
     def return_client_information(client)
       json({
-        "client_id" => "urn:blinkbox:zuul:id:client:#{client.id}",
+        "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
         "client_id_issued_at" => client.created_at.to_i,
         "client_secret" => client.client_secret,
         "client_secret_expires_at" => 0,
@@ -155,22 +155,20 @@ module Blinkbox::Zuul::Server
     def build_access_token(refresh_token)
       access_token = refresh_token.access_token
       claims = {
-        "sub" => "urn:blinkbox:zuul:id:user:#{refresh_token.user.id}",
+        "sub" => "urn:blinkbox:zuul:user:#{refresh_token.user.id}",
         "iat" => access_token.created_at.to_i,
         "exp" => access_token.expires_at.to_i,
-        "jti" => "urn:blinkbox:zuul:id:access-token:#{access_token.id}"
+        "jti" => "urn:blinkbox:zuul:access-token:#{access_token.id}"
       }
-      claims["bb/cid"] = "urn:blinkbox:zuul:id:client:#{refresh_token.client.id}" if refresh_token.client
+      claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
 
-      signer = Sandal::Sig::ES256.new(File.read("./keys/auth_server_ec_priv.pem"))
-      jws_token = Sandal.encode_token(claims, signer, { "kid" => "/bbb/auth/sig/ec/1" })
-
-      # TODO: Uncomment to use an RSA signed token instead of an ECDSA one
-      # signer = Sandal::Sig::RS256.new(File.read("./keys/auth_server_rsa_priv.pem"))
-      # jws_token = Sandal.encode_token(claims, signer, { kid: "/bbb/auth/sig/rsa/1" })
-
-      encrypter = Sandal::Enc::A128GCM.new(Sandal::Enc::Alg::Direct.new(File.read("./keys/shared_aes128.key")))
-      Sandal.encrypt_token(jws_token, encrypter, { "kid" => "/bbb/svcs/enc/a128/1", "cty" => "JWT" })
+      sig_key_id = "blinkbox/zuul/sig/ec/1" # TODO: This should be a setting
+      signer = Sandal::Sig::ES256.new(File.read("./keys/#{sig_key_id}/private.pem"))
+      jws_token = Sandal.encode_token(claims, signer, { "kid" => sig_key_id })
+      
+      enc_key_id = "blinkbox/plat/enc/rsa/1" # TODO: This should be a setting
+      encrypter = Sandal::Enc::A128GCM.new(Sandal::Enc::Alg::RSA_OAEP.new(File.read("./keys/#{enc_key_id}/public.pem")))
+      Sandal.encrypt_token(jws_token, encrypter, { "kid" => enc_key_id, "cty" => "JWT" })
     end
   end
 end
