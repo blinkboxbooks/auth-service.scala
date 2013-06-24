@@ -9,7 +9,7 @@ class CreateUsers < ActiveRecord::Migration
       t.string :password_hash, limit: 128
       t.string :roles, limit: 120
     end
-    add_index :users, :email, name: 'ix__users__email', unique: true
+    add_index :users, :email, unique: true
   end
 
   def self.down

@@ -1,7 +1,7 @@
 
 def generate_user_registration_details
   @registration_details = {
-    "grant_type" => "urn:blinkboxbooks:oauth:grant-type:registration",
+    "grant_type" => "urn:blinkbox:oauth:grant-type:registration",
     "first_name" => "John",
     "last_name" => "Doe",
     "username" => random_email,

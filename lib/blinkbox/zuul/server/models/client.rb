@@ -12,7 +12,7 @@ module Blinkbox::Zuul::Server
     # TODO: Should probably hash the client secret...
     def self.authenticate(id, secret)
       return nil if id.nil? || secret.nil?
-      numeric_id = id.match(/^urn:blinkboxbooks:id:client:(\d+)$/)[1]
+      numeric_id = id.match(/^urn:blinkbox:zuul:id:client:(\d+)$/)[1]
       client = Client.find_by_id(numeric_id.to_i) if numeric_id
       if client && client.client_secret == secret then client else nil end
     end

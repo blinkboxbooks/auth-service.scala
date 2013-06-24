@@ -9,7 +9,7 @@ class CreateRefreshTokens < ActiveRecord::Migration
       t.datetime :expires_at
       t.boolean :revoked
     end
-    add_index :refresh_tokens, :token, name: 'ix__refresh_tokens__token', unique: true
+    add_index :refresh_tokens, :token, unique: true
   end
 
   def self.down

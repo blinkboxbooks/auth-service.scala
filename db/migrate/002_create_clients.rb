@@ -8,7 +8,7 @@ class CreateClients < ActiveRecord::Migration
       t.string :client_secret, limit: 50
       t.string :registration_access_token, limit: 50
     end
-    add_index :clients, :registration_access_token, name: 'ix__clients__registration_access_token', unique: true
+    add_index :clients, :registration_access_token, unique: true
   end
 
   def self.down

@@ -47,7 +47,8 @@ module Sinatra
                 throw Sandal::TokenError.new("Key #{header["kid"]} is unknown.")
               end
             end
-            request[:current_user] = Blinkbox::Zuul::Server::User.find_by_id(claims["bbb/uid"])
+            user_id = claims["sub"].match(/^urn:blinkbox:zuul:id:user:(\d+)$/)[1] if claims.has_key?("sub")
+            request[:current_user] = Blinkbox::Zuul::Server::User.find_by_id(user_id)
           rescue Sandal::TokenError
           end
         end

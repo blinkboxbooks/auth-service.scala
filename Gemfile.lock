@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    blinkbox-zuul-server (0.1.0)
+    blinkbox-zuul-server (0.1.1)
       activerecord (~> 3.2)
       multi_json (~> 1.7)
       sandal (~> 0.5)
