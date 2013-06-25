@@ -11,12 +11,16 @@ Given(/^I have (not )?provided my client access token$/) do |no_token|
 end
 
 Given(/^I have (not )?provided a client name$/) do |no_name|
-  @client_info ||= {}
-  @client_info["client_name"] = "My Test Client" unless no_name
+  @client_registration_details ||= {}
+  if no_token
+    @client_registration_details.delete("client_name")
+  else
+    @client_registration_details["client_name"] = "My Test Client" unless no_name
+  end
 end
 
 Given(/^the client details I have provided are malformed$/) do
-  @client_info = "this doesn't parse as json!"
+  @client_registration_details = "this doesn't parse as json!"
 end
 
 Given(/^I have provided the access token for a different client$/) do
@@ -42,7 +46,7 @@ end
 Then(/^the response contains client information, including a client secret$/, :check_client_information_response)
 
 Then(/^the client name should match the provided name$/) do
-  @client_response["client_name"].should == @client_info["client_name"]
+  @client_response["client_name"].should == @client_registration_details["client_name"]
 end
 
 Then(/^a client name should have been created for me$/) do

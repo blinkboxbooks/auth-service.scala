@@ -1,7 +1,7 @@
 
 def submit_client_registration_request
-  @client_info ||= {}
-  post_json_request("/oauth2/client", @client_info)
+  @client_registration_details ||= {}
+  post_json_request("/oauth2/clients", @client_registration_details)
 end
 
 def check_client_information_response

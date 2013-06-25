@@ -1,20 +1,20 @@
 
 Given(/^I have authenticated with my email address and password$/) do
-  provide_username_and_password_credentials
+  use_username_and_password_credentials
   submit_authentication_request
   check_response_tokens
 end
 
 Given(/^I have provided my email address$/) do
-  provide_username_and_password_credentials
+  use_username_and_password_credentials
   @credentials.delete("password")
 end
 
-Given(/^I have provided my email address and password$/, :provide_username_and_password_credentials)
+Given(/^I have provided my email address and password$/, :use_username_and_password_credentials)
 
 Given(/^I have provided my email address, password and client credentials$/) do
-  provide_username_and_password_credentials
-  provide_client_credentials
+  use_username_and_password_credentials
+  include_client_credentials
 end
 
 Given(/^the email address is different from the one I used to register$/) do
@@ -37,32 +37,30 @@ end
 Given(/^I have provided another user's client credentials$/) do
   register_new_user
   register_new_client
-  provide_client_credentials
+  include_client_credentials
 end
 
-Given(/^I have provided my refresh token?$/, :provide_refresh_token_credentials) 
+Given(/^I have provided my refresh token?$/, :use_refresh_token_credentials) 
 
 Given(/^I have provided my refresh token and client credentials$/) do 
-  provide_refresh_token_credentials
-  provide_client_credentials
+  use_refresh_token_credentials
+  include_client_credentials
 end
 
 Given(/^I have not provided my refresh token$/) do
-  @credentials ||= {}
-  @credentials["grant_type"] = "refresh_token"
+  use_refresh_token_credentials
   @credentials.delete("refresh_token")
 end
 
 Given(/^I have provided an incorrect refresh token$/) do  
-  @credentials ||= {}
-  @credentials["grant_type"] = "refresh_token"
+  use_refresh_token_credentials
   @credentials["refresh_token"] = random_password
 end
 
 Given(/^I have bound my refresh token to a client$/) do  
   register_new_client
-  provide_refresh_token_credentials
-  provide_client_credentials
+  use_refresh_token_credentials
+  include_client_credentials
   submit_authentication_request
   check_response_tokens(refresh_token: :optional)
 end

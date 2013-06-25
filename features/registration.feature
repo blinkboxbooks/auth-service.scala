@@ -14,6 +14,7 @@ Feature: Registration
     When I provide the same registration details I previously registered with
     And I submit the registration request
     Then the response indicates that the request was invalid
+    And the reason is that the email address is already taken
 
   Scenario Outline: Trying to register with missing details
     Given I have provided valid registration details, except <detail> which is missing

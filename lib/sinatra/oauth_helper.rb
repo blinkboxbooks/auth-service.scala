@@ -5,8 +5,15 @@ module Sinatra
       @base_url ||= "#{request.env["rack.url_scheme"]}://#{request.env["HTTP_HOST"]}"
     end
 
-    def oauth_error(code, description)
-      halt 400, json({ "error" => code, "error_description" => description })
+    def oauth_error(code, *args)
+      case args.length
+      when 0
+        halt 400, json({ "error" => code })
+      when 1
+        halt 400, json({ "error" => code, "error_description" => args[0] })
+      else
+        halt 400, json({ "error" => code, "error_reason" => args[0], "error_description" => args[1] })
+      end
     end
 
     def method_missing(method_sym, *args)

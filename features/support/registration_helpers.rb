@@ -1,6 +1,6 @@
 
 def generate_user_registration_details
-  @registration_details = {
+  @user_registration_details = {
     "grant_type" => "urn:blinkbox:oauth:grant-type:registration",
     "first_name" => "John",
     "last_name" => "Doe",
@@ -10,8 +10,8 @@ def generate_user_registration_details
 end
 
 def submit_user_registration_request
-  @registration_details.should_not be nil
-  post_www_form_request("/oauth2/token", @registration_details)
+  @user_registration_details.should_not be nil
+  post_www_form_request("/oauth2/token", @user_registration_details)
 end
 
 def register_new_user

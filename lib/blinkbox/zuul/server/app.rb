@@ -17,10 +17,10 @@ module Blinkbox::Zuul::Server
     ACCESS_TOKEN_LIFETIME = 1800
     REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90
 
-    require_user_authorization_for "/oauth2/client"
-    require_client_authorization_for %r{/oauth2/client/(\d+)(?:/.*)?}
+    require_user_authorization_for "/oauth2/clients"
+    require_client_authorization_for %r{/oauth2/clients/(\d+)(?:/.*)?}
 
-    post "/oauth2/client" do
+    post "/oauth2/clients" do
       data = request_body_json
       client = Client.new do |c|
         c.name = data["client_name"] || "Unknown Client"
@@ -32,7 +32,7 @@ module Blinkbox::Zuul::Server
       return_client_information(client)
     end
 
-    get %r{/oauth2/client/(\d+)} do
+    get %r{/oauth2/clients/(\d+)} do
       return_client_information(current_client)
     end
 
@@ -59,7 +59,7 @@ module Blinkbox::Zuul::Server
         "client_secret" => client.client_secret,
         "client_secret_expires_at" => 0,
         "registration_access_token" => client.registration_access_token,
-        "registration_client_uri" => "#{base_url}/oauth2/client/#{client.id}",
+        "registration_client_uri" => "#{base_url}/oauth2/clients/#{client.id}",
         "client_name" => client.name
       })
     end
@@ -83,7 +83,11 @@ module Blinkbox::Zuul::Server
       begin
         user.save!
       rescue ActiveRecord::RecordInvalid => e
-        invalid_request e.message
+        if user.errors[:email].include?(user.errors.generate_message(:email, :taken)) 
+          invalid_request "username_already_taken", e.message
+        else
+          invalid_request e.message
+        end
       end
       issue_refresh_token(user)
     end
@@ -130,11 +134,11 @@ module Blinkbox::Zuul::Server
     end
 
     def issue_refresh_token(user, client = nil)
-      refresh_token = RefreshToken.new do |token|
-        token.user = user
-        token.client = client
-        token.token = random_string
-        token.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
+      refresh_token = RefreshToken.new do |rt|
+        rt.user = user
+        rt.client = client
+        rt.token = random_string
+        rt.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
       end
       issue_access_token(refresh_token, include_refresh_token: true)
     end
@@ -143,13 +147,13 @@ module Blinkbox::Zuul::Server
       refresh_token.access_token = AccessToken.new(expires_at: Time.now + ACCESS_TOKEN_LIFETIME)
       refresh_token.save!
 
-      response_body = {
+      token_info = {
         "access_token" => build_access_token(refresh_token),
         "token_type" => "bearer",
         "expires_in" => ACCESS_TOKEN_LIFETIME
       }
-      response_body["refresh_token"] = refresh_token.token if include_refresh_token
-      json response_body
+      token_info["refresh_token"] = refresh_token.token if include_refresh_token
+      json token_info
     end
 
     def build_access_token(refresh_token)

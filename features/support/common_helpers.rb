@@ -3,7 +3,7 @@ def noop; end
 
 def random_email
   chars = [*("A".."Z"), *("a".."z"), *("0".."9")]
-  "#{chars.sample(32).join}@example.org"
+  "#{chars.sample(40).join}@example.org"
 end
 
 def random_password
@@ -19,7 +19,7 @@ end
 
 def provide_access_token
   @request_headers ||= {}
-  @request_headers["Authorization"] = "Bearer #{@oauth_response["access_token"]}"
+  @request_headers["Authorization"] = "Bearer #{@token_response["access_token"]}"
 end
 
 def post_www_form_request(path, body, additional_headers = {})
@@ -65,9 +65,9 @@ def check_response_tokens(refresh_token = :required)
   end
 
   # merge here so that we keep the old refresh token if a new one wasn't issued
-  if @oauth_response
-    @oauth_response.merge!(body)
+  if @token_response
+    @token_response.merge!(body)
   else
-    @oauth_response = body
+    @token_response = body
   end
 end

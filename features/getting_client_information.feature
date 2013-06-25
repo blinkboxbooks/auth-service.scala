@@ -1,5 +1,5 @@
 @clients
-Feature: Registering a client
+Feature: Getting client information
   As a client
   I want to be able to get information about myself
   So that I can make sure the server is up to date
