@@ -13,6 +13,7 @@ class CreateRefreshTokens < ActiveRecord::Migration
   end
 
   def self.down
+    remove_index :refresh_tokens, :token
     drop_table :refresh_tokens
   end
 

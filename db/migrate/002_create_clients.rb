@@ -12,6 +12,7 @@ class CreateClients < ActiveRecord::Migration
   end
 
   def self.down
+    remove_index :clients, :registration_access_token
     drop_table :clients
   end
 

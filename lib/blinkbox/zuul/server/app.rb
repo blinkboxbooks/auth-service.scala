@@ -25,8 +25,8 @@ module Blinkbox::Zuul::Server
       client = Client.new do |c|
         c.name = data["client_name"] || "Unknown Client"
         c.user = current_user
-        c.client_secret = Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(32))
-        c.registration_access_token = Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(32))
+        c.client_secret = random_string
+        c.registration_access_token = random_string
       end
       client.save!
       return_client_information(client)
@@ -133,7 +133,7 @@ module Blinkbox::Zuul::Server
       refresh_token = RefreshToken.new do |token|
         token.user = user
         token.client = client
-        token.token = Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(32))
+        token.token = random_string
         token.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
       end
       issue_access_token(refresh_token, include_refresh_token: true)
@@ -170,5 +170,10 @@ module Blinkbox::Zuul::Server
       encrypter = Sandal::Enc::A128GCM.new(Sandal::Enc::Alg::RSA_OAEP.new(File.read("./keys/#{enc_key_id}/public.pem")))
       Sandal.encrypt_token(jws_token, encrypter, { "kid" => enc_key_id, "cty" => "JWT" })
     end
+
+    def random_string(bytes_of_entropy = 32)
+      Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(bytes_of_entropy))
+    end
+
   end
 end
