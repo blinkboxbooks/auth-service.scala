@@ -12,7 +12,7 @@ end
 
 Given(/^I have (not )?provided a client name$/) do |no_name|
   @client_registration_details ||= {}
-  if no_token
+  if no_name
     @client_registration_details.delete("client_name")
   else
     @client_registration_details["client_name"] = "My Test Client" unless no_name

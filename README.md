@@ -63,6 +63,8 @@ To run the server in dev mode, just launch your favourite Rack development middl
 $ shotgun
 ```
 
+(Note: you can use `rackup` but `shotgun` is a really handy server as it reloads your code changes automatically. If you haven't got it yet just run `gem install shotgun`.)
+
 The server will run against a local SQLite3 database which is fine for developing against.
 
 ### In production mode
@@ -90,3 +92,19 @@ Once your database is set up, run the server with a similar connection URL (thou
 ```
 $ rackup DATABASE_URL=mysql://localhost:3306/zuul?user=zuul&password=cheese
 ```
+
+## Running the tests
+
+The tests are written using Cucumber, so to run them just run:
+
+```
+$ cucumber
+```
+
+The tests assume you're using Shotgun as your development server on your local machine, so will attempt to run against `http://localhost:9393/` by default. You can change this by specifying the `AUTH_SERVER` environment variable, e.g.
+
+```
+$ cucumber AUTH_SERVER=https://myserver:123/
+```
+
+They should all pass. If they don't, fix it or raise a bug.

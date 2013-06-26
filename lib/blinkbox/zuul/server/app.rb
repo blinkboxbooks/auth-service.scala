@@ -78,8 +78,13 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_registration_flow(params)
-      first_name, last_name, email, password = params[:first_name], params[:last_name], params[:username], params[:password]
-      user = User.new(first_name: first_name, last_name: last_name, email: email, password: password)
+      user = User.new do |u|
+        u.first_name = params[:first_name]
+        u.last_name = params[:last_name]
+        u.email = params[:username]
+        u.password = params[:password]
+      end
+
       begin
         user.save!
       rescue ActiveRecord::RecordInvalid => e
@@ -89,6 +94,7 @@ module Blinkbox::Zuul::Server
           invalid_request e.message
         end
       end
+
       issue_refresh_token(user)
     end
 
@@ -160,7 +166,6 @@ module Blinkbox::Zuul::Server
       access_token = refresh_token.access_token
       claims = {
         "sub" => "urn:blinkbox:zuul:user:#{refresh_token.user.id}",
-        "iat" => access_token.created_at.to_i,
         "exp" => access_token.expires_at.to_i,
         "jti" => "urn:blinkbox:zuul:access-token:#{access_token.id}"
       }
