@@ -9,13 +9,7 @@ end
 When(/^I submit the client registration request$/, :submit_client_registration_request)
 
 When(/^I submit the client information request$/) do
-  begin
-    @response = @agent.request_with_entity(:get, @client_response["client_uri"], "", @request_headers)
-    # p @response.body
-  rescue Mechanize::ResponseCodeError => e
-    @response = e.page
-    # p e.page.body
-  end
+  get_request(@client_response["client_uri"])
 end
 
 Then(/^the response contains client information, (including a|excluding the) client secret$/) do |including|
@@ -24,8 +18,6 @@ Then(/^the response contains client information, (including a|excluding the) cli
 end
 
 Then(/^the client name should match the provided name$/) do
-  p @client_response["client_name"]
-  p @client_registration_details["client_name"]
   @client_response["client_name"].should == @client_registration_details["client_name"]
 end
 

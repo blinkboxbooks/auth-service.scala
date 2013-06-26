@@ -20,7 +20,7 @@ def verify_client_information_response(client_secret = :required)
 end
 
 def register_new_client
-  provide_access_token
+  add_access_token_request_header
   submit_client_registration_request
   verify_client_information_response
 end
