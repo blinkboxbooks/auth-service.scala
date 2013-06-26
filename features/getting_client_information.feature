@@ -9,16 +9,13 @@ Feature: Getting client information
     And I have registered a client
 
   Scenario: Getting client information
-    Given I have provided my client access token
+    Given I have provided my access token
     When I submit the client information request
-    Then the response contains client information, including a client secret
+    Then the response contains client information, excluding the client secret
 
   Scenario: Trying to get client information without authorisation
-    Given I have not provided my client access token
+    Given I have not provided my access token
     When I submit the client information request
     Then the response indicates that I am unauthorised
 
-  Scenario: Trying to get client information for a different client
-    Given I have provided the access token for a different client
-    When I submit the client information request
-    Then the response indicates that this is forbidden
+

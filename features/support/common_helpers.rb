@@ -38,22 +38,6 @@ def post_www_form_request(path, body, additional_headers = {})
   end
 end
 
-def post_json_request(path, body)
-  url = servers[:auth].clone
-  url.path = path
-  headers = { "Content-Type" => "application/json" }
-  headers.merge!(@request_headers) if defined?(@request_headers)
-  body = MultiJson.dump(body) unless body.is_a?(String)
-  begin
-    # p body
-    @response = @agent.request_with_entity(:post, url, body, headers)
-    # p @response.body
-  rescue Mechanize::ResponseCodeError => e
-    @response = e.page
-    # p e.page.body
-  end
-end
-
 def check_response_tokens(refresh_token = :required)
   @response.code.to_i.should == 200
   body = MultiJson.load(@response.body)
