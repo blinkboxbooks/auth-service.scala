@@ -10,7 +10,7 @@ end
 def use_refresh_token_credentials
   @credentials = {
     "grant_type" => "refresh_token",
-    "refresh_token" => @token_response["refresh_token"]
+    "refresh_token" => @user_tokens["refresh_token"]
   }
 end
 

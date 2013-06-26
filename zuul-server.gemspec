@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.homepage = "https://git.mobcastdev.com/zuul/zuul-server"
   s.license = "none"
 
-  s.files = `git ls-files`.split($/).reject { |f| f.end_with?(".db") }
+  s.files = Dir.glob("{db|features|keys|lib}/**/*").reject { |f| f.end_with?(".db") } << "README.md"
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
   s.require_paths = ["lib"]

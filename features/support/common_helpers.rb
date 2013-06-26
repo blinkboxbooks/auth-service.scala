@@ -19,7 +19,7 @@ end
 
 def provide_access_token
   @request_headers ||= {}
-  @request_headers["Authorization"] = "Bearer #{@token_response["access_token"]}"
+  @request_headers["Authorization"] = "Bearer #{@user_tokens["access_token"]}"
 end
 
 def post_www_form_request(path, body, additional_headers = {})
@@ -36,22 +36,5 @@ def post_www_form_request(path, body, additional_headers = {})
     @response = e.page
     # p e.page.body
   end
-end
-
-def check_response_tokens(refresh_token = :required)
-  @response.code.to_i.should == 200
-  body = MultiJson.load(@response.body)
-  body["access_token"].should_not be nil
-  body["token_type"].downcase.should == "bearer"
-  body["expires_in"].to_i.should > 0
-  if refresh_token == :required
-    body["refresh_token"].should_not be nil
-  end
-
-  # merge here so that we keep the old refresh token if a new one wasn't issued
-  if @token_response
-    @token_response.merge!(body)
-  else
-    @token_response = body
-  end
+  @response
 end

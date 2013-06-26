@@ -14,10 +14,10 @@ Given(/^I have provided an incorrect access token$/) do
 end
 
 Then(/^the response contains an access token$/) do
-  check_response_tokens(refresh_token: :optional)
+  validate_user_token_response(refresh_token: :optional)
 end
 
-Then(/^the response contains an access token and a refresh token$/, :check_response_tokens)
+Then(/^the response contains an access token and a refresh token$/, :validate_user_token_response)
 
 Then(/^the response indicates that the request was invalid$/) do
   @response.code.to_i.should == 400
