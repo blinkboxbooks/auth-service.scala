@@ -14,6 +14,18 @@ If you're planning on doing development using SQLite then you'll need to install
 $ yum install sqlite-devel
 ```
 
+On the other hand, if you're planning on using MySQL you'll need to download the [MySQL developer RPM package](http://dev.mysql.com/get/Downloads/MySQL-5.6/MySQL-devel-5.6.12-1.el6.x86_64.rpm/from/http://cdn.mysql.com/) and then install that:
+
+```
+$ rpm -ivh /path/to/MySQL-devel-5.6.12-1.el6.x86_64.rpm
+```
+
+And then install the MySQL adapter for Active Record:
+
+```
+$ gem install activerecord-mysql-adapter
+```
+
 ### OS X only
 
 - Install [RVM](https://rvm.io/)
