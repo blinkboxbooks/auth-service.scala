@@ -6,7 +6,13 @@ The authentication server requires Ruby 2.0.0 or later as it uses the AES-128-GC
 
 ### CentOS only
 
-- Get your sysadmins to set it up for you.
+On the CentOS image, Ruby and OpenSSL should be already set up correctly.
+
+If you're planning on doing development using SQLite then you'll need to install it as a pre-requisite though. To do this run:
+
+```
+$ yum install sqlite-devel
+```
 
 ### OS X only
 
@@ -15,7 +21,7 @@ The authentication server requires Ruby 2.0.0 or later as it uses the AES-128-GC
 
 ### Windows only
 
-_Note: In theory this should work, but the SCrypt gem doesn't seem to build on Windows x64 under Ruby 2.0.0 so it doesn't appear to be possible to run it on Windows at the moment._
+_Note: In theory this should work, but the SCrypt gem doesn't seem to build on Windows x64 under Ruby 2.0.0 so it doesn't appear to be possible to run it on Windows at the moment. Feel free to have a crack at fixing this if you really want to make it work, otherwise I'd suggest using CentOS or OS X._
 
 - Install Ruby 2.0.0 x64 from [RubyInstaller](http://rubyinstaller.org/downloads/)
 - Install the appropriate DevKit from the same place. Note: The folder you extract it to is where it will live, so don't use the default location.
