@@ -53,10 +53,16 @@ Ensure you have bundler installed, as it is used to load dependencies:
 $ gem install bundler
 ```
 
-Install the dependencies using it:
+For development or testing you can install all the dependencies using the basic command:
 
 ```
 $ bundle
+```
+
+In production mode you're not going to need (or want) the development or testing gems so exclude those groups:
+
+```
+$ bundle --without development test
 ```
 
 ## Running the server
