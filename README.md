@@ -6,7 +6,25 @@ The authentication server requires Ruby 2.0.0 or later as it uses the AES-128-GC
 
 ### CentOS only
 
-- Get your sysadmins to set it up for you.
+On the CentOS image, Ruby and OpenSSL should be already set up correctly.
+
+If you're planning on doing development using SQLite then you'll need to install it as a pre-requisite though. To do this run:
+
+```
+$ yum install sqlite-devel
+```
+
+On the other hand, if you're planning on using MySQL you'll need to download the [MySQL developer RPM package](http://dev.mysql.com/get/Downloads/MySQL-5.6/MySQL-devel-5.6.12-1.el6.x86_64.rpm/from/http://cdn.mysql.com/) and then install that:
+
+```
+$ rpm -ivh /path/to/MySQL-devel-5.6.12-1.el6.x86_64.rpm
+```
+
+And then install the MySQL adapter for Active Record:
+
+```
+$ gem install activerecord-mysql-adapter
+```
 
 ### OS X only
 
@@ -15,7 +33,7 @@ The authentication server requires Ruby 2.0.0 or later as it uses the AES-128-GC
 
 ### Windows only
 
-_Note: In theory this should work, but the SCrypt gem doesn't seem to build on Windows x64 under Ruby 2.0.0 so it doesn't appear to be possible to run it on Windows at the moment._
+_Note: In theory this should work, but the SCrypt gem doesn't seem to build on Windows x64 under Ruby 2.0.0 so it doesn't appear to be possible to run it on Windows at the moment. Feel free to have a crack at fixing this if you really want to make it work, otherwise I'd suggest using CentOS or OS X._
 
 - Install Ruby 2.0.0 x64 from [RubyInstaller](http://rubyinstaller.org/downloads/)
 - Install the appropriate DevKit from the same place. Note: The folder you extract it to is where it will live, so don't use the default location.
@@ -47,10 +65,16 @@ Ensure you have bundler installed, as it is used to load dependencies:
 $ gem install bundler
 ```
 
-Install the dependencies using it:
+For development or testing you can install all the dependencies using the basic command:
 
 ```
 $ bundle
+```
+
+In production mode you're not going to need (or want) the development or testing gems so exclude those groups:
+
+```
+$ bundle --without development test
 ```
 
 ## Running the server
@@ -90,7 +114,8 @@ $ rake db:migrate_with_ddl["my_file.sql"] DATABASE_URL=mysql://localhost:3306/zu
 Once your database is set up, run the server with a similar connection URL (though probably using a different user who doesn't have permission to modify the database schema):
 
 ```
-$ rackup DATABASE_URL=mysql://localhost:3306/zuul?user=zuul&password=cheese
+$ export DATABASE_URL=mysql://localhost:3306/zuul?user=zuul&password=cheese
+$ rackup
 ```
 
 ## Running the tests
