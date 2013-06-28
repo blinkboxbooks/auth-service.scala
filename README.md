@@ -114,7 +114,8 @@ $ rake db:migrate_with_ddl["my_file.sql"] DATABASE_URL=mysql://localhost:3306/zu
 Once your database is set up, run the server with a similar connection URL (though probably using a different user who doesn't have permission to modify the database schema):
 
 ```
-$ rackup DATABASE_URL=mysql://localhost:3306/zuul?user=zuul&password=cheese
+$ export DATABASE_URL=mysql://localhost:3306/zuul?user=zuul&password=cheese
+$ rackup
 ```
 
 ## Running the tests
