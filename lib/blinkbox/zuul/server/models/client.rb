@@ -7,7 +7,6 @@ module Blinkbox::Zuul::Server
     validates :name, length: { within: 1..50 }
     validates :user, presence: true
     validates :client_secret, presence: true
-    validates :registration_access_token, presence: true, uniqueness: true
 
     # TODO: Should probably hash the client secret...
     def self.authenticate(id, secret)

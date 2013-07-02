@@ -17,23 +17,22 @@ module Blinkbox::Zuul::Server
     ACCESS_TOKEN_LIFETIME = 1800
     REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90
 
-    require_user_authorization_for "/oauth2/clients"
-    require_client_authorization_for %r{/oauth2/clients/(\d+)(?:/.*)?}
+    require_user_authorization_for %r{/clients(?:/.*)?}
 
-    post "/oauth2/clients" do
-      data = request_body_json
+    post "/clients" do
       client = Client.new do |c|
-        c.name = data["client_name"] || "Unknown Client"
+        c.name = params[:client_name] || "Unknown Client"
         c.user = current_user
-        c.client_secret = random_string
-        c.registration_access_token = random_string
+        c.client_secret = generate_opaque_token
       end
       client.save!
-      return_client_information(client)
+      return_client_information(client, include_client_secret: true)
     end
 
-    get %r{/oauth2/clients/(\d+)} do
-      return_client_information(current_client)
+    get "/clients/:client_id" do |client_id|
+      client = Client.find_by_id(client_id)
+      invalid_client "You are not authorised to use this client." unless client.user == current_user
+      return_client_information(client)
     end
 
     get "/oauth2/token" do
@@ -46,22 +45,14 @@ module Blinkbox::Zuul::Server
 
     private
 
-    def request_body_json
-      MultiJson.load(request.body.read)
-    rescue MultiJson::LoadError
-      invalid_request "The request body is not valid JSON"
-    end
-
-    def return_client_information(client)
-      json({
+    def return_client_information(client, include_client_secret = false)
+      client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-        "client_id_issued_at" => client.created_at.to_i,
-        "client_secret" => client.client_secret,
-        "client_secret_expires_at" => 0,
-        "registration_access_token" => client.registration_access_token,
-        "registration_client_uri" => "#{base_url}/oauth2/clients/#{client.id}",
-        "client_name" => client.name
-      })
+        "client_name" => client.name,
+        "client_uri" => "#{base_url}/clients/#{client.id}"
+      }
+      client_info["client_secret"] = client.client_secret if include_client_secret
+      json client_info
     end
 
     def handle_token_request(params)
@@ -143,7 +134,7 @@ module Blinkbox::Zuul::Server
       refresh_token = RefreshToken.new do |rt|
         rt.user = user
         rt.client = client
-        rt.token = random_string
+        rt.token = generate_opaque_token
         rt.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
       end
       issue_access_token(refresh_token, include_refresh_token: true)
@@ -180,8 +171,8 @@ module Blinkbox::Zuul::Server
       Sandal.encrypt_token(jws_token, encrypter, { "kid" => enc_key_id, "cty" => "JWT" })
     end
 
-    def random_string(bytes_of_entropy = 32)
-      Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(bytes_of_entropy))
+    def generate_opaque_token
+      Sandal::Util.jwt_base64_encode(SecureRandom.random_bytes(32))
     end
 
   end

@@ -2,7 +2,7 @@
 Given(/^I have authenticated with my email address and password$/) do
   use_username_and_password_credentials
   submit_authentication_request
-  check_response_tokens
+  validate_user_token_response
 end
 
 Given(/^I have provided my email address$/) do
@@ -62,7 +62,7 @@ Given(/^I have bound my refresh token to a client$/) do
   use_refresh_token_credentials
   include_client_credentials
   submit_authentication_request
-  check_response_tokens(refresh_token: :optional)
+  validate_user_token_response(refresh_token: :optional)
 end
 
 When(/^I submit the (?:authentication|access token refresh) request$/) do

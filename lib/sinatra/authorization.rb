@@ -2,10 +2,6 @@ module Sinatra
   module Authorization
 
     module Helpers
-      def current_client
-        request[:current_client]
-      end
-      
       def current_user
         request[:current_user]
       end
@@ -13,21 +9,6 @@ module Sinatra
 
     def self.registered(app)
       app.helpers Sinatra::Authorization::Helpers
-    end
-
-    def require_client_authorization_for(url_pattern)
-      before url_pattern do |client_id|
-        registration_access_token = request.bearer_token
-        unless registration_access_token.nil?
-          request[:current_client] = Blinkbox::Zuul::Server::Client.find_by_registration_access_token(registration_access_token)
-        end
-        if request[:current_client].nil?
-          halt 401, "Client authorisation is required"
-        end
-        unless request[:current_client].id == client_id.to_i
-          halt 403, "Clients are only permitted to access their own information"
-        end
-      end
     end
 
     def require_user_authorization_for(url_pattern)

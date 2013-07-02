@@ -8,7 +8,7 @@ namespace :db do
     File.open(args[:file] || "migration.sql", "w") do |file|
       ActiveSupport::Notifications.subscribe("sql.active_record") do |*ignored, payload|
         sql = payload[:sql].strip.gsub(/\s+/, " ")
-        file << "-- " if sql =~ /^(select|pragma)/i
+        file << "-- " if sql =~ /^(pragma|select|show)/i
         file << sql
         file << ";\n"
       end

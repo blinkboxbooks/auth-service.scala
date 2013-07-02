@@ -30,9 +30,3 @@ Feature: Registering a client
     Given I have provided an incorrect access token
     When I submit the client registration request
     Then the response indicates that I am unauthorised
-
-  Scenario: Trying to register a client with malformed details
-    Given I have provided my access token
-    But the client details I have provided are malformed
-    When I submit the client registration request
-    Then the response indicates that the request was invalid
