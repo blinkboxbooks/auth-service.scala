@@ -40,13 +40,13 @@ ActiveRecord::Schema.define(:version => 4) do
   add_index "refresh_tokens", ["token"], :name => "index_refresh_tokens_on_token", :unique => true
 
   create_table "users", :force => true do |t|
-    t.datetime "created_at",                   :null => false
-    t.datetime "updated_at",                   :null => false
-    t.string   "first_name",    :limit => 50
-    t.string   "last_name",     :limit => 50
-    t.string   "email",         :limit => 320
-    t.string   "password_hash", :limit => 128
-    t.string   "roles",         :limit => 120
+    t.datetime "created_at",                                    :null => false
+    t.datetime "updated_at",                                    :null => false
+    t.string   "first_name",                     :limit => 50
+    t.string   "last_name",                      :limit => 50
+    t.string   "email",                          :limit => 320
+    t.string   "password_hash",                  :limit => 128
+    t.boolean  "allow_marketing_communications"
   end
 
   add_index "users", ["email"], :name => "index_users_on_email", :unique => true

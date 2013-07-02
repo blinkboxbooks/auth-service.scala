@@ -8,10 +8,9 @@ module Blinkbox::Zuul::Server
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
-    validates :email, format: { with: /.+@.+\..+/ }, uniqueness: true
+    validates :email, format: { with: /^[^@]+@[^@]+\.[^@\.]+$/ }, uniqueness: true
+    validates :allow_marketing_communications, presence: true
     validate :validate_password
-
-    serialize :roles, Array
 
     def initialize(*params)
       self.password = params.delete("password")
@@ -24,7 +23,7 @@ module Blinkbox::Zuul::Server
         self.password_hash = SCrypt::Password.create(password)
       else
         @password_length = 0
-        # TODO: This should probably set password_has to nil but that raises an error...
+        # TODO: This should probably set password_hash to nil but that raises an error...
       end
     end
 

@@ -69,11 +69,14 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_registration_flow(params)
+      invalid_request "You must accept the terms and conditions" unless params[:accepted_terms_and_conditions] == "true"
+
       user = User.new do |u|
         u.first_name = params[:first_name]
         u.last_name = params[:last_name]
         u.email = params[:username]
         u.password = params[:password]
+        u.allow_marketing_communications = params[:allow_marketing_communications]
       end
 
       begin
