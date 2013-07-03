@@ -16,10 +16,18 @@ module Blinkbox::Zuul::Server
 
     ACCESS_TOKEN_LIFETIME = 1800
     REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90
+    MAX_CLIENTS_PER_USER = 12
 
     require_user_authorization_for %r{/clients(?:/.*)?}
 
     post "/clients" do
+      if current_user.clients.count >= MAX_CLIENTS_PER_USER
+        halt 403, json({ 
+          "error" => "client_limit_reached", 
+          "error_description" => "The allowed number of clients (#{MAX_CLIENTS_PER_USER}) are already registered" 
+        })
+      end
+
       client = Client.new do |c|
         c.name = params[:client_name] || "Unknown Client"
         c.user = current_user
