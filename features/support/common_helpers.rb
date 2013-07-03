@@ -3,7 +3,7 @@ def noop; end
 
 def random_email
   chars = [*("A".."Z"), *("a".."z"), *("0".."9")]
-  "#{chars.sample(40).join}@blinkbox.com"
+  "#{chars.sample(40).join}@example.org"
 end
 
 def random_password
