@@ -1,4 +1,4 @@
-@clients
+@clients @client_registration
 Feature: Registering a client
   As a user
   I want to be able to register my client
@@ -23,10 +23,17 @@ Feature: Registering a client
 
   Scenario: Trying to register a client without user authorisation
     Given I have not provided my access token
-    When I submit the client registration request
+    When I submit a client registration request
     Then the response indicates that I am unauthorised
 
   Scenario: Trying to register a client with invalid user authorisation
     Given I have provided an incorrect access token
-    When I submit the client registration request
+    When I submit a client registration request
     Then the response indicates that I am unauthorised
+
+  Scenario: Trying to register more than the allowed number of clients
+    Given I have provided my access token
+    And I have registered 12 clients
+    When I submit a client registration request
+    Then the response indicates that this is forbidden
+

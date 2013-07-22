@@ -8,47 +8,47 @@
 # from scratch. The latter is a flawed and unsustainable approach (the more migrations
 # you'll amass, the slower it'll run and the greater likelihood for issues).
 #
-# It's strongly recommended to check this file into your version control system.
+# It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 4) do
+ActiveRecord::Schema.define(version: 4) do
 
-  create_table "access_tokens", :force => true do |t|
-    t.datetime "created_at",       :null => false
-    t.datetime "updated_at",       :null => false
+  create_table "access_tokens", force: true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
     t.integer  "refresh_token_id"
     t.datetime "expires_at"
   end
 
-  create_table "clients", :force => true do |t|
-    t.datetime "created_at",                  :null => false
-    t.datetime "updated_at",                  :null => false
+  create_table "clients", force: true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
     t.integer  "user_id"
-    t.string   "name",          :limit => 50
-    t.string   "client_secret", :limit => 50
+    t.string   "name",          limit: 50
+    t.string   "client_secret", limit: 50
   end
 
-  create_table "refresh_tokens", :force => true do |t|
-    t.datetime "created_at",               :null => false
-    t.datetime "updated_at",               :null => false
+  create_table "refresh_tokens", force: true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
     t.integer  "user_id"
     t.integer  "client_id"
-    t.string   "token",      :limit => 50
+    t.string   "token",      limit: 50
     t.datetime "expires_at"
     t.boolean  "revoked"
   end
 
-  add_index "refresh_tokens", ["token"], :name => "index_refresh_tokens_on_token", :unique => true
+  add_index "refresh_tokens", ["token"], name: "index_refresh_tokens_on_token", unique: true
 
-  create_table "users", :force => true do |t|
-    t.datetime "created_at",                                    :null => false
-    t.datetime "updated_at",                                    :null => false
-    t.string   "first_name",                     :limit => 50
-    t.string   "last_name",                      :limit => 50
-    t.string   "email",                          :limit => 320
-    t.string   "password_hash",                  :limit => 128
+  create_table "users", force: true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "first_name",                     limit: 50
+    t.string   "last_name",                      limit: 50
+    t.string   "email",                          limit: 320
+    t.string   "password_hash",                  limit: 128
     t.boolean  "allow_marketing_communications"
   end
 
-  add_index "users", ["email"], :name => "index_users_on_email", :unique => true
+  add_index "users", ["email"], name: "index_users_on_email", unique: true
 
 end

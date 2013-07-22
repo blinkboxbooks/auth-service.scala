@@ -1,5 +1,6 @@
 require "sinatra/base"
 require "active_record"
+require "java_properties"
 require "uri"
 
 module Blinkbox
@@ -7,8 +8,12 @@ module Blinkbox
     module Server 
       class App < Sinatra::Base
 
-        configure do  
-          db = URI.parse(ENV["DATABASE_URL"] || "sqlite3:///db/auth.db")
+        configure do
+          propfile = [".properties", ".properties.#{ENV["RACK_ENV"]}"].select { |f| File.exist?(f) }.first
+          raise "No properties file found." unless propfile
+          set :properties, JavaProperties::Properties.new(propfile)
+
+          db = URI.parse(settings.properties["database_url"])
           ActiveRecord::Base.establish_connection(
             adapter:  db.scheme == "postgres" ? "postgresql" : db.scheme,
             host:     db.host,
