@@ -1,5 +1,6 @@
 require "sinatra/base"
 require "active_record"
+require "java_properties"
 require "uri"
 
 module Blinkbox
@@ -8,7 +9,9 @@ module Blinkbox
       class App < Sinatra::Base
 
         configure do  
-          db = URI.parse(ENV["DATABASE_URL"] || "sqlite3:///db/auth.db")
+          @properties = JavaProperties::Properties.new(".properties")
+
+          db = URI.parse(@properties["database_url"])
           ActiveRecord::Base.establish_connection(
             adapter:  db.scheme == "postgres" ? "postgresql" : db.scheme,
             host:     db.host,
