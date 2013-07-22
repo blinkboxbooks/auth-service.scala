@@ -10,7 +10,7 @@ module Blinkbox::Zuul::Server
     validates :access_token, presence: true
 
     def age
-      Time.now - self.updated_at
+      DateTime.now - self.updated_at
     end
 
   end

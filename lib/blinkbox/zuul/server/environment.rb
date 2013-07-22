@@ -8,10 +8,12 @@ module Blinkbox
     module Server 
       class App < Sinatra::Base
 
-        configure do  
-          @properties = JavaProperties::Properties.new(".properties")
+        configure do
+          propfile = [".properties", ".properties.#{ENV["RACK_ENV"]}"].select { |f| File.exist?(f) }.first
+          raise "No properties file found." unless propfile
+          set :properties, JavaProperties::Properties.new(propfile)
 
-          db = URI.parse(@properties["database_url"])
+          db = URI.parse(settings.properties["database_url"])
           ActiveRecord::Base.establish_connection(
             adapter:  db.scheme == "postgres" ? "postgresql" : db.scheme,
             host:     db.host,

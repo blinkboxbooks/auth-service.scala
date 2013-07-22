@@ -20,7 +20,7 @@ module Blinkbox::Zuul::Server
 
     require_user_authorization_for %r{/clients(?:/.*)?}
 
-    post "/clients" do
+    post "/clients", provides: :json do
       if current_user.clients.count >= MAX_CLIENTS_PER_USER
         halt 403, json({ 
           "error" => "client_limit_reached", 
@@ -37,17 +37,17 @@ module Blinkbox::Zuul::Server
       return_client_information(client, include_client_secret: true)
     end
 
-    get "/clients/:client_id" do |client_id|
+    get "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
       invalid_client "You are not authorised to use this client." unless client.user == current_user
       return_client_information(client)
     end
 
-    get "/oauth2/token" do
+    get "/oauth2/token", provides: :json do
       handle_token_request(params)
     end
 
-    post "/oauth2/token" do
+    post "/oauth2/token", provides: :json do
       handle_token_request(params)
     end
 
@@ -117,7 +117,7 @@ module Blinkbox::Zuul::Server
 
       refresh_token = RefreshToken.find_by_token(token_value)
       invalid_grant "The refresh token is invalid" if refresh_token.nil?
-      invalid_grant "The refresh token has expired" if refresh_token.expires_at < Time.now
+      invalid_grant "The refresh token has expired" if refresh_token.expires_at < DateTime.now
       invalid_grant "The refresh token has been revoked" if refresh_token.revoked
 
       client = authenticate_client(params, refresh_token.user)
@@ -127,7 +127,7 @@ module Blinkbox::Zuul::Server
         invalid_client "Your client is not authorised to use this refresh token."
       end
 
-      refresh_token.expires_at = Time.now + REFRESH_TOKEN_LIFETIME
+      refresh_token.expires_at = DateTime.now + REFRESH_TOKEN_LIFETIME
       issue_access_token(refresh_token)
     end
 
@@ -142,6 +142,9 @@ module Blinkbox::Zuul::Server
     end
 
     def issue_refresh_token(user, client = nil)
+      # note: this method and issue_access_token are effectively a pair of methods; this one always
+      # calls that one to save the refresh token which means this one doesn't need to do it. it's
+      # a little bit dirty i guess, but there's no point in saving the refresh token twice.
       refresh_token = RefreshToken.new do |rt|
         rt.user = user
         rt.client = client
@@ -173,11 +176,11 @@ module Blinkbox::Zuul::Server
       }
       claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
 
-      sig_key_id = "blinkbox/zuul/sig/ec/1" # TODO: This should be a setting
+      sig_key_id = settings.properties["signing_key_id"]
       signer = Sandal::Sig::ES256.new(File.read("./keys/#{sig_key_id}/private.pem"))
       jws_token = Sandal.encode_token(claims, signer, { "kid" => sig_key_id })
       
-      enc_key_id = "blinkbox/plat/enc/rsa/1" # TODO: This should be a setting
+      enc_key_id = settings.properties["encryption_key_id"]
       encrypter = Sandal::Enc::A128GCM.new(Sandal::Enc::Alg::RSA_OAEP.new(File.read("./keys/#{enc_key_id}/public.pem")))
       Sandal.encrypt_token(jws_token, encrypter, { "kid" => enc_key_id, "cty" => "JWT" })
     end
