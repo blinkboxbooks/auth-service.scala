@@ -2,9 +2,9 @@ PATH
   remote: .
   specs:
     blinkbox-zuul-server (0.1.1)
-      activerecord (~> 3.2)
+      activerecord (~> 4.0)
       multi_json (~> 1.7)
-      sandal (~> 0.5)
+      sandal (~> 0.5, >= 0.5.1)
       scrypt (~> 1.1)
       sinatra (~> 1.2)
       sinatra-activerecord (~> 1.2)
@@ -13,19 +13,24 @@ GEM
   remote: http://gems.mobcastdev.com/
   remote: https://rubygems.org/
   specs:
-    activemodel (3.2.13)
-      activesupport (= 3.2.13)
-      builder (~> 3.0.0)
-    activerecord (3.2.13)
-      activemodel (= 3.2.13)
-      activesupport (= 3.2.13)
-      arel (~> 3.0.2)
-      tzinfo (~> 0.3.29)
-    activesupport (3.2.13)
-      i18n (= 0.6.1)
-      multi_json (~> 1.0)
-    arel (3.0.2)
-    builder (3.0.4)
+    activemodel (4.0.0)
+      activesupport (= 4.0.0)
+      builder (~> 3.1.0)
+    activerecord (4.0.0)
+      activemodel (= 4.0.0)
+      activerecord-deprecated_finders (~> 1.0.2)
+      activesupport (= 4.0.0)
+      arel (~> 4.0.0)
+    activerecord-deprecated_finders (1.0.3)
+    activesupport (4.0.0)
+      i18n (~> 0.6, >= 0.6.4)
+      minitest (~> 4.2)
+      multi_json (~> 1.3)
+      thread_safe (~> 0.1)
+      tzinfo (~> 0.3.37)
+    arel (4.0.0)
+    atomic (1.1.10)
+    builder (3.1.4)
     colorize (0.5.8)
     coveralls (0.6.7)
       colorize
@@ -53,7 +58,7 @@ GEM
       multi_json (~> 1.3)
     http-cookie (1.0.1)
       domain_name (~> 0.5)
-    i18n (0.6.1)
+    i18n (0.6.4)
     mechanize (2.7.1)
       domain_name (~> 0.5, >= 0.5.1)
       http-cookie (~> 1.0.0)
@@ -65,6 +70,7 @@ GEM
       webrobots (>= 0.0.9, < 0.2)
     mime-types (1.23)
     mini_portile (0.5.1)
+    minitest (4.7.5)
     multi_json (1.7.7)
     multi_test (0.0.2)
     net-http-digest_auth (1.3)
@@ -88,6 +94,7 @@ GEM
     rspec-expectations (2.14.0)
       diff-lcs (>= 1.1.3, < 2.0)
     rspec-mocks (2.14.1)
+    ruby-prof (0.13.0)
     sandal (0.5.1)
       multi_json (~> 1.7)
     scrypt (1.2.0)
@@ -107,6 +114,8 @@ GEM
     sqlite3 (1.3.7)
     sqlite3 (1.3.7-x86-mingw32)
     thor (0.18.1)
+    thread_safe (0.1.0)
+      atomic
     tilt (1.4.1)
     tzinfo (0.3.37)
     unf (0.1.1)
@@ -128,6 +137,7 @@ DEPENDENCIES
   mechanize
   rake
   rspec
+  ruby-prof
   simplecov
   sqlite3
   yard

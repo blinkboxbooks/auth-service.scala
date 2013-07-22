@@ -5,7 +5,9 @@ def generate_user_registration_details
     "first_name" => "John",
     "last_name" => "Doe",
     "username" => random_email,
-    "password" => random_password
+    "password" => random_password,
+    "accepted_terms_and_conditions" => true,
+    "allow_marketing_communications" => true
   }
 end
 

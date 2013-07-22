@@ -16,10 +16,18 @@ module Blinkbox::Zuul::Server
 
     ACCESS_TOKEN_LIFETIME = 1800
     REFRESH_TOKEN_LIFETIME = 3600 * 24 * 90
+    MAX_CLIENTS_PER_USER = 12
 
     require_user_authorization_for %r{/clients(?:/.*)?}
 
     post "/clients" do
+      if current_user.clients.count >= MAX_CLIENTS_PER_USER
+        halt 403, json({ 
+          "error" => "client_limit_reached", 
+          "error_description" => "The allowed number of clients (#{MAX_CLIENTS_PER_USER}) are already registered" 
+        })
+      end
+
       client = Client.new do |c|
         c.name = params[:client_name] || "Unknown Client"
         c.user = current_user
@@ -69,11 +77,14 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_registration_flow(params)
+      invalid_request "You must accept the terms and conditions" unless params[:accepted_terms_and_conditions] == "true"
+
       user = User.new do |u|
         u.first_name = params[:first_name]
         u.last_name = params[:last_name]
         u.email = params[:username]
         u.password = params[:password]
+        u.allow_marketing_communications = params[:allow_marketing_communications]
       end
 
       begin
