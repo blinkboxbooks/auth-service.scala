@@ -44,13 +44,13 @@ Feature: Registration
 
     Examples: Malformed email address
       The email address must have one @ symbol with a . after it and characters at each end and in between 
-      | detail        | value              |
-      | email address | user.blinkbox.com  |
-      | email address | user@blinkbox      |
-      | email address | user.blinkbox@com  |
-      | email address | user@@blinkbox.com |
-      | email address | user@blinkbox.     |
-      | email address | @blinkbox.com      |
+      | detail        | value             |
+      | email address | user.example.org  |
+      | email address | user@example      |
+      | email address | user.example@com  |
+      | email address | user@@example.org |
+      | email address | user@example.     |
+      | email address | @example.org      |
 
     Examples: Password too short
       The password must be at least six characters in length
