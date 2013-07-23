@@ -22,3 +22,8 @@ group :development, :test do
   gem "sqlite3"
   gem "yard"
 end
+
+group :mysql do
+  gem "mysql2"
+  gem "activerecord-mysql2-adapter"
+end
