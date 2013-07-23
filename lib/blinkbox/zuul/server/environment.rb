@@ -19,7 +19,7 @@ module Blinkbox
                       when "mysql" then "mysql2"
                       when "postgres" then "postgresql"
                       else db.scheme
-                      end
+                      end,
             host:     db.host,
             username: db.user,
             password: db.password,
