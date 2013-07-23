@@ -15,7 +15,11 @@ module Blinkbox
 
           db = URI.parse(settings.properties["database_url"])
           ActiveRecord::Base.establish_connection(
-            adapter:  db.scheme == "postgres" ? "postgresql" : db.scheme,
+            adapter:  case db.scheme
+                      when "mysql" then "mysql2"
+                      when "postgres" then "postgresql"
+                      else db.scheme
+                      end,
             host:     db.host,
             username: db.user,
             password: db.password,

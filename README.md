@@ -53,22 +53,16 @@ Ensure you have bundler installed, as it is used to load dependencies:
 $ gem install bundler
 ```
 
-For development or testing you can install all the dependencies using the basic command:
+For development or testing you can install all the dependencies using the `install` command. If you're only planning on doing development/testing against SQLite, you may want to use the `--without mysql` option as otherwise you'll need MySQL installed on your machine.
 
 ```
-$ bundle
+$ bundle install
 ```
 
 In production mode you're not going to need (or want) the development or testing gems so exclude those groups:
 
 ```
-$ bundle --without development test
-```
-
-If you're using MySQL as the database you'll need to install the MySQL adapter for Active Record as an additional step. This isn't installed by default as it isn't needed for development.
-
-```
-$ gem install activerecord-mysql-adapter
+$ bundle install --without development test
 ```
 
 ## Setting up the database
