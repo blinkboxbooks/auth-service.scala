@@ -21,6 +21,10 @@ Given(/^the email address is different from the one I used to register$/) do
   @credentials["username"] = random_email
 end
 
+Given(/^the email address is in a different case to the one I used to register$/) do
+  @credentials["username"] = @credentials["username"].swapcase
+end
+
 Given(/^I have not provided my (password|client secret)$/) do |name|
   @credentials.delete(oauth_param_name(name))
 end
