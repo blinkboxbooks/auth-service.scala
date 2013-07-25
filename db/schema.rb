@@ -37,18 +37,18 @@ ActiveRecord::Schema.define(version: 4) do
     t.boolean  "revoked"
   end
 
-  add_index "refresh_tokens", ["token"], name: "index_refresh_tokens_on_token", unique: true
+  add_index "refresh_tokens", ["token"], name: "index_refresh_tokens_on_token", unique: true, using: :btree
 
   create_table "users", force: true do |t|
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "first_name",                     limit: 50
     t.string   "last_name",                      limit: 50
-    t.string   "email",                          limit: 320
+    t.string   "email",                          limit: 120
     t.string   "password_hash",                  limit: 128
     t.boolean  "allow_marketing_communications"
   end
 
-  add_index "users", ["email"], name: "index_users_on_email", unique: true
+  add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
 
 end

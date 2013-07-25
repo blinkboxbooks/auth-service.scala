@@ -17,6 +17,10 @@ Given(/^I have provided valid registration details, except (.+) which is "(.*)"$
   @user_registration_details[oauth_param_name(name)] = value
 end
 
+Given(/^my (.+) is "(.+)"$/) do |name, value|
+  @user_registration_details[oauth_param_name(name)] = value
+end
+
 When(/^I provide the same registration details I previously registered with$/, :noop)
 When(/^I submit the registration request$/, :submit_user_registration_request)
 

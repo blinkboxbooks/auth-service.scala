@@ -1,11 +1,13 @@
+require_relative "../default_options"
+
 class CreateUsers < ActiveRecord::Migration
 
   def self.up
-    create_table :users do |t|
+    create_table :users, options: default_create_table_options do |t|
       t.timestamps
       t.string :first_name, limit: 50
       t.string :last_name, limit: 50
-      t.string :email, limit: 320
+      t.string :email, limit: 120
       t.string :password_hash, limit: 128
       t.boolean :allow_marketing_communications
     end

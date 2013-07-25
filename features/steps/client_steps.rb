@@ -5,9 +5,13 @@ Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
   (1..count).each { register_new_client }
 end
 
-Given(/^I have (not )?provided a client name$/) do |no_name|
-  name = no_name ? nil : "Test Client"
+Given(/^I have provided a client name(?: of "(.+)")?$/) do |name|
+  name ||= "My Test Client"
   generate_client_registration_details(name)
+end
+
+Given(/^I have not provided a client name$/) do
+  generate_client_registration_details(nil)
 end
 
 When(/^I submit (?:a|the) client registration request$/, :submit_client_registration_request)
