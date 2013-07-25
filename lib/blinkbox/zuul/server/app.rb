@@ -10,7 +10,7 @@ require "sinatra/oauth_helper"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
-    helpers Sinatra::JSON
+    helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
     register Sinatra::Authorization
 
