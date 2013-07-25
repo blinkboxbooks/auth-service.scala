@@ -62,7 +62,7 @@ $ bundle install
 In production mode you're not going to need (or want) the development or testing gems so exclude those groups:
 
 ```
-$ bundle install --without development test
+$ bundle install --without development:test
 ```
 
 ## Setting up the database
