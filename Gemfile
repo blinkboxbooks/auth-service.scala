@@ -25,5 +25,4 @@ end
 
 group :mysql do
   gem "mysql2"
-  gem "activerecord-mysql2-adapter"
 end
