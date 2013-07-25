@@ -12,7 +12,6 @@ Feature: Password authentication
     When I submit the authentication request
     Then the response contains an access token and a refresh token
 
-  @wip
   Scenario: Authentication with email address in a different case to the one used when registering
     Given I have provided my email address and password
     But the email address is in a different case to the one I used to register

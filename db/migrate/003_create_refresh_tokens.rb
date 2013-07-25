@@ -7,7 +7,7 @@ class CreateRefreshTokens < ActiveRecord::Migration
       t.timestamps
       t.integer :user_id
       t.integer :client_id
-      t.string :token, limit: 50
+      t.string :token, limit: 50 # BUGBUG: Can this column use case-sensitive collation?
       t.datetime :expires_at
       t.boolean :revoked
     end

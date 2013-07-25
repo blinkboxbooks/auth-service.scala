@@ -8,6 +8,15 @@ Feature: Registration
     Given I have provided valid registration details
     When I submit the registration request
     Then the response contains an access token and a refresh token
+    # TODO: Check the details match when we have a user info request method
+
+  Scenario: Registering with a name containing international characters
+    Given I have provided valid registration details
+    And my first name is "Iñtërnâtiônàlizætiøn"
+    And my last name is "中国扬声器可以阅读本"
+    When I submit the registration request
+    Then the response contains an access token and a refresh token
+    # TODO: Check the details match when we have a user info request method
 
   Scenario: Trying to register without accepting the terms and conditions
     Given I have provided valid registration details
