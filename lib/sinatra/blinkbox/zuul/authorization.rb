@@ -1,5 +1,4 @@
 require "sinatra/base"
-require "sinatra/request-bearer_token"
 require "sandal"
 
 module Sinatra
