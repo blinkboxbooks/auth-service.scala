@@ -20,7 +20,8 @@ module Blinkbox::Zuul::Server
     REFRESH_TOKEN_LIFETIME_IN_DAYS = 90.0
     MAX_CLIENTS_PER_USER = 12
 
-    require_user_authorization_for %r{/clients(?:/.*)?}
+    require_user_authorization_for %r{^/clients(?:/.*)?}
+    require_user_authorization_for %r{^/users(?:/.*)?}
 
     after do
       # none of the responses from the auth server should be cached
@@ -60,13 +61,18 @@ module Blinkbox::Zuul::Server
       handle_token_request(params)
     end
 
+    get "/users/:user_id", provides: :json do |user_id|
+      halt 403, "Access denied" unless user_id == current_user.id.to_s
+      json user_info(current_user)
+    end
+
     private
 
     def return_client_information(client, include_client_secret = false)
       client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-        "client_name" => client.name,
-        "client_uri" => "#{base_url}/clients/#{client.id}"
+        "client_uri" => "#{base_url}/clients/#{client.id}",
+        "client_name" => client.name
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
       json client_info
@@ -173,7 +179,18 @@ module Blinkbox::Zuul::Server
         "expires_in" => ACCESS_TOKEN_LIFETIME_IN_SECONDS
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
-      json token_info
+      json token_info.merge(user_info(refresh_token.user))
+    end
+
+    def user_info(user)
+      {
+        "user_id" => "urn:blinkbox:zuul:user:#{user.id}",
+        "user_uri" => "#{base_url}/users/#{user.id}",
+        "user_email" => user.email,
+        "user_first_name" => user.first_name,
+        "user_last_name" => user.last_name,
+        "user_allow_marketing_communications" => user.allow_marketing_communications
+      }
     end
 
     def build_access_token(refresh_token)

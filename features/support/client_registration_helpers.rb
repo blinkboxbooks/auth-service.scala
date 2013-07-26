@@ -11,12 +11,12 @@ end
 
 def verify_client_information_response(client_secret = :required)
   expect(@response.status).to eq(200)
-  @client_response = MultiJson.load(@response.body)
-  expect(@client_response["client_id"]).to_not be_nil
-  expect(@client_response["client_uri"]).to_not be_nil
-  expect(@client_response["client_name"]).to_not be_nil
-  expect(@client_response["client_secret"]).to_not be_nil if client_secret == :required
-  expect(@client_response["client_secret"]).to be_nil if client_secret == :prohibited
+  @client_info = MultiJson.load(@response.body)
+  expect(@client_info["client_id"]).to_not be_nil
+  expect(@client_info["client_uri"]).to_not be_nil
+  expect(@client_info["client_name"]).to_not be_nil
+  expect(@client_info["client_secret"]).to_not be_nil if client_secret == :required
+  expect(@client_info["client_secret"]).to be_nil if client_secret == :prohibited
 end
 
 def register_new_client

@@ -12,7 +12,7 @@ Feature: Getting client information
     Given I have provided my access token
     When I submit the client information request
     Then the response contains client information, excluding the client secret
-    And the response is not cacheable
+    And it is not cacheable
 
   Scenario: Trying to get client information without authorisation
     Given I have not provided my access token
