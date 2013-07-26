@@ -17,7 +17,7 @@ def submit_user_registration_request
 end
 
 def validate_user_token_response(refresh_token = :required)
-  @user_response.code.to_i.should == 200
+  @user_response.status.should == 200
   token_info = MultiJson.load(@response.body)
   token_info["access_token"].should_not be nil
   token_info["token_type"].downcase.should == "bearer"

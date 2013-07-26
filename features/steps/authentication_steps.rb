@@ -74,7 +74,7 @@ When(/^I submit the (?:authentication|access token refresh) request$/) do
 end
 
 Then(/^the response indicates that my (?:credentials are|refresh token is) incorrect$/) do
-  @response.code.to_i.should == 400
+  @response.status.should == 400
   @response_json = MultiJson.load(@response.body)
   @response_json["error"].should == "invalid_grant"
 end

@@ -1,4 +1,4 @@
-@clients @client_registration
+@clients @registration @client_registration
 Feature: Registering a client
   As a user
   I want to be able to register my client
@@ -14,6 +14,7 @@ Feature: Registering a client
     Then the response contains client information, including a client secret
     And the client name should match the provided name
     # TODO: Check the details match when we have a user info request method
+    And the response is not cacheable
 
   Scenario: Registering a client with a name containing international characters
     Given I have provided my access token
@@ -22,6 +23,7 @@ Feature: Registering a client
     Then the response contains client information, including a client secret
     And the client name should match the provided name
     # TODO: Check the details match when we have a user info request method
+    And the response is not cacheable
 
   Scenario: Registering a client without a name
     Given I have provided my access token
@@ -30,6 +32,7 @@ Feature: Registering a client
     Then the response contains client information, including a client secret
     And a client name should have been created for me
     # TODO: Check the details match when we have a user info request method
+    And the response is not cacheable
 
   Scenario: Trying to register a client without user authorisation
     Given I have not provided my access token

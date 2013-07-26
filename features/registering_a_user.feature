@@ -1,14 +1,16 @@
-@users @user_registration
+@users @registration @user_registration
 Feature: Registration
   As a user
   I want to be able to register an account
   So that I can use services that require my identity
   
+  @wip
   Scenario: Registering with all the required information
     Given I have provided valid registration details
     When I submit the registration request
     Then the response contains an access token and a refresh token
     # TODO: Check the details match when we have a user info request method
+    And the response is not cacheable
 
   Scenario: Registering with a name containing international characters
     Given I have provided valid registration details
@@ -17,6 +19,7 @@ Feature: Registration
     When I submit the registration request
     Then the response contains an access token and a refresh token
     # TODO: Check the details match when we have a user info request method
+    And the response is not cacheable
 
   Scenario: Trying to register without accepting the terms and conditions
     Given I have provided valid registration details

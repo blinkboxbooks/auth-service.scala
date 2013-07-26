@@ -9,15 +9,15 @@ Then(/^the response contains an access token$/) do
 end
 
 Then(/^the response indicates that the request was invalid$/) do
-  @response.code.to_i.should == 400
+  @response.status.should == 400
   @response_json = MultiJson.load(@response.body)
   @response_json["error"].should == "invalid_request"
 end
 
 Then(/^the response indicates that I am unauthorised$/) do
-  @response.code.to_i.should == 401
+  @response.status.should == 401
 end
 
 Then(/^the response indicates that this is forbidden$/) do
-  @response.code.to_i.should == 403
+  @response.status.should == 403
 end

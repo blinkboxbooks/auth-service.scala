@@ -10,7 +10,7 @@ def submit_client_registration_request
 end
 
 def verify_client_information_response(client_secret = :required)
-  @response.code.to_i.should == 200
+  @response.status.should == 200
   @client_response = MultiJson.load(@response.body)
   @client_response["client_id"].should_not be nil
   @client_response["client_uri"].should_not be nil
