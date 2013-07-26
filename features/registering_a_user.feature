@@ -25,19 +25,19 @@ Feature: Registration
     Given I have provided valid registration details
     But I have not accepted the terms and conditions
     When I submit the registration request
-    Then the response indicates that the request was invalid
+    Then the request fails because it is invalid
 
   Scenario: Trying to register with an email address that is already registered
     Given I have registered an account
     When I provide the same registration details I previously registered with
     And I submit the registration request
-    Then the response indicates that the request was invalid
+    Then the request fails because it is invalid
     And the reason is that the email address is already taken
 
   Scenario Outline: Trying to register with missing details
     Given I have provided valid registration details, except <detail> which is missing
     When I submit the registration request
-    Then the response indicates that the request was invalid
+    Then the request fails because it is invalid
 
     Examples: Required details
       These details are required for registration
@@ -52,7 +52,7 @@ Feature: Registration
   Scenario Outline: Trying to register with invalid details
     Given I have provided valid registration details, except <detail> which is "<value>"
     When I submit the registration request
-    Then the response indicates that the request was invalid
+    Then the request fails because it is invalid
 
     Examples: Malformed email address
       The email address must have one @ symbol with a . after it and characters at each end and in between 

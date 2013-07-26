@@ -25,5 +25,5 @@ When(/^I provide the same registration details I previously registered with$/, :
 When(/^I submit the registration request$/, :submit_user_registration_request)
 
 Then(/^the reason is that the email address is already taken$/) do
-  @response_json["error_reason"].should == "username_already_taken"
+  expect(@response_json["error_reason"]).to eq("username_already_taken")
 end

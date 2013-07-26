@@ -24,7 +24,7 @@ Feature: Password authentication
     Given I have provided my email address
     But I have not provided my password
     When I submit the authentication request
-    Then the response indicates that the request was invalid
+    Then the request fails because it is invalid
 
   Scenario: Trying to authenticate with an incorrect password
     Given I have provided my email address and password

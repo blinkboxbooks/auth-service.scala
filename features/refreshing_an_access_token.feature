@@ -16,7 +16,7 @@ Feature: Refreshing an access token
   Scenario: Trying to refresh an access token without a refresh token
     Given I have not provided my refresh token
     When I submit the access token refresh request
-    Then the response indicates that the request was invalid
+    Then the request fails because it is invalid
 
   Scenario: Trying to refresh an access token with an incorrect refresh token
     Given I have provided an incorrect refresh token

@@ -14,7 +14,7 @@ group :development, :test do
   gem "bundler"
   gem "coveralls"
   gem "cucumber"
-  gem "cucumber-rest"
+  gem "cucumber-rest", ">= 0.0.5"
   gem "httparty"
   gem "rake"
   gem "rspec"

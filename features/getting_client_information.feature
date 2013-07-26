@@ -17,6 +17,6 @@ Feature: Getting client information
   Scenario: Trying to get client information without authorisation
     Given I have not provided my access token
     When I submit the client information request
-    Then the response indicates that I am unauthorised
+    Then the request fails because I am unauthorised
 
 

@@ -26,16 +26,16 @@ Then(/^the response contains client information, (including a|excluding the) cli
 end
 
 Then(/^the client name should match the provided name$/) do
-  @client_response["client_name"].should == @client_registration_details["client_name"]
+  expect(@client_response["client_name"]).to eq(@client_registration_details["client_name"])
 end
 
 Then(/^a client name should have been created for me$/) do
-  @client_response["client_name"].should_not be nil
+  expect(@client_response["client_name"]).to_not be_nil
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do
-  @response.status.should === 400..401
-  @response["WWW-Authenticate"].should_not be nil if @response.status == 401
+  expect(@response.status).to be_between(400, 401)
+  expect(@response["WWW-Authenticate"]).to_not be_nil if @response.status == 401
   @response_json = MultiJson.load(@response.body)
-  @response_json["error"].should == "invalid_client"
+  expect(@response_json["error"]).to eq("invalid_client")
 end

@@ -1,6 +1,6 @@
 require "httparty"
 require "net/http/capture" # BUGBUG: httparty/capture should work; bug in HttpCapture I think...
-require "cucumber/rest"
+require "cucumber/rest/steps/caching"
 
 module KnowsAboutTheEnvironment
   def servers
