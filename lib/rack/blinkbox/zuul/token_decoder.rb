@@ -4,7 +4,7 @@ require "sandal"
 module Rack
   module Blinkbox
     module Zuul
-      class Auth
+      class TokenDecoder
 
         def initialize(app)
           @app = app

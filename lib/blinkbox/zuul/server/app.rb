@@ -6,11 +6,11 @@ require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/blinkbox/zuul/authorization"
 require "blinkbox/zuul/server/environment"
-require "rack/blinkbox/zuul/auth"
+require "rack/blinkbox/zuul/token_decoder"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
-    use Rack::Blinkbox::Zuul::Auth
+    use Rack::Blinkbox::Zuul::TokenDecoder
     helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
     register Sinatra::Blinkbox::Zuul::Authorization
