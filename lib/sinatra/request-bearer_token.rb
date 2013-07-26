@@ -1,3 +1,5 @@
+require "sinatra/base"
+
 module Sinatra
   class Request
 

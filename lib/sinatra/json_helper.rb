@@ -1,3 +1,6 @@
+require "sinatra/base"
+require "multi_json"
+
 module Sinatra
   module JSONHelper
     def json(data)
@@ -6,5 +9,5 @@ module Sinatra
     end
   end
 
-  helpers JSON
+  helpers JSONHelper
 end

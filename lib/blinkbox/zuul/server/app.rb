@@ -2,17 +2,18 @@ require "multi_json"
 require "sandal"
 require "scrypt"
 
-require "blinkbox/zuul/server/environment"
-require "sinatra/request-bearer_token"
-require "sinatra/authorization"
-require "sinatra/json"
+require "sinatra/json_helper"
 require "sinatra/oauth_helper"
+require "sinatra/blinkbox/zuul/authorization"
+require "blinkbox/zuul/server/environment"
+require "rack/blinkbox/zuul/auth"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
+    use Rack::Blinkbox::Zuul::Auth
     helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
-    register Sinatra::Authorization
+    register Sinatra::Blinkbox::Zuul::Authorization
 
     ACCESS_TOKEN_LIFETIME_IN_SECONDS = 1800
     ACCESS_TOKEN_LIFETIME_IN_DAYS = ACCESS_TOKEN_LIFETIME_IN_SECONDS / (24.0 * 3600.0)
