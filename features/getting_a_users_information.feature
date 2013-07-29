@@ -10,7 +10,7 @@ Feature: Getting a user's information
   Scenario: Getting user information
     Given I have provided my access token
     When I submit the user information request
-    Then the response contains user information matching the registration details
+    Then the response contains complete user information matching the registration details
     And it is not cacheable
 
   Scenario: Trying to get user information without authorisation

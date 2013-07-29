@@ -28,15 +28,19 @@ def validate_user_token_response(refresh_token = :required)
   (@user_tokens ||= {}).merge!(@user_info)
 end
 
-def verify_user_information_response
+def verify_user_information_response(format = :complete)
   expect(@user_response.status).to eq(200)
   @user_info = MultiJson.load(@response.body)
   expect(@user_info["user_id"]).to_not be_nil
   expect(@user_info["user_uri"]).to_not be_nil
-  expect(@user_info["user_email"]).to eq(@user_registration_details["username"])
+  expect(@user_info["user_username"]).to eq(@user_registration_details["username"])
   expect(@user_info["user_first_name"]).to eq(@user_registration_details["first_name"])
   expect(@user_info["user_last_name"]).to eq(@user_registration_details["last_name"])
-  expect(@user_info["user_allow_marketing_communications"]).to eq(@user_registration_details["allow_marketing_communications"])
+  if format == :complete
+    expect(@user_info["user_allow_marketing_communications"]).to eq(@user_registration_details["allow_marketing_communications"])
+  else
+    expect(@user_info["user_allow_marketing_communications"]).to be_nil
+  end
 end
 
 def register_new_user

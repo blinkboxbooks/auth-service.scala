@@ -5,3 +5,4 @@ pkg/
 .properties
 *.db
 last_response.html
+migration.sql

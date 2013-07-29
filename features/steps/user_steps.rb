@@ -8,7 +8,7 @@ When(/^I submit the user information request for a different user$/) do
   @user_response = get_request("/users/#{different_user_id}")
 end
 
-Then(/^(?:the response|it) contains user information matching the registration details$/) do
-  verify_user_information_response
+Then(/^(?:the response|it) contains (basic|complete) user information matching the registration details$/) do |format|
+  verify_user_information_response(format.to_sym)
 end
 
