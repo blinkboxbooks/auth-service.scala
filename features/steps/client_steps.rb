@@ -20,7 +20,7 @@ When(/^I submit the client information request$/) do
   get_request(@client_info["client_uri"])
 end
 
-Then(/^the response contains client information, (including a|excluding the) client secret$/) do |including|
+Then(/^(?:the response|it) contains client information, (including a|excluding the) client secret$/) do |including|
   client_secret_expectation = including == "including a" ? :required : :prohibited
   verify_client_information_response(client_secret: client_secret_expectation)
 end

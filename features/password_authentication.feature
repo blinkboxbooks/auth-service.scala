@@ -11,6 +11,7 @@ Feature: Password authentication
     Given I have provided my email address and password
     When I submit the authentication request
     Then the response contains an access token and a refresh token
+    And it contains basic user information matching the registration details
     And it is not cacheable
 
   Scenario: Authentication with email address in a different case to the one used when registering
@@ -18,6 +19,7 @@ Feature: Password authentication
     But the email address is in a different case to the one I used to register
     When I submit the authentication request
     Then the response contains an access token and a refresh token
+    And it contains basic user information matching the registration details
     And it is not cacheable  
 
   Scenario: Trying to authenticate without a password
@@ -43,6 +45,8 @@ Feature: Password authentication
     And I have provided my email address, password and client credentials
     When I submit the authentication request
     Then the response contains an access token and a refresh token
+    And it contains basic user information matching the registration details
+    # TODO: And it contains client information, excluding the client secret
     And it is not cacheable
 
   Scenario: Trying to authenticate with valid credentials but a missing client secret
