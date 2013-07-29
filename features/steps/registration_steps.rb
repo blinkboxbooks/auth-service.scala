@@ -3,8 +3,11 @@ Given(/^I have registered an account$/, :register_new_user)
 Given(/^I have provided valid registration details$/, :generate_user_registration_details) 
 
 Given(/^I have not accepted the terms and conditions$/) do
-  generate_user_registration_details
   @user_registration_details["accepted_terms_and_conditions"] = false
+end
+
+Given(/^I have not allowed marketing communications$/) do
+  @user_registration_details["allow_marketing_communications"] = false
 end
 
 Given(/^I have provided valid registration details, except (.+) which is missing$/) do |name|

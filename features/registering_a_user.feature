@@ -19,6 +19,14 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching the registration details
     And it is not cacheable
+  
+  Scenario: Registering without allowing marketing communications
+    Given I have provided valid registration details
+    And I have not allowed marketing communications
+    When I submit the registration request
+    Then the response contains an access token and a refresh token
+    And it contains basic user information matching the registration details
+    And the response is not cacheable
 
   Scenario: Trying to register without accepting the terms and conditions
     Given I have provided valid registration details
