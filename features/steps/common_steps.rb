@@ -8,16 +8,16 @@ Then(/^the response contains an access token$/) do
   validate_user_token_response(refresh_token: :optional)
 end
 
-Then(/^the response indicates that the request was invalid$/) do
-  @response.code.to_i.should == 400
+Then(/^the request fails because it is invalid$/) do
+  expect(@response.status).to eq(400)
   @response_json = MultiJson.load(@response.body)
-  @response_json["error"].should == "invalid_request"
+  expect(@response_json["error"]).to eq("invalid_request")
 end
 
-Then(/^the response indicates that I am unauthorised$/) do
-  @response.code.to_i.should == 401
+Then(/^the request fails because I am unauthorised$/) do
+  expect(@response.status).to eq(401)
 end
 
-Then(/^the response indicates that this is forbidden$/) do
-  @response.code.to_i.should == 403
+Then(/^the request fails because this is forbidden$/) do
+  expect(@response.status).to eq(403)
 end

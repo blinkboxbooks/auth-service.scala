@@ -15,12 +15,12 @@ def use_refresh_token_credentials
 end
 
 def include_client_credentials
-  @credentials.should_not be nil
+  expect(@credentials).to_not be_nil
   @credentials["client_id"] = @client_response["client_id"]
   @credentials["client_secret"] = @client_response["client_secret"]
 end
 
 def submit_authentication_request
-  @credentials.should_not be nil
+  expect(@credentials).to_not be_nil
   post_www_form_request("/oauth2/token", @credentials)
 end

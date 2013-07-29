@@ -1,4 +1,4 @@
-@clients
+@clients @client_info
 Feature: Getting client information
   As a client
   I want to be able to get information about myself
@@ -12,10 +12,11 @@ Feature: Getting client information
     Given I have provided my access token
     When I submit the client information request
     Then the response contains client information, excluding the client secret
+    And the response is not cacheable
 
   Scenario: Trying to get client information without authorisation
     Given I have not provided my access token
     When I submit the client information request
-    Then the response indicates that I am unauthorised
+    Then the request fails because I am unauthorised
 
 

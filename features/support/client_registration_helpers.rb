@@ -10,13 +10,13 @@ def submit_client_registration_request
 end
 
 def verify_client_information_response(client_secret = :required)
-  @response.code.to_i.should == 200
+  expect(@response.status).to eq(200)
   @client_response = MultiJson.load(@response.body)
-  @client_response["client_id"].should_not be nil
-  @client_response["client_uri"].should_not be nil
-  @client_response["client_name"].should_not be nil
-  @client_response["client_secret"].should_not be nil if client_secret == :required
-  @client_response["client_secret"].should be nil if client_secret == :prohibited
+  expect(@client_response["client_id"]).to_not be_nil
+  expect(@client_response["client_uri"]).to_not be_nil
+  expect(@client_response["client_name"]).to_not be_nil
+  expect(@client_response["client_secret"]).to_not be_nil if client_secret == :required
+  expect(@client_response["client_secret"]).to be_nil if client_secret == :prohibited
 end
 
 def register_new_client

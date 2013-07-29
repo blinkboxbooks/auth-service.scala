@@ -21,12 +21,10 @@ def get_request(uri_or_path)
   }
   headers.merge!(@request_headers) if defined?(@request_headers)
   begin
-    @response = @agent.request_with_entity(:get, uri, "", headers)
-    # p @response.body
-  rescue Mechanize::ResponseCodeError => e
-    @response = e.page
-    # p e.page.body
+    HTTParty.get(uri.to_s, headers: headers)    
+  rescue HTTParty::ResponseError
   end
+  @response = HttpCapture::RESPONSES.last
 end
 
 def post_www_form_request(uri_or_path, body)
@@ -38,14 +36,10 @@ def post_www_form_request(uri_or_path, body)
   headers.merge!(@request_headers) if defined?(@request_headers)
   body = URI.encode_www_form(body) unless body.is_a?(String)
   begin
-    # p body
-    @response = @agent.request_with_entity(:post, uri, body, headers)
-    # p @response.body
-  rescue Mechanize::ResponseCodeError => e
-    @response = e.page
-    # p e.page.body
+    HTTParty.post(uri.to_s, headers: headers, body: body)    
+  rescue HTTParty::ResponseError
   end
-  @response
+  @response = HttpCapture::RESPONSES.last
 end
 
 def construct_auth_server_uri(uri_or_path)

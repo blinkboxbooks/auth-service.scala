@@ -1,4 +1,6 @@
-require "mechanize"
+require "httparty"
+require "net/http/capture" # BUGBUG: httparty/capture should work; bug in HttpCapture I think...
+require "cucumber/rest/steps/caching"
 
 module KnowsAboutTheEnvironment
   def servers
@@ -9,7 +11,3 @@ module KnowsAboutTheEnvironment
 end
 
 World(KnowsAboutTheEnvironment)
-
-Before do 
-  @agent = Mechanize.new
-end

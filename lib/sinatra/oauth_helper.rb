@@ -1,3 +1,5 @@
+require "sinatra/base"
+
 module Sinatra
   module OAuthHelper
 
@@ -25,4 +27,6 @@ module Sinatra
     end
 
   end
+
+  helpers OAuthHelper
 end

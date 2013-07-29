@@ -11,18 +11,20 @@ Feature: Password authentication
     Given I have provided my email address and password
     When I submit the authentication request
     Then the response contains an access token and a refresh token
+    And the response is not cacheable
 
   Scenario: Authentication with email address in a different case to the one used when registering
     Given I have provided my email address and password
     But the email address is in a different case to the one I used to register
     When I submit the authentication request
-    Then the response contains an access token and a refresh token    
+    Then the response contains an access token and a refresh token
+    And the response is not cacheable  
 
   Scenario: Trying to authenticate without a password
     Given I have provided my email address
     But I have not provided my password
     When I submit the authentication request
-    Then the response indicates that the request was invalid
+    Then the request fails because it is invalid
 
   Scenario: Trying to authenticate with an incorrect password
     Given I have provided my email address and password
@@ -41,6 +43,7 @@ Feature: Password authentication
     And I have provided my email address, password and client credentials
     When I submit the authentication request
     Then the response contains an access token and a refresh token
+    And the response is not cacheable
 
   Scenario: Trying to authenticate with valid credentials but a missing client secret
     Given I have registered a client

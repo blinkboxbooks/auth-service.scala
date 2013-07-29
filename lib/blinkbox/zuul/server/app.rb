@@ -2,17 +2,18 @@ require "multi_json"
 require "sandal"
 require "scrypt"
 
-require "blinkbox/zuul/server/environment"
-require "sinatra/request-bearer_token"
-require "sinatra/authorization"
-require "sinatra/json"
+require "rack/blinkbox/zuul/token_decoder"
+require "sinatra/json_helper"
 require "sinatra/oauth_helper"
+require "sinatra/blinkbox/zuul/authorization"
+require "blinkbox/zuul/server/environment"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
-    helpers Sinatra::JSON
+    use Rack::Blinkbox::Zuul::TokenDecoder
+    helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
-    register Sinatra::Authorization
+    register Sinatra::Blinkbox::Zuul::Authorization
 
     ACCESS_TOKEN_LIFETIME_IN_SECONDS = 1800
     ACCESS_TOKEN_LIFETIME_IN_DAYS = ACCESS_TOKEN_LIFETIME_IN_SECONDS / (24.0 * 3600.0)
@@ -20,6 +21,13 @@ module Blinkbox::Zuul::Server
     MAX_CLIENTS_PER_USER = 12
 
     require_user_authorization_for %r{/clients(?:/.*)?}
+
+    after do
+      # none of the responses from the auth server should be cached
+      cache_control :no_store
+      response["Date"] = response["Expires"] = Time.now.rfc822.to_s
+      response["Pragma"] = "no-cache"
+    end
 
     post "/clients", provides: :json do
       if current_user.clients.count >= MAX_CLIENTS_PER_USER
