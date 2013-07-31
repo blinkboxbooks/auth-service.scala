@@ -8,7 +8,7 @@ module Blinkbox::Zuul::Server
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
-    validates :email, format: { with: /\A[^@]+@[^@]+\.[^@\.]+\Z/ }, uniqueness: true
+    validates :username, format: { with: /\A[^@]+@[^@]+\.[^@\.]+\Z/ }, uniqueness: true
     validates :allow_marketing_communications, inclusion: { :in => [true, false] }
     validate :validate_password
 
@@ -22,9 +22,9 @@ module Blinkbox::Zuul::Server
       end
     end
 
-    def self.authenticate(email, password)
-      return nil if email.nil? || password.nil?
-      user = User.find_by_email(email)
+    def self.authenticate(username, password)
+      return nil if username.nil? || password.nil?
+      user = User.find_by_username(username)
       if user && SCrypt::Password.new(user.password_hash) == password then user else nil end
     end
 

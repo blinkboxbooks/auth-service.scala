@@ -16,8 +16,8 @@ end
 
 def include_client_credentials
   expect(@credentials).to_not be_nil
-  @credentials["client_id"] = @client_response["client_id"]
-  @credentials["client_secret"] = @client_response["client_secret"]
+  @credentials["client_id"] = @client_info["client_id"]
+  @credentials["client_secret"] = @client_info["client_secret"]
 end
 
 def submit_authentication_request

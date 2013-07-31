@@ -25,6 +25,8 @@ def get_request(uri_or_path)
   rescue HTTParty::ResponseError
   end
   @response = HttpCapture::RESPONSES.last
+  # File.open("last_response.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
+  @response
 end
 
 def post_www_form_request(uri_or_path, body)
@@ -40,6 +42,8 @@ def post_www_form_request(uri_or_path, body)
   rescue HTTParty::ResponseError
   end
   @response = HttpCapture::RESPONSES.last
+  # File.open("last_response.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
+  @response
 end
 
 def construct_auth_server_uri(uri_or_path)

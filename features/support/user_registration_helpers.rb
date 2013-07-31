@@ -18,14 +18,29 @@ end
 
 def validate_user_token_response(refresh_token = :required)
   expect(@user_response.status).to eq(200)
-  token_info = MultiJson.load(@response.body)
-  expect(token_info["access_token"]).to_not be_nil
-  expect(token_info["token_type"]).to match(/\Abearer\Z/i)
-  expect(token_info["expires_in"]).to be > 0
-  expect(token_info["refresh_token"]).to_not be_nil if refresh_token == :required
+  @user_info = MultiJson.load(@response.body)
+  expect(@user_info["access_token"]).to_not be_nil
+  expect(@user_info["token_type"]).to match(/\Abearer\Z/i)
+  expect(@user_info["expires_in"]).to be > 0
+  expect(@user_info["refresh_token"]).to_not be_nil if refresh_token == :required
 
   # merge so that we keep the old refresh token if a new one wasn't issued
-  (@user_tokens ||= {}).merge!(token_info)
+  (@user_tokens ||= {}).merge!(@user_info)
+end
+
+def verify_user_information_response(format = :complete)
+  expect(@user_response.status).to eq(200)
+  @user_info = MultiJson.load(@response.body)
+  expect(@user_info["user_id"]).to_not be_nil
+  expect(@user_info["user_uri"]).to_not be_nil
+  expect(@user_info["user_username"]).to eq(@user_registration_details["username"])
+  expect(@user_info["user_first_name"]).to eq(@user_registration_details["first_name"])
+  expect(@user_info["user_last_name"]).to eq(@user_registration_details["last_name"])
+  if format == :complete
+    expect(@user_info["user_allow_marketing_communications"]).to eq(@user_registration_details["allow_marketing_communications"])
+  else
+    expect(@user_info["user_allow_marketing_communications"]).to be_nil
+  end
 end
 
 def register_new_user

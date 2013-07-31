@@ -42,13 +42,13 @@ ActiveRecord::Schema.define(version: 4) do
   create_table "users", force: true do |t|
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "username",                       limit: 120
     t.string   "first_name",                     limit: 50
     t.string   "last_name",                      limit: 50
-    t.string   "email",                          limit: 120
     t.string   "password_hash",                  limit: 128
     t.boolean  "allow_marketing_communications"
   end
 
-  add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
+  add_index "users", ["username"], name: "index_users_on_username", unique: true, using: :btree
 
 end

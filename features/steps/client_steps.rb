@@ -17,20 +17,20 @@ end
 When(/^I submit (?:a|the) client registration request$/, :submit_client_registration_request)
 
 When(/^I submit the client information request$/) do
-  get_request(@client_response["client_uri"])
+  get_request(@client_info["client_uri"])
 end
 
-Then(/^the response contains client information, (including a|excluding the) client secret$/) do |including|
+Then(/^(?:the response|it) contains client information, (including a|excluding the) client secret$/) do |including|
   client_secret_expectation = including == "including a" ? :required : :prohibited
   verify_client_information_response(client_secret: client_secret_expectation)
 end
 
 Then(/^the client name should match the provided name$/) do
-  expect(@client_response["client_name"]).to eq(@client_registration_details["client_name"])
+  expect(@client_info["client_name"]).to eq(@client_registration_details["client_name"])
 end
 
 Then(/^a client name should have been created for me$/) do
-  expect(@client_response["client_name"]).to_not be_nil
+  expect(@client_info["client_name"]).to_not be_nil
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do

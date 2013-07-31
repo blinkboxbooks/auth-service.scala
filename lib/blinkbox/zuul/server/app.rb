@@ -20,7 +20,8 @@ module Blinkbox::Zuul::Server
     REFRESH_TOKEN_LIFETIME_IN_DAYS = 90.0
     MAX_CLIENTS_PER_USER = 12
 
-    require_user_authorization_for %r{/clients(?:/.*)?}
+    require_user_authorization_for %r{^/clients(?:/.*)?}
+    require_user_authorization_for %r{^/users(?:/.*)?}
 
     after do
       # none of the responses from the auth server should be cached
@@ -60,13 +61,18 @@ module Blinkbox::Zuul::Server
       handle_token_request(params)
     end
 
+    get "/users/:user_id", provides: :json do |user_id|
+      halt 403, "Access denied" unless user_id == current_user.id.to_s
+      json build_user_info(current_user)
+    end
+
     private
 
     def return_client_information(client, include_client_secret = false)
       client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-        "client_name" => client.name,
-        "client_uri" => "#{base_url}/clients/#{client.id}"
+        "client_uri" => "#{base_url}/clients/#{client.id}",
+        "client_name" => client.name
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
       json client_info
@@ -91,7 +97,7 @@ module Blinkbox::Zuul::Server
       user = User.new do |u|
         u.first_name = params[:first_name]
         u.last_name = params[:last_name]
-        u.email = params[:username]
+        u.username = params[:username]
         u.password = params[:password]
         u.allow_marketing_communications = params[:allow_marketing_communications]
       end
@@ -99,7 +105,7 @@ module Blinkbox::Zuul::Server
       begin
         user.save!
       rescue ActiveRecord::RecordInvalid => e
-        if user.errors[:email].include?(user.errors.generate_message(:email, :taken)) 
+        if user.errors[:username].include?(user.errors.generate_message(:username, :taken)) 
           invalid_request "username_already_taken", e.message
         else
           invalid_request e.message
@@ -110,10 +116,10 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_password_flow(params)
-      email, password = params[:username], params[:password]
-      invalid_request "The username and password are required for this grant type" if email.nil? || password.nil?
+      username, password = params[:username], params[:password]
+      invalid_request "The username and password are required for this grant type" if username.nil? || password.nil?
 
-      user = User.authenticate(email, password)
+      user = User.authenticate(username, password)
       invalid_grant "The username and/or password is incorrect." if user.nil?
 
       client = authenticate_client(params, user)
@@ -173,7 +179,21 @@ module Blinkbox::Zuul::Server
         "expires_in" => ACCESS_TOKEN_LIFETIME_IN_SECONDS
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
-      json token_info
+      json token_info.merge(build_user_info(refresh_token.user, format: :basic))
+    end
+
+    def build_user_info(user, format = :complete)
+      user_info = {
+        "user_id" => "urn:blinkbox:zuul:user:#{user.id}",
+        "user_uri" => "#{base_url}/users/#{user.id}",
+        "user_username" => user.username,
+        "user_first_name" => user.first_name,
+        "user_last_name" => user.last_name        
+      }
+      if format == :complete
+        user_info["user_allow_marketing_communications"] = user.allow_marketing_communications
+      end
+      user_info
     end
 
     def build_access_token(refresh_token)

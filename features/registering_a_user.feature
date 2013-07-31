@@ -4,13 +4,12 @@ Feature: Registration
   I want to be able to register an account
   So that I can use services that require my identity
   
-  @wip
   Scenario: Registering with all the required information
     Given I have provided valid registration details
     When I submit the registration request
     Then the response contains an access token and a refresh token
-    # TODO: Check the details match when we have a user info request method
-    And the response is not cacheable
+    And it contains basic user information matching the registration details
+    And it is not cacheable
 
   Scenario: Registering with a name containing international characters
     Given I have provided valid registration details
@@ -18,15 +17,15 @@ Feature: Registration
     And my last name is "中国扬声器可以阅读本"
     When I submit the registration request
     Then the response contains an access token and a refresh token
-    # TODO: Check the details match when we have a user info request method
-    And the response is not cacheable
+    And it contains basic user information matching the registration details
+    And it is not cacheable
   
   Scenario: Registering without allowing marketing communications
     Given I have provided valid registration details
     And I have not allowed marketing communications
     When I submit the registration request
     Then the response contains an access token and a refresh token
-    # TODO: Check the details match when we have a user info request method
+    And it contains basic user information matching the registration details
     And the response is not cacheable
 
   Scenario: Trying to register without accepting the terms and conditions

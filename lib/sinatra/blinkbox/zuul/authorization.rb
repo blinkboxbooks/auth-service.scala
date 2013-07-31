@@ -20,7 +20,7 @@ module Sinatra
           before url_pattern do
             user_id = request.env["zuul.user_id"]
             request.env["zuul.user"] = ::Blinkbox::Zuul::Server::User.find_by_id(user_id) if user_id
-            halt 401, "User authorisation is required: #{request.env["zuul.user_id"]}" if request.env["zuul.user"].nil?
+            halt 401, "Authentication required" if request.env["zuul.user"].nil?
           end
         end
 
