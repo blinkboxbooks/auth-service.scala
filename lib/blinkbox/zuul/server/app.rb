@@ -18,7 +18,6 @@ module Blinkbox::Zuul::Server
     ACCESS_TOKEN_LIFETIME_IN_SECONDS = 1800
     ACCESS_TOKEN_LIFETIME_IN_DAYS = ACCESS_TOKEN_LIFETIME_IN_SECONDS / (24.0 * 3600.0)
     REFRESH_TOKEN_LIFETIME_IN_DAYS = 90.0
-    MAX_CLIENTS_PER_USER = 12
 
     require_user_authorization_for %r{^/clients(?:/.*)?}
     require_user_authorization_for %r{^/users(?:/.*)?}
@@ -31,11 +30,8 @@ module Blinkbox::Zuul::Server
     end
 
     post "/clients", provides: :json do
-      if current_user.clients.count >= MAX_CLIENTS_PER_USER
-        halt 403, json({ 
-          "error" => "client_limit_reached", 
-          "error_description" => "The allowed number of clients (#{MAX_CLIENTS_PER_USER}) are already registered" 
-        })
+      if current_user.clients.count >= Client::MAX_CLIENTS_PER_USER
+        invalid_request "client_limit_reached", "Max clients (#{Client::MAX_CLIENTS_PER_USER}) already registered"
       end
 
       client = Client.new do |c|
@@ -43,7 +39,13 @@ module Blinkbox::Zuul::Server
         c.user = current_user
         c.client_secret = generate_opaque_token
       end
-      client.save!
+
+      begin
+        client.save!
+      rescue => e
+        invalid_request e.message
+      end
+
       json build_client_information(client, include_client_secret: true)
     end
 

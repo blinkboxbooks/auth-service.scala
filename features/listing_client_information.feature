@@ -1,4 +1,4 @@
-@clients @client_info @wip
+@clients @client_info
 Feature: Listing client information
   As a user
   I want to be able to list information about all my clients

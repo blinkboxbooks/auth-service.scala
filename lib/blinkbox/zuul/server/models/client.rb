@@ -1,6 +1,8 @@
 module Blinkbox::Zuul::Server
   class Client < ActiveRecord::Base
 
+    MAX_CLIENTS_PER_USER = 12
+
     belongs_to :user
     has_one :refresh_token
 

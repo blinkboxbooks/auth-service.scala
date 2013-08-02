@@ -41,9 +41,18 @@ Feature: Registering a client
     When I submit a client registration request
     Then the request fails because I am unauthorised
 
+  Scenario: Trying to register a client with an empty name
+    Not providing a name is OK because it's optional, but providing an empty name means that an
+    invalid name has been provided, which should return an error.
+    Given I have provided my access token
+    And I have provided a client name of ""
+    When I submit the client registration request
+    Then the request fails because it is invalid
+
   Scenario: Trying to register more than the allowed number of clients
     Given I have provided my access token
     And I have registered 12 clients
     When I submit a client registration request
-    Then the request fails because this is forbidden
+    Then the request fails because it is invalid
+    And the reason is that the client limit has been reached
 
