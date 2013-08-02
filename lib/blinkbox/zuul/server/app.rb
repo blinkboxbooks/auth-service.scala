@@ -44,13 +44,18 @@ module Blinkbox::Zuul::Server
         c.client_secret = generate_opaque_token
       end
       client.save!
-      return_client_information(client, include_client_secret: true)
+      json build_client_information(client, include_client_secret: true)
+    end
+
+    get "/clients", provides: :json do
+      client_infos = current_user.clients.map { |client| build_client_information(client) }
+      json({ "clients" => client_infos })
     end
 
     get "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
-      invalid_client "You are not authorised to use this client." unless client.user == current_user
-      return_client_information(client)
+      halt 404 if client.nil? || client.user != current_user
+      json build_client_information(client)
     end
 
     get "/oauth2/token", provides: :json do
@@ -62,21 +67,11 @@ module Blinkbox::Zuul::Server
     end
 
     get "/users/:user_id", provides: :json do |user_id|
-      halt 403, "Access denied" unless user_id == current_user.id.to_s
+      halt 404 unless user_id == current_user.id.to_s
       json build_user_info(current_user)
     end
 
     private
-
-    def return_client_information(client, include_client_secret = false)
-      client_info = {
-        "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-        "client_uri" => "#{base_url}/clients/#{client.id}",
-        "client_name" => client.name
-      }
-      client_info["client_secret"] = client.client_secret if include_client_secret
-      json client_info
-    end
 
     def handle_token_request(params)
       case params[:grant_type]
@@ -180,6 +175,16 @@ module Blinkbox::Zuul::Server
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       json token_info.merge(build_user_info(refresh_token.user, format: :basic))
+    end
+
+    def build_client_information(client, include_client_secret = false)
+      client_info = {
+        "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
+        "client_uri" => "#{base_url}/clients/#{client.id}",
+        "client_name" => client.name
+      }
+      client_info["client_secret"] = client.client_secret if include_client_secret
+      client_info
     end
 
     def build_user_info(user, format = :complete)

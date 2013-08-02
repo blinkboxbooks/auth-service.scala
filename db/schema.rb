@@ -27,6 +27,8 @@ ActiveRecord::Schema.define(version: 4) do
     t.string   "client_secret", limit: 50
   end
 
+  add_index "clients", ["user_id"], name: "index_clients_on_user_id", using: :btree
+
   create_table "refresh_tokens", force: true do |t|
     t.datetime "created_at"
     t.datetime "updated_at"

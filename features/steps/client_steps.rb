@@ -16,13 +16,28 @@ end
 
 When(/^I submit (?:a|the) client registration request$/, :submit_client_registration_request)
 
-When(/^I submit the client information request$/) do
+When(/^I submit a client information request for the current client$/) do
   get_request(@client_info["client_uri"])
+end
+
+When(/^I submit a client information request for a nonexistent client$/) do
+  nonexistent_client_id = @client_info["client_id"][/\d+$/].to_i + 100
+  get_request("/clients/#{nonexistent_client_id}")
+end
+
+When(/^I submit a client information request for all my clients$/) do
+  get_request("/clients")
 end
 
 Then(/^(?:the response|it) contains client information, (including a|excluding the) client secret$/) do |including|
   client_secret_expectation = including == "including a" ? :required : :prohibited
   verify_client_information_response(client_secret: client_secret_expectation)
+end
+
+Then(/^(?:the response|it) contains a list of (#{CAPTURE_INTEGER}) client's information(?:, excluding the client secret)?$/) do |count|
+  client_list = MultiJson.load(@response.body)
+  expect(client_list["clients"]).to be_instance_of(Array)
+  # TODO: Need to verify the client information looks correct - needs tests to track all clients for user
 end
 
 Then(/^the client name should match the provided name$/) do

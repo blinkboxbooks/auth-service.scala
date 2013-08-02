@@ -21,6 +21,7 @@ end
 
 def register_new_client
   add_access_token_request_header
+  generate_client_registration_details
   submit_client_registration_request
   verify_client_information_response
 end
