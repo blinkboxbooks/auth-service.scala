@@ -21,3 +21,7 @@ end
 Then(/^the request fails because this is forbidden$/) do
   expect(@response.status).to eq(403)
 end
+
+Then(/^the request fails because (?:.+) was not found$/) do
+  expect(@response.status).to eq(404)
+end

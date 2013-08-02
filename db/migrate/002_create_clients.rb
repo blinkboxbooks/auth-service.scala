@@ -9,6 +9,7 @@ class CreateClients < ActiveRecord::Migration
       t.string :name, limit: 50
       t.string :client_secret, limit: 50
     end
+    add_index :clients, :user_id
   end
 
   def self.down
