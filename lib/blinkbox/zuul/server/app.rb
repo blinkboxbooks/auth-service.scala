@@ -2,7 +2,7 @@ require "multi_json"
 require "sandal"
 require "scrypt"
 
-require "rack/blinkbox/zuul/token_decoder"
+require "rack/blinkbox/zuul/tokens"
 require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/blinkbox/zuul/authorization"
