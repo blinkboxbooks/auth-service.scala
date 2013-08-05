@@ -1,21 +1,21 @@
-@users @user_info
+@users @user_info @wip
 Feature: Getting a user's information
-  As an application
-  I want to be able to get information about the authenticated user
-  So that I can use and display their details
+  As a user
+  I want to be able to get information about myself
+  So that I can check whether my details are up to date
 
   Background:
     Given I have registered an account
 
   Scenario: Getting user information
     Given I have provided my access token
-    When I submit a user information request for the current user
-    Then the response contains complete user information matching the registration details
+    When I submit a user information request for myself
+    Then the response contains complete user information matching my details
     And it is not cacheable
 
   Scenario: Trying to get user information without authorisation
     Given I have not provided my access token
-    When I submit a user information request for the current user
+    When I submit a user information request for myself
     Then the request fails because I am unauthorised
 
   Scenario: Trying to get user information for a nonexistent user

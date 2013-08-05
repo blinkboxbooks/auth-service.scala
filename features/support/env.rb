@@ -9,5 +9,18 @@ module KnowsAboutTheEnvironment
     }
   end
 end
-
 World(KnowsAboutTheEnvironment)
+
+module KnowsAboutResponses
+  def last_response
+    HttpCapture::RESPONSES.last
+  end
+  def last_response_json
+    MultiJson.load(HttpCapture::RESPONSES.last.body)
+  end
+end
+World(KnowsAboutResponses)
+
+Before do
+  $zuul = ZuulClient.new(servers[:auth])
+end

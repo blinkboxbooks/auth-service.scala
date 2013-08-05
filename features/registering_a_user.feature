@@ -1,4 +1,4 @@
-@users @registration @user_registration
+@users @registration @user_registration @wip
 Feature: Registration
   As a user
   I want to be able to register an account
@@ -8,7 +8,7 @@ Feature: Registration
     Given I have provided valid registration details
     When I submit the registration request
     Then the response contains an access token and a refresh token
-    And it contains basic user information matching the registration details
+    And it contains basic user information matching my details
     And it is not cacheable
 
   Scenario: Registering with a name containing international characters
@@ -17,7 +17,7 @@ Feature: Registration
     And my last name is "中国扬声器可以阅读本"
     When I submit the registration request
     Then the response contains an access token and a refresh token
-    And it contains basic user information matching the registration details
+    And it contains basic user information matching my details
     And it is not cacheable
   
   Scenario: Registering without allowing marketing communications
@@ -25,7 +25,7 @@ Feature: Registration
     And I have not allowed marketing communications
     When I submit the registration request
     Then the response contains an access token and a refresh token
-    And it contains basic user information matching the registration details
+    And it contains basic user information matching my details
     And the response is not cacheable
 
   Scenario: Trying to register without accepting the terms and conditions

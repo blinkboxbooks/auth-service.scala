@@ -17,8 +17,8 @@ def submit_user_registration_request
 end
 
 def validate_user_token_response(refresh_token = :required)
-  expect(@user_response.status).to eq(200)
-  @user_info = MultiJson.load(@response.body)
+  expect(last_response.status).to eq(200)
+  @user_info = MultiJson.load(last_response.body)
   expect(@user_info["access_token"]).to_not be_nil
   expect(@user_info["token_type"]).to match(/\Abearer\Z/i)
   expect(@user_info["expires_in"]).to be > 0
@@ -28,16 +28,16 @@ def validate_user_token_response(refresh_token = :required)
   (@user_tokens ||= {}).merge!(@user_info)
 end
 
-def verify_user_information_response(format = :complete)
-  expect(@user_response.status).to eq(200)
-  @user_info = MultiJson.load(@response.body)
+def verify_user_information_response(format = :complete, user = @me)
+  expect(last_response.status).to eq(200)
+  @user_info = MultiJson.load(last_response.body)
   expect(@user_info["user_id"]).to_not be_nil
   expect(@user_info["user_uri"]).to_not be_nil
-  expect(@user_info["user_username"]).to eq(@user_registration_details["username"])
-  expect(@user_info["user_first_name"]).to eq(@user_registration_details["first_name"])
-  expect(@user_info["user_last_name"]).to eq(@user_registration_details["last_name"])
+  expect(@user_info["user_username"]).to eq(user.username)
+  expect(@user_info["user_first_name"]).to eq(user.first_name)
+  expect(@user_info["user_last_name"]).to eq(user.last_name)
   if format == :complete
-    expect(@user_info["user_allow_marketing_communications"]).to eq(@user_registration_details["allow_marketing_communications"])
+    expect(@user_info["user_allow_marketing_communications"]).to eq(user.allow_marketing_communications)
   else
     expect(@user_info["user_allow_marketing_communications"]).to be_nil
   end
