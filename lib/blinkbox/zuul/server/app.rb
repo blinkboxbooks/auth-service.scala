@@ -2,7 +2,7 @@ require "multi_json"
 require "sandal"
 require "scrypt"
 
-require "rack/blinkbox/zuul/token_decoder"
+require "rack/blinkbox/zuul/tokens"
 require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/blinkbox/zuul/authorization"
@@ -14,10 +14,6 @@ module Blinkbox::Zuul::Server
     helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
     register Sinatra::Blinkbox::Zuul::Authorization
-
-    ACCESS_TOKEN_LIFETIME_IN_SECONDS = 1800
-    ACCESS_TOKEN_LIFETIME_IN_DAYS = ACCESS_TOKEN_LIFETIME_IN_SECONDS / (24.0 * 3600.0)
-    REFRESH_TOKEN_LIFETIME_IN_DAYS = 90.0
 
     require_user_authorization_for %r{^/clients(?:/.*)?}
     require_user_authorization_for %r{^/users(?:/.*)?}
@@ -139,7 +135,7 @@ module Blinkbox::Zuul::Server
         invalid_client "Your client is not authorised to use this refresh token."
       end
 
-      refresh_token.expires_at = DateTime.now + REFRESH_TOKEN_LIFETIME_IN_DAYS
+      refresh_token.extend_lifetime
       issue_access_token(refresh_token)
     end
 
@@ -161,19 +157,18 @@ module Blinkbox::Zuul::Server
         rt.user = user
         rt.client = client
         rt.token = generate_opaque_token
-        rt.expires_at = DateTime.now + REFRESH_TOKEN_LIFETIME_IN_DAYS
       end
       issue_access_token(refresh_token, include_refresh_token: true)
     end
 
     def issue_access_token(refresh_token, include_refresh_token = false)
-      refresh_token.access_token = AccessToken.new(expires_at: DateTime.now + ACCESS_TOKEN_LIFETIME_IN_DAYS)
+      refresh_token.access_token = AccessToken.new
       refresh_token.save!
 
       token_info = {
         "access_token" => build_access_token(refresh_token),
         "token_type" => "bearer",
-        "expires_in" => ACCESS_TOKEN_LIFETIME_IN_SECONDS
+        "expires_in" => AccessToken::LIFETIME_IN_SECONDS
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       json token_info.merge(build_user_info(refresh_token.user, format: :basic))
