@@ -5,7 +5,7 @@ Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
   (1..count).each { register_new_client }
 end
 
-Given(/^I have provided a client name(?: of "(.+)")?$/) do |name|
+Given(/^I have provided a client name(?: of "(.*)")?$/) do |name|
   name ||= "My Test Client"
   generate_client_registration_details(name)
 end
@@ -46,6 +46,7 @@ end
 
 Then(/^a client name should have been created for me$/) do
   expect(@client_info["client_name"]).to_not be_nil
+  expect(@client_info["client_name"]).to_not be_empty
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do
@@ -53,4 +54,8 @@ Then(/^the response indicates that the client credentials are incorrect$/) do
   expect(@response["WWW-Authenticate"]).to_not be_nil if @response.status == 401
   @response_json = MultiJson.load(@response.body)
   expect(@response_json["error"]).to eq("invalid_client")
+end
+
+Then(/^the reason is that the client limit has been reached$/) do
+  expect(@response_json["error_reason"]).to eq("client_limit_reached")
 end
