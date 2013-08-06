@@ -1,5 +1,7 @@
 class TestUser
 
+  ANONYMOUS = TestUser.new
+
   attr_accessor :username,
                 :password,
                 :first_name, 
@@ -12,17 +14,20 @@ class TestUser
                 :id,
                 :local_id
 
+  attr_accessor :clients
+
   def initialize
+    @clients = []
+  end
+
+  def generate_details
     @first_name = "John"
     @last_name = "Doe"
     @username = random_email
     @password = random_password
     @accepted_terms_and_conditions = true
     @allow_marketing_communications = true
-  end
-
-  def get_info
-    $zuul.get_user_info(@local_id)
+    self
   end
 
   def register
@@ -34,7 +39,13 @@ class TestUser
       @id = token_info["user_id"]
       @local_id = @id[/\d+$/]
     end
-    self
+    response
+  end
+
+  def register_client(client)
+    response = client.register(@access_token)
+    @clients << client if response.status == 200
+    response
   end
 
 end

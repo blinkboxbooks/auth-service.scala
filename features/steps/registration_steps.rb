@@ -1,33 +1,35 @@
 
 Given(/^I have registered an account$/) do
-  @me = TestUser.new.register
+  @me = TestUser.new.generate_details
+  @me.register
+  expect(last_response.status).to eq(200)
 end
 
-Given(/^I have provided valid registration details$/) do
-  @me = TestUser.new
+When(/^I provide valid registration details$/) do
+  @me = TestUser.new.generate_details
 end 
 
-Given(/^I have not accepted the terms and conditions$/) do
+When(/^I have not accepted the terms and conditions$/) do
   @me.accepted_terms_and_conditions = false
 end
 
-Given(/^I have not allowed marketing communications$/) do
+When(/^I have not allowed marketing communications$/) do
   @me.allow_marketing_communications = false
 end
 
-Given(/^I have provided valid registration details, except (.+) which is missing$/) do |name|
-  @me ||= TestUser.new  
+When(/^I provide valid registration details, except (.+) which is missing$/) do |name|
+  @me ||= TestUser.new.generate_details
   method_name = "#{oauth_param_name(name)}="
   @me.send(method_name, nil)
 end
 
-Given(/^I have provided valid registration details, except (.+) which is "(.*)"$/) do |name, value|
-  @me ||= TestUser.new  
+When(/^I provide valid registration details, except (.+) which is "(.*)"$/) do |name, value|
+  @me ||= TestUser.new.generate_details
   method_name = "#{oauth_param_name(name)}="
   @me.send(method_name, value)
 end
 
-Given(/^my (.+) is "(.+)"$/) do |name, value|
+When(/^my (.+) is "(.+)"$/) do |name, value|
   method_name = "#{oauth_param_name(name)}="
   @me.send(method_name, value)
 end

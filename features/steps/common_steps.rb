@@ -3,7 +3,9 @@ Given(/^I have (not )?provided my access token$/) do |no_token|
   $zuul.access_token = no_token ? nil : @me.access_token
 end
 
-Given(/^I have provided an incorrect access token$/, :add_invalid_access_token_request_header)
+Given(/^I have provided an incorrect access token$/) do
+  $zuul.access_token = "not.a.valid.access.token"
+end
 
 Then(/^the response contains an access token and a refresh token$/, :validate_user_token_response)
 Then(/^the response contains an access token$/) do

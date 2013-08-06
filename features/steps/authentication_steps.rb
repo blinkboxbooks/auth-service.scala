@@ -22,7 +22,7 @@ Given(/^the email address is different from the one I used to register$/) do
 end
 
 Given(/^the email address is in a different case to the one I used to register$/) do
-  @credentials["username"] = @credentials["username"].swapcase
+  @credentials["username"] = @me.username.swapcase
 end
 
 Given(/^I have not provided my (password|client secret)$/) do |name|
@@ -39,14 +39,17 @@ Given(/^I have provided an incorrect (password|client secret)$/) do |name|
 end
 
 Given(/^I have provided another user's client credentials$/) do
-  register_new_user
-  register_new_client
-  include_client_credentials
+  # TODO: Should this setup of other user/client be moved into 'Given' steps?
+  other_user = TestUser.new.generate_details
+  other_user.register
+  other_client = TestClient.new.generate_details
+  other_user.register_client(other_client)
+  include_client_credentials(other_client)
 end
 
-Given(/^I have provided my refresh token?$/, :use_refresh_token_credentials) 
+Given(/^I provide my refresh token?$/, :use_refresh_token_credentials) 
 
-Given(/^I have provided my refresh token and client credentials$/) do 
+Given(/^I provide my refresh token and client credentials$/) do 
   use_refresh_token_credentials
   include_client_credentials
 end
@@ -61,20 +64,18 @@ Given(/^I have provided an incorrect refresh token$/) do
   @credentials["refresh_token"] = random_password
 end
 
-Given(/^I have bound my refresh token to a client$/) do  
-  register_new_client
+Given(/^I have bound my refresh token to my client$/) do  
   use_refresh_token_credentials
   include_client_credentials
-  submit_authentication_request
+  $zuul.authenticate(@credentials)
   validate_user_token_response(refresh_token: :optional)
 end
 
 When(/^I submit the (?:authentication|access token refresh) request$/) do
-  submit_authentication_request
+  $zuul.authenticate(@credentials)
 end
 
 Then(/^the response indicates that my (?:credentials are|refresh token is) incorrect$/) do
-  expect(@response.status).to eq(400)
-  @response_json = MultiJson.load(@response.body)
-  expect(@response_json["error"]).to eq("invalid_grant")
+  expect(last_response.status).to eq(400)
+  expect(last_response_json["error"]).to eq("invalid_grant")
 end
