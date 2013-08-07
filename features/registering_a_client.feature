@@ -22,7 +22,7 @@ Feature: Registering a client
     And it is not cacheable
 
   Scenario: Registering a client without a name
-    When I have not provided a client name
+    When I do not provide a client name
     And I submit the client registration request
     Then the response contains client information, including a client secret
     And a client name should have been created for me
@@ -42,7 +42,7 @@ Feature: Registering a client
   Scenario: Trying to register a client with a name that is too long
     The client name can't be more than 50 characters.
     When I provide a client name of "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-    When I submit the client registration request
+    And I submit the client registration request
     Then the request fails because it is invalid
 
   Scenario: Trying to register more than the allowed number of clients

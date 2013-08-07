@@ -5,16 +5,22 @@ Given(/^I have registered a client$/) do
   expect(last_response.status).to eq(200)
 end
 
+Given(/^another user has registered a client$/) do
+  @your_client = TestClient.new.generate_details
+  @you.register_client(@your_client)
+  expect(last_response.status).to eq(200)
+end
+
 Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
   (1..count).each { @me.register_client(TestClient.new.generate_details) }
 end
 
-Given(/^I provide a client name(?: of "(.*)")?$/) do |name|
+When(/^I provide a client name(?: of "(.*)")?$/) do |name|
   @my_client ||= TestClient.new.generate_details
   @my_client.name = name if name
 end
 
-Given(/^I have not provided a client name$/) do
+When(/^I do not provide a client name$/) do
   @my_client ||= TestClient.new.generate_details
   @my_client.name = nil
 end
@@ -25,26 +31,21 @@ When(/^I submit (?:a|the) client registration request(, without my access token)
   user.register_client(@my_client)
 end
 
-When(/^I submit a client information request for my client(, without my access token)?$/) do |no_token|
+When(/^I request client information for my client(, without my access token)?$/) do |no_token|
   access_token = @me.access_token unless no_token
   $zuul.get_client_info(@my_client.local_id, access_token)
 end
 
-When(/^I submit a client information request for a nonexistent client$/) do
+When(/^I request client information for a nonexistent client$/) do
   nonexistent_client_id = @my_client.local_id.to_i + 100
   $zuul.get_client_info(nonexistent_client_id, @me.access_token)
 end
 
-When(/^I submit a client information request for another user's client$/) do
-  # TODO: Should this setup of other user/client be moved into 'Given' steps?
-  other_user = TestUser.new.generate_details
-  other_user.register
-  other_client = TestClient.new.generate_details
-  other_user.register_client(other_client)
-  $zuul.get_client_info(other_client.local_id, @me.access_token)
+When(/^I request client information for the other user's client$/) do
+  $zuul.get_client_info(@your_client.local_id, @me.access_token)
 end
 
-When(/^I submit a client information request for all my clients(, without my access token)?$/) do |no_token|
+When(/^I request client information for all my clients(, without my access token)?$/) do |no_token|
   access_token = @me.access_token unless no_token
   $zuul.get_clients_info(access_token)
 end

@@ -8,42 +8,42 @@ Feature: Password authentication
     Given I have registered an account
 
   Scenario: Authenticating with valid credentials
-    Given I have provided my email address and password
-    When I submit the authentication request
+    When I provide my email address and password
+    And I submit the authentication request
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
 
   Scenario: Authentication with email address in a different case to the one used when registering
-    Given I have provided my email address and password
+    When I provide my email address and password
     But the email address is in a different case to the one I used to register
-    When I submit the authentication request
+    And I submit the authentication request
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable  
 
   Scenario: Trying to authenticate without a password
-    Given I have provided my email address
-    But I have not provided my password
-    When I submit the authentication request
+    When I provide my email address
+    But I do not provide my password
+    And I submit the authentication request
     Then the request fails because it is invalid
 
   Scenario: Trying to authenticate with an incorrect password
-    Given I have provided my email address and password
-    But I have provided an incorrect password
-    When I submit the authentication request
+    When I provide my email address and password
+    But I provide an incorrect password
+    And I submit the authentication request
     Then the response indicates that my credentials are incorrect
 
   Scenario: Trying to authenticate with an unregistered email address
-    Given I have provided my email address and password
+    When I provide my email address and password
     But the email address is different from the one I used to register
-    When I submit the authentication request
+    And I submit the authentication request
     Then the response indicates that my credentials are incorrect
 
   Scenario: Authenticating with valid credentials and client credentials
     Given I have registered a client
-    And I have provided my email address, password and client credentials
-    When I submit the authentication request
+    When I provide my email address, password and client credentials
+    And I submit the authentication request
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     # TODO: And it contains client information, excluding the client secret
@@ -51,20 +51,22 @@ Feature: Password authentication
 
   Scenario: Trying to authenticate with valid credentials but a missing client secret
     Given I have registered a client
-    And I have provided my email address, password and client credentials
-    But I have not provided my client secret
-    When I submit the authentication request
+    When I provide my email address, password and client credentials
+    But I do not provide my client secret
+    And I submit the authentication request
     Then the response indicates that the client credentials are incorrect
 
   Scenario: Trying to authenticate with valid credentials but an incorrect client secret
     Given I have registered a client
-    And I have provided my email address, password and client credentials
-    But I have provided an incorrect client secret
-    When I submit the authentication request
+    When I provide my email address, password and client credentials
+    But I provide an incorrect client secret
+    And I submit the authentication request
     Then the response indicates that the client credentials are incorrect
 
   Scenario: Trying to authenticate with valid credentials but another user's client credentials
-    Given I have provided my email address and password
-    But I have provided another user's client credentials
-    When I submit the authentication request
+    Given another user has registered an account
+    And another user has registered a client
+    When I provide my email address and password
+    But I provide the other user's client credentials
+    And I submit the authentication request
     Then the response indicates that the client credentials are incorrect

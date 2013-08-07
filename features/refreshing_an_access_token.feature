@@ -1,4 +1,4 @@
-@refresh_tokens
+@authentication @refresh_tokens @wip
 Feature: Refreshing an access token
   As a client application
   I want to be able to refresh an access token
@@ -8,26 +8,26 @@ Feature: Refreshing an access token
     Given I have registered an account
 
   Scenario: Refreshing an access token using a refresh token
-    Given I provide my refresh token
-    When I submit the access token refresh request
+    When I provide my refresh token
+    And I submit the access token refresh request
     Then the response contains an access token 
     And it contains basic user information matching my details
     And it is not cacheable
 
   Scenario: Trying to refresh an access token without a refresh token
-    Given I have not provided my refresh token
-    When I submit the access token refresh request
+    When I do not provide my refresh token
+    And I submit the access token refresh request
     Then the request fails because it is invalid
 
   Scenario: Trying to refresh an access token with an incorrect refresh token
-    Given I have provided an incorrect refresh token
-    When I submit the access token refresh request
+    When I provide an incorrect refresh token
+    And I submit the access token refresh request
     Then the response indicates that my refresh token is incorrect
 
   Scenario: Binding a refresh token to a client using client credentials
     Given I have registered a client
-    And I provide my refresh token and client credentials
-    When I submit the access token refresh request
+    When I provide my refresh token and client credentials
+    And I submit the access token refresh request
     Then the response contains an access token
     And it contains basic user information matching my details
     # TODO: And it contains client information, excluding the client secret
@@ -47,7 +47,7 @@ Feature: Refreshing an access token
     Given I have registered a client
     And I have bound my refresh token to my client
     When I provide my refresh token
-    But I have not provided my client credentials
+    But I do not provide my client credentials
     And I submit the access token refresh request
     Then the response indicates that the client credentials are incorrect
 

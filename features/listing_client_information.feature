@@ -8,16 +8,16 @@ Feature: Listing client information
     Given I have registered an account
 
   Scenario: Listing client information for no clients
-    When I submit a client information request for all my clients
+    When I request client information for all my clients
     Then the response contains a list of 0 client's information
     And it is not cacheable
 
   Scenario: Listing client information for multiple clients
     Given I have registered 3 clients
-    When I submit a client information request for all my clients
+    When I request client information for all my clients
     Then the response contains a list of 3 client's information, excluding the client secret
     And it is not cacheable
 
   Scenario: Trying to list client information without authorisation
-    When I submit a client information request for all my clients, without my access token
+    When I request client information for all my clients, without my access token
     Then the request fails because I am unauthorised
