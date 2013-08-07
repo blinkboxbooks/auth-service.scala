@@ -8,6 +8,7 @@ Feature: Listing client information
     Given I have registered an account
 
   Scenario: Listing client information for no clients
+    Given I have registered no clients
     When I request client information for all my clients
     Then the response contains a list of 0 client's information
     And it is not cacheable

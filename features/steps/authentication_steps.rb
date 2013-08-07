@@ -28,7 +28,7 @@ When(/^I do not provide my (password|client secret)$/) do |name|
   @credentials.delete(oauth_param_name(name))
 end
 
-When(/^I provide an incorrect (password|client secret)$/) do |name|
+When(/^the (password|client secret) is incorrect$/) do |name|
   @credentials[oauth_param_name(name)] = random_password
 end
 

@@ -24,6 +24,7 @@ Feature: Getting a client's information
   Scenario: Trying to get client information for another user's client
     For security reasons we don't distinguish between a client that doesn't exist and a client that 
     does exist but the user isn't allowed to access. In either case we say it was not found.
+    
     Given another user has registered an account
     And another user has registered a client
     When I request client information for the other user's client

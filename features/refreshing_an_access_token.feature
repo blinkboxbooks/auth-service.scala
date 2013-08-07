@@ -1,4 +1,4 @@
-@authentication @refresh_tokens @wip
+@authentication @refresh_tokens
 Feature: Refreshing an access token
   As a client application
   I want to be able to refresh an access token
@@ -33,7 +33,7 @@ Feature: Refreshing an access token
     # TODO: And it contains client information, excluding the client secret
     And it is not cacheable
 
-  Scenario: Refreshing an access using a refresh token that is bound to a client, with client credentials
+  Scenario: Refreshing an access token using a refresh token that is bound to a client, with client credentials
     Given I have registered a client
     And I have bound my refresh token to my client
     When I provide my refresh token and client credentials
@@ -43,7 +43,7 @@ Feature: Refreshing an access token
     # TODO: And it contains client information, excluding the client secret
     And it is not cacheable
 
-  Scenario: Trying to refresh an access using a refresh token that is bound to a client, without client credentials
+  Scenario: Trying to refresh an access token using a refresh token that is bound to a client, without client credentials
     Given I have registered a client
     And I have bound my refresh token to my client
     When I provide my refresh token

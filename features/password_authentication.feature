@@ -1,4 +1,4 @@
-@authentication @passwords
+@authentication @passwords @wip
 Feature: Password authentication
   As a user
   I want to be able to authenticate with my email address and password
@@ -30,7 +30,7 @@ Feature: Password authentication
 
   Scenario: Trying to authenticate with an incorrect password
     When I provide my email address and password
-    But I provide an incorrect password
+    But the password is incorrect
     And I submit the authentication request
     Then the response indicates that my credentials are incorrect
 
@@ -59,7 +59,7 @@ Feature: Password authentication
   Scenario: Trying to authenticate with valid credentials but an incorrect client secret
     Given I have registered a client
     When I provide my email address, password and client credentials
-    But I provide an incorrect client secret
+    But the client secret is incorrect
     And I submit the authentication request
     Then the response indicates that the client credentials are incorrect
 
