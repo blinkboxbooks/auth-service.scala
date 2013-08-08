@@ -23,6 +23,7 @@ module Blinkbox::Zuul::Server
       cache_control :no_store
       response["Date"] = response["Expires"] = Time.now.rfc822.to_s
       response["Pragma"] = "no-cache"
+      response['X-Application-Version'] = VERSION+'-'+COMMIT
     end
 
     post "/clients", provides: :json do
