@@ -1,4 +1,4 @@
-@authentication @passwords @wip
+@authentication @passwords
 Feature: Password authentication
   As a user
   I want to be able to authenticate with my email address and password

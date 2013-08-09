@@ -15,12 +15,12 @@ When(/^I provide valid registration details$/) do
   @me = TestUser.new.generate_details
 end 
 
-When(/^I have not accepted the terms and conditions$/) do
-  @me.accepted_terms_and_conditions = false
+When(/^I have( not)? accepted the terms and conditions$/) do |not_accepted|
+  @me.accepted_terms_and_conditions = !not_accepted
 end
 
-When(/^I have not allowed marketing communications$/) do
-  @me.allow_marketing_communications = false
+When(/^I have( not)? allowed marketing communications$/) do |not_allowed|
+  @me.allow_marketing_communications = !not_allowed
 end
 
 When(/^I provide valid registration details, except (.+) which is missing$/) do |name|

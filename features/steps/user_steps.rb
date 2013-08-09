@@ -5,7 +5,7 @@ When(/^I request user information for myself(, without my access token)?$/) do |
 end
 
 When(/^I request user information for a nonexistent user$/) do
-  nonexistent_user_id = @me.local_id.to_i + 100
+  nonexistent_user_id = @me.local_id.to_i + 1000
   $zuul.get_user_info(nonexistent_user_id, @me.access_token)
 end
 
@@ -14,17 +14,6 @@ When(/^I request user information for the other user$/) do
 end
 
 Then(/^(?:the response|it) contains (basic|complete) user information matching my details$/) do |format|
-  expect(last_response.status).to eq(200)
-  user_info = last_response_json
-  expect(user_info["user_id"]).to_not be_nil
-  expect(user_info["user_uri"]).to_not be_nil
-  expect(user_info["user_username"]).to eq(@me.username)
-  expect(user_info["user_first_name"]).to eq(@me.first_name)
-  expect(user_info["user_last_name"]).to eq(@me.last_name)
-  if format == "complete"
-    expect(user_info["user_allow_marketing_communications"]).to eq(@me.allow_marketing_communications)
-  else
-    expect(user_info["user_allow_marketing_communications"]).to be_nil
-  end
+  validate_user_information_response(format.to_sym)
 end
 

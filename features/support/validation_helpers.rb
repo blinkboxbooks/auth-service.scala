@@ -9,6 +9,21 @@ def verify_client_information_response(client_secret = :required)
   expect(client_info["client_secret"]).to be_nil if client_secret == :prohibited
 end
 
+def validate_user_information_response(format)
+  expect(last_response.status).to eq(200)
+  user_info = last_response_json
+  expect(user_info["user_id"]).to_not be_nil
+  expect(user_info["user_uri"]).to_not be_nil
+  expect(user_info["user_username"]).to eq(@me.username)
+  expect(user_info["user_first_name"]).to eq(@me.first_name)
+  expect(user_info["user_last_name"]).to eq(@me.last_name)
+  if format == :complete
+    expect(user_info["user_allow_marketing_communications"]).to eq(@me.allow_marketing_communications)
+  else
+    expect(user_info["user_allow_marketing_communications"]).to be_nil
+  end
+end
+
 def validate_user_token_response(refresh_token = :required)
   expect(last_response.status).to eq(200)
   token_info = last_response_json

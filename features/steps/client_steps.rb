@@ -12,7 +12,9 @@ Given(/^another user has registered a client$/) do
 end
 
 Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
-  (1..count).each { @me.register_client(TestClient.new.generate_details) }
+  count.times do
+    @me.register_client(TestClient.new.generate_details)
+  end
 end
 
 When(/^I provide a client name(?: of "(.*)")?$/) do |name|
@@ -37,7 +39,7 @@ When(/^I request client information for my client(, without my access token)?$/)
 end
 
 When(/^I request client information for a nonexistent client$/) do
-  nonexistent_client_id = @my_client.local_id.to_i + 100
+  nonexistent_client_id = @my_client.local_id.to_i + 1000
   $zuul.get_client_info(nonexistent_client_id, @me.access_token)
 end
 
@@ -58,7 +60,7 @@ end
 Then(/^(?:the response|it) contains a list of (#{CAPTURE_INTEGER}) client's information(?:, excluding the client secret)?$/) do |count|
   client_list = last_response_json
   expect(client_list["clients"]).to be_instance_of(Array)
-  # TODO: Need to verify the client information looks correct - needs tests to track all clients for user
+  # TODO: Need to verify the client information looks correct
 end
 
 Then(/^the client name should match the provided name$/) do
