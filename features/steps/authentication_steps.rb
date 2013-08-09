@@ -1,80 +1,66 @@
 
-Given(/^I have authenticated with my email address and password$/) do
-  use_username_and_password_credentials
-  submit_authentication_request
-  validate_user_token_response
+Given(/^I have bound my refresh token to my client$/) do  
+  use_refresh_token_credentials
+  include_client_credentials
+  $zuul.authenticate(@credentials)
+  expect(last_response.status).to eq(200)
 end
 
-Given(/^I have provided my email address$/) do
+When(/^I provide my email address( and password)?$/) do |with_password|
   use_username_and_password_credentials
-  @credentials.delete("password")
+  @credentials.delete("password") unless with_password
 end
 
-Given(/^I have provided my email address and password$/, :use_username_and_password_credentials)
-
-Given(/^I have provided my email address, password and client credentials$/) do
+When(/^I provide my email address, password and client credentials$/) do
   use_username_and_password_credentials
   include_client_credentials
 end
 
-Given(/^the email address is different from the one I used to register$/) do
+When(/^the email address is different from the one I used to register$/) do
   @credentials["username"] = random_email
 end
 
-Given(/^the email address is in a different case to the one I used to register$/) do
-  @credentials["username"] = @credentials["username"].swapcase
+When(/^the email address is in a different case to the one I used to register$/) do
+  @credentials["username"] = @me.username.swapcase
 end
 
-Given(/^I have not provided my (password|client secret)$/) do |name|
+When(/^I do not provide my (password|client secret)$/) do |name|
   @credentials.delete(oauth_param_name(name))
 end
 
-Given(/^I have not provided my client credentials$/) do
+When(/^the (password|client secret) is incorrect$/) do |name|
+  @credentials[oauth_param_name(name)] = random_password
+end
+
+When(/^I do not provide my client credentials$/) do
   @credentials.delete("client_id")
   @credentials.delete("client_secret")
 end
 
-Given(/^I have provided an incorrect (password|client secret)$/) do |name|
-  @credentials[oauth_param_name(name)] = random_password
+When(/^I provide the other user's client credentials$/) do
+  include_client_credentials(@your_client)
 end
 
-Given(/^I have provided another user's client credentials$/) do
-  register_new_user
-  register_new_client
-  include_client_credentials
-end
-
-Given(/^I have provided my refresh token?$/, :use_refresh_token_credentials) 
-
-Given(/^I have provided my refresh token and client credentials$/) do 
+When(/^I provide my refresh token( and client credentials)?$/) do |with_client_credentials|
   use_refresh_token_credentials
-  include_client_credentials
+  include_client_credentials if with_client_credentials
 end
 
-Given(/^I have not provided my refresh token$/) do
+When(/^I do not provide my refresh token$/) do
   use_refresh_token_credentials
   @credentials.delete("refresh_token")
 end
 
-Given(/^I have provided an incorrect refresh token$/) do  
+When(/^I provide an incorrect refresh token$/) do  
   use_refresh_token_credentials
   @credentials["refresh_token"] = random_password
 end
 
-Given(/^I have bound my refresh token to a client$/) do  
-  register_new_client
-  use_refresh_token_credentials
-  include_client_credentials
-  submit_authentication_request
-  validate_user_token_response(refresh_token: :optional)
-end
-
 When(/^I submit the (?:authentication|access token refresh) request$/) do
-  submit_authentication_request
+  $zuul.authenticate(@credentials)
 end
 
 Then(/^the response indicates that my (?:credentials are|refresh token is) incorrect$/) do
-  expect(@response.status).to eq(400)
-  @response_json = MultiJson.load(@response.body)
-  expect(@response_json["error"]).to eq("invalid_grant")
+  expect(last_response.status).to eq(400)
+  expect(last_response_json["error"]).to eq("invalid_grant")
 end
