@@ -39,15 +39,21 @@ class ZuulClient
     http_post "/oauth2/token", params
   end
 
+  def update_client(client, access_token)
+    params = {}
+    params[:name] = client.name if client.name_changed?
+    http_patch "/clients/#{client.local_id}", params, access_token
+  end
+
   def update_user(user, access_token)
     params = {}
-    params["username"] = user.username if user.username_changed?
-    params["password"] = user.password if user.password_changed?
-    params["first_name"] = user.first_name if user.first_name_changed?
-    params["last_name"] = user.last_name if user.last_name_changed?
-    params["accepted_terms_and_conditions"] = user.accepted_terms_and_conditions if user.accepted_terms_and_conditions_changed?
-    params["allow_marketing_communications"] = user.allow_marketing_communications if user.allow_marketing_communications_changed?
-    http_post "/users/#{user.local_id}", params, access_token
+    params[:username] = user.username if user.username_changed?
+    params[:password] = user.password if user.password_changed?
+    params[:first_name] = user.first_name if user.first_name_changed?
+    params[:last_name] = user.last_name if user.last_name_changed?
+    params[:accepted_terms_and_conditions] = user.accepted_terms_and_conditions if user.accepted_terms_and_conditions_changed?
+    params[:allow_marketing_communications] = user.allow_marketing_communications if user.allow_marketing_communications_changed?
+    http_patch "/users/#{user.local_id}", params, access_token
   end
 
   private
@@ -60,12 +66,20 @@ class ZuulClient
     HttpCapture::RESPONSES.last
   end
 
-  def http_post(uri, body_params, access_token = nil)    
+  def http_patch(uri, body_params, access_token = nil)
+    http_send(:patch, uri, body_params, access_token)
+  end
+
+  def http_post(uri, body_params, access_token = nil)
+    http_send(:post, uri, body_params, access_token)
+  end
+
+  def http_send(verb, uri, body_params, access_token = nil)    
     headers = { "Accept" => "application/json", "Content-Type" => "application/x-www-form-urlencoded" }
     headers["Authorization"] = "Bearer #{access_token}" if access_token
     body_params.reject! { |k, v| v.nil? }
     body_params = URI.encode_www_form(body_params) unless body_params.is_a?(String)
-    self.class.post(uri.to_s, headers: headers, body: body_params)  
+    self.class.send(verb, uri.to_s, headers: headers, body: body_params)  
     # File.open("last_response.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
     HttpCapture::RESPONSES.last
   end

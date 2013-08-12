@@ -42,18 +42,33 @@ module Blinkbox::Zuul::Server
         invalid_request e.message
       end
 
-      json build_client_information(client, include_client_secret: true)
+      json build_client_info(client, include_client_secret: true)
     end
 
     get "/clients", provides: :json do
-      client_infos = current_user.clients.map { |client| build_client_information(client) }
+      client_infos = current_user.clients.map { |client| build_client_info(client) }
       json({ "clients" => client_infos })
     end
 
     get "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user
-      json build_client_information(client)
+      json build_client_info(client)
+    end
+
+    patch "/clients/:client_id", provides: :json do |client_id|
+      client = Client.find_by_id(client_id)
+      halt 404 if client.nil? || client.user != current_user
+
+      updateable = ["name"]
+      updates = params.select { |k, v| updateable.include?(k) }
+      begin
+        client.update_attributes!(updates)
+      rescue => e
+        invalid_request e.message
+      end
+
+      json build_client_info(client)
     end
 
     get "/oauth2/token", provides: :json do
@@ -69,7 +84,7 @@ module Blinkbox::Zuul::Server
       json build_user_info(current_user)
     end
 
-    post "/users/:user_id", provides: :json do |user_id|
+    patch "/users/:user_id", provides: :json do |user_id|
       halt 404 unless user_id == current_user.id.to_s
       invalid_request "Cannot change acceptance of terms and conditions" if params["accepted_terms_and_conditions"]
 
@@ -189,7 +204,7 @@ module Blinkbox::Zuul::Server
       json token_info.merge(build_user_info(refresh_token.user, format: :basic))
     end
 
-    def build_client_information(client, include_client_secret = false)
+    def build_client_info(client, include_client_secret = false)
       client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
         "client_uri" => "#{base_url}/clients/#{client.id}",

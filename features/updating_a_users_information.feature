@@ -35,7 +35,7 @@ Feature: Updating a user's information
     When I request my user information be updated, without my access token
     Then the request fails because I am unauthorised
 
-  Scenario: I try to update user information for a different user
+  Scenario: Trying to update user information for a different user
     For security reasons we don't distinguish between a user that doesn't exist and a user that 
     does exist but is not the current user. In either case we say it was not found.
     
