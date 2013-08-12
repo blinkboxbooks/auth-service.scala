@@ -5,6 +5,12 @@ Given(/^I have registered a client$/) do
   expect(last_response.status).to eq(200)
 end
 
+Given(/^I have registered another client$/) do
+  @my_other_client = TestClient.new.generate_details
+  @me.register_client(@my_other_client)
+  expect(last_response.status).to eq(200)
+end
+
 Given(/^another user has registered a client$/) do
   @your_client = TestClient.new.generate_details
   @you.register_client(@your_client)
@@ -33,9 +39,10 @@ When(/^I submit (?:a|the) client registration request(, without my access token)
   user.register_client(@my_client)
 end
 
-When(/^I request client information for my client(, without my access token)?$/) do |no_token|
+When(/^I request client information for my( other)? client(, without my access token)?$/) do |other_client, no_token|
+  client = other_client ? @my_other_client : @my_client
   access_token = @me.access_token unless no_token
-  $zuul.get_client_info(@my_client.local_id, access_token)
+  $zuul.get_client_info(client.local_id, access_token)
 end
 
 When(/^I request client information for a nonexistent client$/) do
@@ -50,6 +57,22 @@ end
 When(/^I request client information for all my clients(, without my access token)?$/) do |no_token|
   access_token = @me.access_token unless no_token
   $zuul.get_clients_info(access_token)
+end
+
+When(/^I change my( other)? client's (.+) to "(.+)"$/) do |other_client, name, value|
+  method_name = "#{oauth_param_name(name)}="
+  client = other_client ? @my_other_client : @my_client
+  client.send(method_name, value)
+end
+
+When(/^I request my( other)? client's information be updated(, without my access token)?$/) do |other_client, no_token|
+  client = other_client ? @my_other_client : @my_client  
+  access_token = @me.access_token unless no_token
+  $zuul.update_client(client, access_token)
+end
+
+When(/^I request the other user's client's information be updated$/) do
+  $zuul.update_client(@your_client, @me.access_token)
 end
 
 Then(/^(?:the response|it) contains client information, (including a|excluding the) client secret$/) do |including|

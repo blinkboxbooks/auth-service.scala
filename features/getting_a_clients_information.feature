@@ -8,8 +8,18 @@ Feature: Getting a client's information
     Given I have registered an account
     And I have registered a client
 
-  Scenario: Getting client information
+  Scenario: Getting my current client's information
     When I request client information for my client
+    Then the response contains client information, excluding the client secret
+    And it is not cacheable
+
+  Scenario: Getting one of my other client's information
+    Users can get the information for any of their clients from anywhere as long as
+    they are authenticated; it doesn't have to be done from the same client. This is so 
+    that they can manage all their clients from a central location.
+
+    Given I have registered another client
+    When I request client information for my other client
     Then the response contains client information, excluding the client secret
     And it is not cacheable
 
