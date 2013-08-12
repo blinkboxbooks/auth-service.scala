@@ -10,6 +10,7 @@ module Blinkbox::Zuul::Server
     validates :last_name, length: { within: 1..50 }
     validates :username, format: { with: /\A[^@]+@([^@\.]+\.)+[^@\.]+\Z/ }, uniqueness: true
     validates :allow_marketing_communications, inclusion: { :in => [true, false] }
+    validates :password_hash, presence: true
     validate :validate_password
 
     def password=(password)  
@@ -31,7 +32,10 @@ module Blinkbox::Zuul::Server
     private 
 
     def validate_password
-      if @password_length.nil? || @password_length < MIN_PASSWORD_LENGTH
+      # this validation is only needed when the password is changed, in which case we recorded
+      # the length of the new password in the accessor. if the password length attribute is nil 
+      # then the password hasn't been changed and we don't need to do the validation.
+      if @password_length && @password_length < MIN_PASSWORD_LENGTH
         errors.add(:password, "is too short (minimum is #{MIN_PASSWORD_LENGTH} characters)")
       end
     end

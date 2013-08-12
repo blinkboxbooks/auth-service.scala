@@ -1,6 +1,8 @@
+require_relative "change_tracking"
+
 class TestClient
 
-  attr_accessor :name
+  tracked_attr_accessor :name
 
   attr_accessor :id,
                 :local_id,
