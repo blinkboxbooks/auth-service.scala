@@ -24,4 +24,4 @@ Feature: Revoking a refresh token
     that action would be a lot more useful to any potential attacker.
 
     When I request that a nonexistent refresh token be revoked
-    Then the request fails because it is invalid
+    Then the response indicates that my refresh token is invalid
