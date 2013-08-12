@@ -201,7 +201,9 @@ module Blinkbox::Zuul::Server
         "expires_in" => AccessToken::LIFETIME_IN_SECONDS
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
-      json token_info.merge(build_user_info(refresh_token.user, format: :basic))
+      token_info.merge!(build_user_info(refresh_token.user, format: :basic))
+      token_info.merge!(build_client_info(refresh_token.client)) unless refresh_token.client.nil?
+      json token_info
     end
 
     def build_client_info(client, include_client_secret = false)
