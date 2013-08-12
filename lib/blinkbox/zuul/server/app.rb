@@ -80,8 +80,11 @@ module Blinkbox::Zuul::Server
     end
 
     post "/tokens/revoke" do
-      refresh_token = RefreshToken.find_by_token(params["refresh_token"])
-      invalid_request "Invalid refresh token" if refresh_token.nil?
+      token_value = params["refresh_token"]
+      invalid_request "The refresh token is required for this grant type" if token_value.nil?
+
+      refresh_token = RefreshToken.find_by_token(token_value)
+      invalid_grant "The refresh token is invalid" if refresh_token.nil?
 
       refresh_token.revoked = true
       refresh_token.save!
