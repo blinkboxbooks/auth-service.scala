@@ -17,7 +17,7 @@ When(/^I change my email address$/) do
   @me.username = random_email
 end
 
-When(/^I change my ((!client's ).+) to "(.+)"$/) do |name, value|
+When(/^I change my ((?!.*client's ).+) to "(.+)"$/) do |name, value|
   method_name = "#{oauth_param_name(name)}="
   @me.send(method_name, value)
 end
