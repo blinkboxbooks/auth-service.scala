@@ -19,10 +19,16 @@ Feature: Refreshing an access token
     And I submit the access token refresh request
     Then the request fails because it is invalid
 
-  Scenario: Trying to refresh an access token with an incorrect refresh token
-    When I provide an incorrect refresh token
+  Scenario: Trying to refresh an access token with a revoked refresh token
+    Given I have revoked my refresh token
+    When I provide my refresh token
     And I submit the access token refresh request
-    Then the response indicates that my refresh token is incorrect
+    Then the response indicates that my refresh token is invalid
+
+  Scenario: Trying to refresh an access token with a nonexistent refresh token
+    When I provide a nonexistent refresh token
+    And I submit the access token refresh request
+    Then the response indicates that my refresh token is invalid
 
   Scenario: Binding a refresh token to a client using client credentials
     Given I have registered a client

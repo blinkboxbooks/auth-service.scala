@@ -79,6 +79,15 @@ module Blinkbox::Zuul::Server
       handle_token_request(params)
     end
 
+    post "/tokens/revoke" do
+      refresh_token = RefreshToken.find_by_token(params["refresh_token"])
+      invalid_request "Invalid refresh token" if refresh_token.nil?
+
+      refresh_token.revoked = true
+      refresh_token.save!
+      nil # no entity-body needed
+    end
+
     get "/users/:user_id", provides: :json do |user_id|
       halt 404 unless user_id == current_user.id.to_s
       json build_user_info(current_user)

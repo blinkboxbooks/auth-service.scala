@@ -39,6 +39,10 @@ class ZuulClient
     http_post "/oauth2/token", params
   end
 
+  def revoke(refresh_token, access_token = nil)
+    http_post "/tokens/revoke", { refresh_token: refresh_token }, access_token
+  end
+
   def update_client(client, access_token)
     params = {}
     params[:name] = client.name if client.name_changed?
