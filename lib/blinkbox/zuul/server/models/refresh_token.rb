@@ -9,7 +9,6 @@ module Blinkbox::Zuul::Server
 
     validates :token, length: { within: 30..50 }, uniqueness: true
     validates :expires_at, presence: true
-    validates :access_token, presence: true
 
     after_initialize :extend_lifetime
 

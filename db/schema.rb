@@ -10,14 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 4) do
-
-  create_table "access_tokens", force: true do |t|
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.integer  "refresh_token_id"
-    t.datetime "expires_at"
-  end
+ActiveRecord::Schema.define(version: 3) do
 
   create_table "clients", force: true do |t|
     t.datetime "created_at"

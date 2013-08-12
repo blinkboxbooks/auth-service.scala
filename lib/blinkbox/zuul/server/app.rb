@@ -178,6 +178,8 @@ module Blinkbox::Zuul::Server
       end
 
       refresh_token.extend_lifetime
+      refresh_token.save!
+
       issue_access_token(refresh_token)
     end
 
@@ -192,25 +194,22 @@ module Blinkbox::Zuul::Server
     end
 
     def issue_refresh_token(user, client = nil)
-      # note: this method and issue_access_token are effectively a pair of methods; this one always
-      # calls that one to save the refresh token which means this one doesn't need to do it. it's
-      # a little bit dirty i guess, but there's no point in saving the refresh token twice.
       refresh_token = RefreshToken.new do |rt|
         rt.user = user
         rt.client = client
         rt.token = generate_opaque_token
       end
+      refresh_token.save!
+
       issue_access_token(refresh_token, include_refresh_token: true)
     end
 
     def issue_access_token(refresh_token, include_refresh_token = false)
-      refresh_token.access_token = AccessToken.new
-      refresh_token.save!
-
+      expires_in = 1800 # seconds
       token_info = {
-        "access_token" => build_access_token(refresh_token),
+        "access_token" => build_access_token(refresh_token, expires_in),
         "token_type" => "bearer",
-        "expires_in" => AccessToken::LIFETIME_IN_SECONDS
+        "expires_in" => expires_in
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       token_info.merge!(build_user_info(refresh_token.user, format: :basic))
@@ -242,14 +241,14 @@ module Blinkbox::Zuul::Server
       user_info
     end
 
-    def build_access_token(refresh_token)
-      access_token = refresh_token.access_token
+    def build_access_token(refresh_token, expires_in)
+      expires_at = DateTime.now + (expires_in  / 86400.0)
       claims = {
         "sub" => "urn:blinkbox:zuul:user:#{refresh_token.user.id}",
-        "exp" => access_token.expires_at.to_i,
-        "jti" => "urn:blinkbox:zuul:access-token:#{access_token.id}"
+        "exp" => expires_at.to_i
       }
       claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
+      claims["zl/rti"] = refresh_token.id # for checking whether the issuing token has been revoked
 
       sig_key_id = settings.properties["signing_key_id"]
       signer = Sandal::Sig::ES256.new(File.read("./keys/#{sig_key_id}/private.pem"))
