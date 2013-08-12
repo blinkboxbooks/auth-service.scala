@@ -51,7 +51,7 @@ When(/^I do not provide my refresh token$/) do
   @credentials.delete("refresh_token")
 end
 
-When(/^I provide an incorrect refresh token$/) do  
+When(/^I provide a nonexistent refresh token$/) do  
   use_refresh_token_credentials
   @credentials["refresh_token"] = random_password
 end
@@ -60,7 +60,7 @@ When(/^I submit the (?:authentication|access token refresh) request$/) do
   $zuul.authenticate(@credentials)
 end
 
-Then(/^the response indicates that my (?:credentials are|refresh token is) incorrect$/) do
+Then(/^the response indicates that my (?:credentials are|refresh token is) (?:incorrect|invalid)$/) do
   expect(last_response.status).to eq(400)
   expect(last_response_json["error"]).to eq("invalid_grant")
 end
