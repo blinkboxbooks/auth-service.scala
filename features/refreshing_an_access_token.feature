@@ -30,7 +30,7 @@ Feature: Refreshing an access token
     And I submit the access token refresh request
     Then the response contains an access token
     And it contains basic user information matching my details
-    # TODO: And it contains client information, excluding the client secret
+    And it contains client information, excluding the client secret
     And it is not cacheable
 
   Scenario: Refreshing an access token using a refresh token that is bound to a client, with client credentials
@@ -40,7 +40,7 @@ Feature: Refreshing an access token
     And I submit the access token refresh request
     Then the response contains an access token 
     And it contains basic user information matching my details
-    # TODO: And it contains client information, excluding the client secret
+    And it contains client information, excluding the client secret
     And it is not cacheable
 
   Scenario: Trying to refresh an access token using a refresh token that is bound to a client, without client credentials

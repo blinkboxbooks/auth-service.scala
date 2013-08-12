@@ -46,7 +46,7 @@ Feature: Password authentication
     And I submit the authentication request
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
-    # TODO: And it contains client information, excluding the client secret
+    And it contains client information, excluding the client secret
     And it is not cacheable
 
   Scenario: Trying to authenticate with valid credentials but a missing client secret
