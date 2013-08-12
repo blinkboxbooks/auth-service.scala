@@ -20,7 +20,7 @@ Feature: Getting a user's information
     When I request user information for a nonexistent user
     Then the request fails because the user was not found
 
-  Scenario: I request user information for a different user
+  Scenario: Trying to get user information for a different user
     For security reasons we don't distinguish between a user that doesn't exist and a user that 
     does exist but is not the current user. In either case we say it was not found.
     

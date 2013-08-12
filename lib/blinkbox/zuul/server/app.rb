@@ -31,7 +31,7 @@ module Blinkbox::Zuul::Server
       end
 
       client = Client.new do |c|
-        c.name = params[:client_name] || "Unknown Client"
+        c.name = params["client_name"] || "Unknown Client"
         c.user = current_user
         c.client_secret = generate_opaque_token
       end
@@ -69,10 +69,25 @@ module Blinkbox::Zuul::Server
       json build_user_info(current_user)
     end
 
+    post "/users/:user_id", provides: :json do |user_id|
+      halt 404 unless user_id == current_user.id.to_s
+      invalid_request "Cannot change acceptance of terms and conditions" if params["accepted_terms_and_conditions"]
+
+      updateable = ["username", "first_name", "last_name", "allow_marketing_communications"]
+      updates = params.select { |k, v| updateable.include?(k) }
+      begin
+        current_user.update_attributes!(updates)
+      rescue => e
+        invalid_request e.message
+      end
+
+      json build_user_info(current_user)
+    end
+
     private
 
     def handle_token_request(params)
-      case params[:grant_type]
+      case params["grant_type"]
       when "password"
         handle_password_flow(params)
       when "refresh_token"
@@ -80,19 +95,19 @@ module Blinkbox::Zuul::Server
       when "urn:blinkbox:oauth:grant-type:registration"
         handle_registration_flow(params)
       else
-        invalid_request "The grant type '#{params[:grant_type]}' is not supported"
+        invalid_request "The grant type '#{params["grant_type"]}' is not supported"
       end
     end
 
     def handle_registration_flow(params)
-      invalid_request "You must accept the terms and conditions" unless params[:accepted_terms_and_conditions] == "true"
+      invalid_request "You must accept the terms and conditions" unless params["accepted_terms_and_conditions"] == "true"
 
       user = User.new do |u|
-        u.first_name = params[:first_name]
-        u.last_name = params[:last_name]
-        u.username = params[:username]
-        u.password = params[:password]
-        u.allow_marketing_communications = params[:allow_marketing_communications]
+        u.first_name = params["first_name"]
+        u.last_name = params["last_name"]
+        u.username = params["username"]
+        u.password = params["password"]
+        u.allow_marketing_communications = params["allow_marketing_communications"]
       end
 
       begin
@@ -109,7 +124,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_password_flow(params)
-      username, password = params[:username], params[:password]
+      username, password = params["username"], params["password"]
       invalid_request "The username and password are required for this grant type" if username.nil? || password.nil?
 
       user = User.authenticate(username, password)
@@ -120,7 +135,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_refresh_token_flow(params)
-      token_value = params[:refresh_token]
+      token_value = params["refresh_token"]
       invalid_request "The refresh token is required for this grant type" if token_value.nil?
 
       refresh_token = RefreshToken.find_by_token(token_value)
@@ -140,7 +155,7 @@ module Blinkbox::Zuul::Server
     end
 
     def authenticate_client(params, user)
-      client_id, client_secret = params[:client_id], params[:client_secret]
+      client_id, client_secret = params["client_id"], params["client_secret"]
       unless client_id.nil?
         client = Client.authenticate(client_id, client_secret)
         invalid_client "The client id and/or client secret is incorrect." if client.nil?

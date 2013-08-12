@@ -39,6 +39,17 @@ class ZuulClient
     http_post "/oauth2/token", params
   end
 
+  def update_user(user, access_token)
+    params = {}
+    params["username"] = user.username if user.username_changed?
+    params["password"] = user.password if user.password_changed?
+    params["first_name"] = user.first_name if user.first_name_changed?
+    params["last_name"] = user.last_name if user.last_name_changed?
+    params["accepted_terms_and_conditions"] = user.accepted_terms_and_conditions if user.accepted_terms_and_conditions_changed?
+    params["allow_marketing_communications"] = user.allow_marketing_communications if user.allow_marketing_communications_changed?
+    http_post "/users/#{user.local_id}", params, access_token
+  end
+
   private
 
   def http_get(uri, access_token = nil)

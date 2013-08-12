@@ -1,28 +1,29 @@
+require_relative "change_tracking"
+
 class TestUser
 
   ANONYMOUS = TestUser.new
 
-  attr_accessor :username,
-                :password,
-                :first_name, 
-                :last_name, 
-                :accepted_terms_and_conditions,
-                :allow_marketing_communications
+  tracked_attr_accessor :username,
+                        :password,
+                        :first_name, 
+                        :last_name, 
+                        :accepted_terms_and_conditions,
+                        :allow_marketing_communications
 
   attr_accessor :access_token,
                 :refresh_token,
                 :id,
-                :local_id
-
-  attr_accessor :clients
+                :local_id,
+                :clients
 
   def initialize
     @clients = []
   end
 
   def generate_details
-    @first_name = "John"
-    @last_name = "Doe"
+    @first_name = "Testy"
+    @last_name = "McTest"
     @username = random_email
     @password = random_password
     @accepted_terms_and_conditions = true
