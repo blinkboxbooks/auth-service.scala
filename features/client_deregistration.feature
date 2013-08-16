@@ -1,3 +1,5 @@
+# CP-250
+@wip
 Feature: Client Deregistration Management
   As a user of registered client
   I want to be able to deregister a client
