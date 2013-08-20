@@ -56,7 +56,7 @@ module Blinkbox::Zuul::Server
       json build_client_info(client)
     end
 
-    patch "/clients/:client_id", provides: :json do |client_id|
+    post "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user
 
@@ -96,7 +96,7 @@ module Blinkbox::Zuul::Server
       json build_user_info(current_user)
     end
 
-    patch "/users/:user_id", provides: :json do |user_id|
+    post "/users/:user_id", provides: :json do |user_id|
       halt 404 unless user_id == current_user.id.to_s
       invalid_request "Cannot change acceptance of terms and conditions" if params["accepted_terms_and_conditions"]
 
