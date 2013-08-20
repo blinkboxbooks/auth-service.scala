@@ -9,7 +9,7 @@ module Blinkbox
       class App < Sinatra::Base
 
         configure do
-          propfile = [".properties", ".properties.#{ENV["RACK_ENV"]}"].select { |f| File.exist?(f) }.first
+          propfile = ["app.properties", "app.properties.#{ENV["RACK_ENV"]}"].select { |f| File.exist?(f) }.first
           raise "No properties file found." unless propfile
           set :properties, JavaProperties::Properties.new(propfile)
 

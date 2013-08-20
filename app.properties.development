@@ -1,3 +1,4 @@
 database_url = sqlite3:///db/auth.db
 signing_key_id = blinkbox/zuul/sig/ec/1
 encryption_key_id = blinkbox/plat/enc/rsa/1
+access_token_duration = 1800
