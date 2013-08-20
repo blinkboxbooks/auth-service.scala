@@ -1,8 +1,8 @@
 
-Given(/^I have bound my refresh token to my client$/) do  
+Given(/^I have bound my tokens to my client$/) do  
   use_refresh_token_credentials
   include_client_credentials
-  $zuul.authenticate(@credentials)
+  @me.authenticate(@credentials)
   expect(last_response.status).to eq(200)
 end
 
@@ -57,7 +57,7 @@ When(/^I provide a nonexistent refresh token$/) do
 end
 
 When(/^I submit the (?:authentication|access token refresh) request$/) do
-  $zuul.authenticate(@credentials)
+  @me.authenticate(@credentials)
 end
 
 Then(/^the response indicates that my (?:credentials are|refresh token is) (?:incorrect|invalid)$/) do

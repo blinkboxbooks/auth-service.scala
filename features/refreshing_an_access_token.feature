@@ -41,7 +41,7 @@ Feature: Refreshing an access token
 
   Scenario: Refreshing an access token using a refresh token that is bound to a client, with client credentials
     Given I have registered a client
-    And I have bound my refresh token to my client
+    And I have bound my tokens to my client
     When I provide my refresh token and client credentials
     And I submit the access token refresh request
     Then the response contains an access token 
@@ -51,7 +51,7 @@ Feature: Refreshing an access token
 
   Scenario: Trying to refresh an access token using a refresh token that is bound to a client, without client credentials
     Given I have registered a client
-    And I have bound my refresh token to my client
+    And I have bound my tokens to my client
     When I provide my refresh token
     But I do not provide my client credentials
     And I submit the access token refresh request

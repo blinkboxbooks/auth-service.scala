@@ -7,6 +7,7 @@ Feature: Getting a client's information
   Background:
     Given I have registered an account
     And I have registered a client
+    And I have bound my tokens to my client
 
   Scenario: Getting my current client's information
     When I request client information for my client
