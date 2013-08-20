@@ -7,13 +7,14 @@ module Blinkbox
   module Zuul
     module Server 
       class App < Sinatra::Base
+          
+        PROPERTIES_FILE = "./app.properties"
 
         configure do
-          propfile = [".properties", ".properties.#{ENV["RACK_ENV"]}"].select { |f| File.exist?(f) }.first
-          raise "No properties file found." unless propfile
-          set :properties, JavaProperties::Properties.new(propfile)
+          raise "No properties file found." unless File.exist?(PROPERTIES_FILE)
+          set :properties, JavaProperties::Properties.new(PROPERTIES_FILE)
 
-          db = URI.parse(settings.properties["database_url"])
+          db = URI.parse(settings.properties[:database_url])
           ActiveRecord::Base.establish_connection(
             adapter:  case db.scheme
                       when "mysql" then "mysql2"
