@@ -1,8 +1,7 @@
 require_relative "../default_options"
 
 class CreateUsers < ActiveRecord::Migration
-
-  def self.up
+  def change
     create_table :users, options: default_create_table_options do |t|
       t.timestamps
       t.string :username, limit: 120
@@ -13,10 +12,4 @@ class CreateUsers < ActiveRecord::Migration
     end
     add_index :users, :username, unique: true
   end
-
-  def self.down
-    remove_index :users, :username
-    drop_table :users
-  end
-
 end

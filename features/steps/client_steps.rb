@@ -23,14 +23,14 @@ Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
   end
 end
 
-When(/^I provide a client name(?: of "(.*)")?$/) do |name|
+When(/^I provide a client (.+?)(?: of "(.*)")?$/) do |name, value|
   @my_client ||= TestClient.new.generate_details
-  @my_client.name = name if name
+  @my_client.send("#{oauth_param_name(name)}=", value)
 end
 
-When(/^I do not provide a client name$/) do
+When(/^I do not provide a client (.+?)$/) do |name|
   @my_client ||= TestClient.new.generate_details
-  @my_client.name = nil
+  @my_client.send("#{oauth_param_name(name)}=", nil)
 end
 
 When(/^I submit (?:a|the) client registration request(, without my access token)?$/) do |no_token|
@@ -77,7 +77,7 @@ end
 
 Then(/^(?:the response|it) contains client information, (including a|excluding the) client secret$/) do |including|
   client_secret_expectation = including == "including a" ? :required : :prohibited
-  verify_client_information_response(client_secret: client_secret_expectation)
+  validate_client_information_response(client_secret: client_secret_expectation)
 end
 
 Then(/^(?:the response|it) contains a list of (#{CAPTURE_INTEGER}) client's information(?:, excluding the client secret)?$/) do |count|
@@ -90,10 +90,16 @@ Then(/^the client name should match the provided name$/) do
   expect(last_response_json["client_name"]).to eq(@my_client.name)
 end
 
-Then(/^a client name should have been created for me$/) do
-  client_info = last_response_json
-  expect(client_info["client_name"]).to_not be_nil
-  expect(client_info["client_name"]).to_not be_empty
+Then(/^the client model should match the provided model$/) do
+  expect(last_response_json["client_model"]).to eq(@my_client.model)
+end
+
+Then(/^the client name is "(.+)"$/) do |name|
+  expect(last_response_json["client_name"]).to eq(name)
+end
+
+Then(/^the client model is "(.+)"$/) do |model|
+  expect(last_response_json["client_model"]).to eq(model)
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do

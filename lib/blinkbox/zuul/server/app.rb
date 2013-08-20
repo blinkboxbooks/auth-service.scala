@@ -31,7 +31,8 @@ module Blinkbox::Zuul::Server
       end
 
       client = Client.new do |c|
-        c.name = params["client_name"] || "Unknown Client"
+        c.name = params["client_name"] || "Unnamed Client"
+        c.model = params["client_model"] || "Unknown Device"
         c.user = current_user
         c.client_secret = generate_opaque_token
       end
@@ -60,7 +61,7 @@ module Blinkbox::Zuul::Server
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user
 
-      updateable = ["name"]
+      updateable = ["name", "model"]
       updates = params.select { |k, v| updateable.include?(k) }
       begin
         client.update_attributes!(updates)
@@ -221,7 +222,8 @@ module Blinkbox::Zuul::Server
       client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
         "client_uri" => "#{base_url}/clients/#{client.id}",
-        "client_name" => client.name
+        "client_name" => client.name,
+        "client_model" => client.model
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
       client_info
