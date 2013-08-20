@@ -13,7 +13,7 @@ module Blinkbox
           raise "No properties file found." unless propfile
           set :properties, JavaProperties::Properties.new(propfile)
 
-          db = URI.parse(settings.properties["database_url"])
+          db = URI.parse(settings.properties[:database_url])
           ActiveRecord::Base.establish_connection(
             adapter:  case db.scheme
                       when "mysql" then "mysql2"

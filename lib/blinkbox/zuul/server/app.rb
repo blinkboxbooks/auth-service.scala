@@ -205,7 +205,7 @@ module Blinkbox::Zuul::Server
     end
 
     def issue_access_token(refresh_token, include_refresh_token = false)
-      expires_in = settings.properties["access_token_duration"].to_i
+      expires_in = settings.properties[:access_token_duration].to_i
       token_info = {
         "access_token" => build_access_token(refresh_token, expires_in),
         "token_type" => "bearer",
@@ -250,11 +250,11 @@ module Blinkbox::Zuul::Server
       claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
       claims["zl/rti"] = refresh_token.id # for checking whether the issuing token has been revoked
 
-      sig_key_id = settings.properties["signing_key_id"]
+      sig_key_id = settings.properties[:signing_key_id]
       signer = Sandal::Sig::ES256.new(File.read("./keys/#{sig_key_id}/private.pem"))
       jws_token = Sandal.encode_token(claims, signer, { "kid" => sig_key_id })
       
-      enc_key_id = settings.properties["encryption_key_id"]
+      enc_key_id = settings.properties[:encryption_key_id]
       encrypter = Sandal::Enc::A128GCM.new(Sandal::Enc::Alg::RSA_OAEP.new(File.read("./keys/#{enc_key_id}/public.pem")))
       Sandal.encrypt_token(jws_token, encrypter, { "kid" => enc_key_id, "cty" => "JWT" })
     end
