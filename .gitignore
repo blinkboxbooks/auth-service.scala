@@ -2,7 +2,7 @@
 
 doc/
 pkg/
-.properties
+app.properties
 *.db
 last_response.html
 migration.sql
