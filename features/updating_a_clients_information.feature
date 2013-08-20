@@ -7,6 +7,7 @@ Feature: Updating a client's information
   Background:
     Given I have registered an account
     And I have registered a client
+    And I have bound my tokens to my client
 
   Scenario: Updating my current client's name
     When I change my client's name to "My iPad Mini"
