@@ -205,7 +205,7 @@ module Blinkbox::Zuul::Server
     end
 
     def issue_access_token(refresh_token, include_refresh_token = false)
-      expires_in = 1800 # seconds
+      expires_in = settings.properties["access_token_duration"].to_i
       token_info = {
         "access_token" => build_access_token(refresh_token, expires_in),
         "token_type" => "bearer",
