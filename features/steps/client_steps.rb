@@ -86,20 +86,12 @@ Then(/^(?:the response|it) contains a list of (#{CAPTURE_INTEGER}) client's info
   # TODO: Need to verify the client information looks correct
 end
 
-Then(/^the client name matches the provided name$/) do
-  expect(last_response_json["client_name"]).to eq(@my_client.name)
+Then(/^the client (.+) matches the provided \1$/) do |name|
+  expect(last_response_json["client_#{name}"]).to eq(@my_client.send(name))
 end
 
-Then(/^the client model matches the provided model$/) do
-  expect(last_response_json["client_model"]).to eq(@my_client.model)
-end
-
-Then(/^the client name is "(.+)"$/) do |name|
-  expect(last_response_json["client_name"]).to eq(name)
-end
-
-Then(/^the client model is "(.+)"$/) do |model|
-  expect(last_response_json["client_model"]).to eq(model)
+Then(/^the client (.+) is "(.+)"$/) do |name, value|
+  expect(last_response_json["client_#{name}"]).to eq(value)
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do
