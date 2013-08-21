@@ -47,7 +47,7 @@ class ZuulClient
     params = {}
     params[:name] = client.name if client.name_changed?
     params[:model] = client.model if client.model_changed?
-    http_post "/clients/#{client.local_id}", params, access_token
+    http_patch "/clients/#{client.local_id}", params, access_token
   end
 
   def update_user(user, access_token)
@@ -58,7 +58,7 @@ class ZuulClient
     params[:last_name] = user.last_name if user.last_name_changed?
     params[:accepted_terms_and_conditions] = user.accepted_terms_and_conditions if user.accepted_terms_and_conditions_changed?
     params[:allow_marketing_communications] = user.allow_marketing_communications if user.allow_marketing_communications_changed?
-    http_post "/users/#{user.local_id}", params, access_token
+    http_patch "/users/#{user.local_id}", params, access_token
   end
 
   private
@@ -69,6 +69,10 @@ class ZuulClient
     self.class.get(uri.to_s, headers: headers)
     # File.open("last_response.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
     HttpCapture::RESPONSES.last
+  end
+
+  def http_patch(uri, body_params, access_token = nil)
+    http_send(:patch, uri, body_params, access_token)
   end
 
   def http_post(uri, body_params, access_token = nil)
