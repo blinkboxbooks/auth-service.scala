@@ -17,6 +17,7 @@ ActiveRecord::Schema.define(version: 3) do
     t.datetime "updated_at"
     t.integer  "user_id"
     t.string   "name",          limit: 50
+    t.string   "model",         limit: 50
     t.string   "client_secret", limit: 50
   end
 
