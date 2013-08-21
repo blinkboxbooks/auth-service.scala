@@ -6,30 +6,31 @@ Feature: Client Deregistration Management
   So that I can free up some space
 
   Scenario: Deregister using the same client
-    Given I have a registered client
+    Given I have registered a client
     And I deregister the current client
-    Then the deregistration will invalid the token bound to that client
-    And I should be left with no client registered
+    Then my refresh token and access token are invalid because they have been revoked
+    And I have got no clients registered
 
   Scenario: Deregister using different client
     Given I have registered 2 clients
     And I deregister one client
-    Then the deregistration will invalid the token bound to that client
+    Then my refresh token and access token are invalid because they have been revoked
     And I should be left with 1 client registered
 
   Scenario: Deregister client without authenticating
     Given I have a registered client
-    And I attempt to deregister the current client while not authenticated
-    Then the request fails because I am unauthorised
+    When I request that my current client be deregistered, without my access token
+    Then the request fails because the client was not found
 
   Scenario: Deregister a non-existent client
     Given I have a registered client
     And I attempt to deregister a non-existent client
-    Then the request fails because client does not exist
+    Then the request fails because the client was not found
 
   Scenario: Deregister another user client
-    Given I have a registered client
-    And I attempt to deregister another user client
+    Given another user has registered an account
+    And another user has registered a client
+    When I request client information for the other user's client
     Then the request fails because I am unauthorised
 
   Scenario: Deregister client when none are registered
