@@ -25,7 +25,7 @@ end
 
 When(/^I provide a client (.+?)(?: of "(.*)")?$/) do |name, value|
   @my_client ||= TestClient.new.generate_details
-  @my_client.send("#{oauth_param_name(name)}=", value)
+  @my_client.send("#{oauth_param_name(name)}=", value) if value
 end
 
 When(/^I do not provide a client (.+?)$/) do |name|
