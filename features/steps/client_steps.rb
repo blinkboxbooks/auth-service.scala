@@ -86,11 +86,11 @@ Then(/^(?:the response|it) contains a list of (#{CAPTURE_INTEGER}) client's info
   # TODO: Need to verify the client information looks correct
 end
 
-Then(/^the client name should match the provided name$/) do
+Then(/^the client name matches the provided name$/) do
   expect(last_response_json["client_name"]).to eq(@my_client.name)
 end
 
-Then(/^the client model should match the provided model$/) do
+Then(/^the client model matches the provided model$/) do
   expect(last_response_json["client_model"]).to eq(@my_client.model)
 end
 

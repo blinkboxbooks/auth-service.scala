@@ -12,8 +12,8 @@ Feature: Registering a client
     And I provide a client model
     And I submit the client registration request
     Then the response contains client information, including a client secret
-    And the client name should match the provided name
-    And the client model should match the provided model
+    And the client name matches the provided name
+    And the client model matches the provided model
     And it is not cacheable
 
   Scenario: Registering a client with details containing international characters
@@ -21,8 +21,8 @@ Feature: Registering a client
     And I provide a client model of "中国扬声器可以阅读本"
     And I submit the client registration request
     Then the response contains client information, including a client secret
-    And the client name should match the provided name
-    And the client model should match the provided model
+    And the client name matches the provided name
+    And the client model matches the provided model
     And it is not cacheable
 
   Scenario: Registering a client without a name
@@ -30,7 +30,7 @@ Feature: Registering a client
     But I do not provide a client name
     And I submit the client registration request
     Then the response contains client information, including a client secret
-    And the client model should match the provided model
+    And the client model matches the provided model
     And the client name is "Unnamed Client"
     And it is not cacheable
 
@@ -39,7 +39,7 @@ Feature: Registering a client
     But I do not provide a client model
     And I submit the client registration request
     Then the response contains client information, including a client secret
-    And the client name should match the provided name
+    And the client name matches the provided name
     And the client model is "Unknown Device"
     And it is not cacheable
 
