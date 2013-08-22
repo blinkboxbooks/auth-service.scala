@@ -1,8 +1,9 @@
 class ZuulClient
   include HTTParty
 
-  def initialize(server_uri)
+  def initialize(server_uri, proxy_uri = nil)
     self.class.base_uri server_uri.to_s
+    self.class.http_proxy proxy_uri.host, proxy_uri.port if proxy_uri
   end
 
   def authenticate(params)

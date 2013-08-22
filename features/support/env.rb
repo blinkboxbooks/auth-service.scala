@@ -3,8 +3,11 @@ require "net/http/capture" # BUGBUG: httparty/capture should work; bug in HttpCa
 require "cucumber/rest/steps/caching"
 require "cucumber/rest/status"
 
+SERVER_URI = URI.parse(ENV["AUTH_SERVER"] || "http://localhost:9393/")
+PROXY_URI = URI.parse(ENV["PROXY_SERVER"]) if ENV["PROXY_SERVER"]
+
 Before do
-  $zuul = ZuulClient.new(ENV["AUTH_SERVER"] || "http://localhost:9393/")
+  $zuul = ZuulClient.new(SERVER_URI, PROXY_URI)
 end
 
 module KnowsAboutResponses
