@@ -36,4 +36,4 @@ Feature: Client Deregistration Management
   Scenario: Deregister client when none are registered
     Given I do not have any client registered
     When I attempt to deregister a client
-    Then request should fail because client is not registered
+    Then the request fails because the client was not found
