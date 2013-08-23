@@ -1,9 +1,8 @@
-# CP-250
-@wip
-Feature: Client Deregistration Management
-  As a user of registered client
-  I want to be able to deregister a client
-  So that I can free up some space
+@clients @deregistration @client_deregistration
+Feature: Deegistering a client
+  As a user
+  I want to be able to register my client
+  So that clients I no longer use/own are able to act on my behalf
 
   Scenario: Deregister using the same client
     Given I have registered a client
