@@ -4,35 +4,49 @@ Feature: Deegistering a client
   I want to be able to register my client
   So that clients I no longer use/own are able to act on my behalf
 
-  Scenario: Deregister using the same client
-    Given I have registered a client
-    And I deregister the current client
-    Then my refresh token and access token are invalid because they have been revoked
-    And I have got no clients registered
+  Background:
+    Given I have registered an account
+    And I have registered a client
+    And I have bound my tokens to my client
 
-  Scenario: Deregister using different client
-    Given I have registered 2 clients
-    And I deregister one client
-    Then my refresh token and access token are invalid because they have been revoked
-    And I should be left with 1 client registered
+  Scenario: Deregistering my current client
+    Deregistering a client also revokes the tokens that are bound to that client, so if you deregister
+    your current client then your tokens will no longer be valid.
 
-  Scenario: Deregister client without authenticating
-    Given I have a registered client
+    When I request that my current client be deregistered
+    Then the request succeeds
+    And my refresh token and access token are invalid because they have been revoked
+    And I have got no registered clients
+
+  Scenario: Deregistering one of my other clients
+    If you deregister another client though, it has no effect on your tokens. This is because the 
+    other client is a separate concern, and you might be deregistering it because it was lost or
+    stolen from another legitimate client that you don't want to be signed out of.
+    
+    Given I have registered another client
+    When I request that my other client be deregistered
+    Then the request succeeds
+    And my refresh token and access token are valid
+    And I have got one registered client
+
+  Scenario: Trying to deregister a client without authorisation
     When I request that my current client be deregistered, without my access token
-    Then the request fails because the client was not found
-
-  Scenario: Deregister a non-existent client
-    Given I have a registered client
-    And I attempt to deregister a non-existent client
-    Then the request fails because the client was not found
-
-  Scenario: Deregister another user client
-    Given another user has registered an account
-    And another user has registered a client
-    When I request client information for the other user's client
     Then the request fails because I am unauthorised
 
-  Scenario: Deregister client when none are registered
-    Given I do not have any client registered
-    When I attempt to deregister a client
+  Scenario: Trying to deregister a nonexistent client
+    When I request that a nonexistent client be deregistered
+    Then the request fails because the client was not found
+
+  Scenario: Trying to deregister an already deregistered client
+    Given I have deregistered my current client
+    When I request that my current client be deregistered
+    Then the request fails because the client was not found
+
+  Scenario: Trying to deregister another user's client
+    For security reasons we don't distinguish between a client that doesn't exist and a client that 
+    does exist but the user isn't allowed to access. In either case we say it was not found.
+
+    Given another user has registered an account
+    And another user has registered a client
+    When I request that the other user's client be deregistered
     Then the request fails because the client was not found
