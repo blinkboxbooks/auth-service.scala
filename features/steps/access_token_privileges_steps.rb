@@ -1,14 +1,12 @@
 Given(/^I obtain an access token using my email address and password$/) do
-  use_username_and_password_credentials
-  @me.authenticate(@credentials)
-  expect(last_response.status).to eq(200)
+  obtain_access_and_token
 end
 
 Given(/^I request information about the access token$/) do
   $zuul.get_access_token_info(@me.access_token)
 end
 
-Then(/^it is (not elevated|elevated to critical)$/) do |elevation|
+Then(/^it( is not elevated|s elevation is critical)$/) do |elevation|
   elev = elevation.equal?('not elevated') ? :NONE : :CRITICAL
   validate_access_token_info_response(token_elevation = elev)
 end
@@ -31,4 +29,9 @@ end
 
 Then(/^the reason is that my identity is considered unverified$/) do
   expect(last_response_json["error_reason"]).to eq("unverified_identity")
+end
+
+Given(/^I have a non-privileged access token$/) do
+  obtain_access_and_token
+  sleep(10.minutes)
 end

@@ -74,7 +74,7 @@ class ZuulClient
 
   private
 
-  def http_get(uri, params={}, access_token = nil)
+  def http_get(uri, params = {}, access_token = nil)
     headers = { "Accept" => "application/json" }
     headers["Authorization"] = "Bearer #{access_token}" if access_token
     self.class.get(uri.to_s, headers: headers, params: params)

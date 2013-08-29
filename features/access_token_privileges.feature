@@ -10,7 +10,7 @@ Feature: Access token privileges
   Scenario: Authenticating with email address and password gives critical privileges
     Given I obtain an access token using my email address and password
     When I request information about the access token
-    Then it is elevated to critical
+    Then its elevation is critical
     And the critical privileges expire ten minutes from now
 
   @slow
@@ -26,7 +26,7 @@ Feature: Access token privileges
     And I wait for nine minutes
     When I submit the access token refresh request
     Then I request information about the access token
-    And it is elevated to critical
+    And its elevation is critical
     And the critical privileges expire ten minutes from now
 
   @slow
@@ -46,7 +46,7 @@ Feature: Access token privileges
     And I wait for two minutes
     When I submit the access token refresh request
     And I request information about the access token
-    Then it is elevated to critical
+    Then its elevation is critical
     And the critical privileges expire eight minutes from now
 
   @slow
