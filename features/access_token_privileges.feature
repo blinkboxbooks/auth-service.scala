@@ -10,7 +10,7 @@ Feature: Access token privileges
   Scenario: Authenticating with email address and password gives critical privileges
     Given I obtain an access token using my email address and password
     When I request information about the access token
-    Then it has critical privileges
+    Then it is elevated to critical
     And the critical privileges expire ten minutes from now
 
   @slow
@@ -18,22 +18,22 @@ Feature: Access token privileges
     Given I obtain an access token using my email address and password
     And I wait for over ten minutes
     When I request information about the access token
-    Then it has no privileges
+    Then it is not elevated
 
   @slow
   Scenario: Privileged session lifetime can be extended
     Given I obtain an access token using my email address and password
     And I wait for nine minutes
-    When I request that my privileged session be extended
-    Then I get information about the token
-    And it has critical privileges
+    When I submit the access token refresh request
+    Then I request information about the access token
+    And it is elevated to critical
     And the critical privileges expire ten minutes from now
 
   @slow
   Scenario: Privileged session lifetime cannot be extended when it has already ended
     Given I obtain an access token using my email address and password
     And I wait for over ten minutes
-    When I request that my privileged session be extended
+    When I request that my elevated session be extended
     Then the request fails because I am not authorised
     And the reason is that my identity is considered unverified
 
@@ -44,9 +44,9 @@ Feature: Access token privileges
     
     Given I obtain an access token using my email address and password
     And I wait for two minutes
-    When I refresh my access token
+    When I submit the access token refresh request
     And I request information about the access token
-    Then it has critical privileges
+    Then it is elevated to critical
     And the critical privileges expire eight minutes from now
 
   @slow
@@ -55,6 +55,6 @@ Feature: Access token privileges
     refreshing doesn't prove your identity, so doesn't grant privileges.
 
     Given I have a non-privileged access token
-    When I refresh my access token
+    When I submit the access token refresh request
     And I request information about the access token
-    Then it has no privileges
+    Then it is not elevated

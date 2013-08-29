@@ -1,5 +1,4 @@
-
-Given(/^I have bound my tokens to my client$/) do  
+Given(/^I have bound my tokens to my client$/) do
   use_refresh_token_credentials
   include_client_credentials
   @me.authenticate(@credentials)

@@ -11,15 +11,29 @@ class ZuulClient
   end
 
   def get_client_info(client_id, access_token)
-    http_get "/clients/#{client_id}", access_token
+    http_get "/clients/#{client_id}", {}, access_token
   end
 
   def get_clients_info(access_token)
-    http_get "/clients", access_token
+    http_get "/clients", {}, access_token
   end
 
   def get_user_info(user_id, access_token)
-    http_get "/users/#{user_id}", access_token
+    http_get "/users/#{user_id}", {}, access_token
+  end
+
+  def get_access_token(access_token)
+    params = {access_token: access_token}
+    http_get "/tokeninfo", params, access_token
+  end
+
+  def refresh_access_token(access_token)
+
+  end
+
+  def extend_elevated_session(access_token)
+    params = {access_token: access_token}
+    http_post "/tokeninfo", params, access_token
   end
 
   def register_client(client, access_token)
@@ -64,10 +78,10 @@ class ZuulClient
 
   private
 
-  def http_get(uri, access_token = nil)
+  def http_get(uri, params={}, access_token = nil)
     headers = { "Accept" => "application/json" }
     headers["Authorization"] = "Bearer #{access_token}" if access_token
-    self.class.get(uri.to_s, headers: headers)
+    self.class.get(uri.to_s, headers: headers, params: params)
     # File.open("last_response.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
     HttpCapture::RESPONSES.last
   end
