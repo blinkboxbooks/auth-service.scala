@@ -34,7 +34,7 @@ Feature: Access token privileges
     Given I obtain an access token using my email address and password
     And I wait for over ten minutes
     When I request that my elevated session be extended
-    Then the request fails because I am not authorised
+    Then the request fails because I am unauthorised
     And the reason is that my identity is considered unverified
 
   @slow

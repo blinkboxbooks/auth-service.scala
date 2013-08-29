@@ -22,13 +22,9 @@ class ZuulClient
     http_get "/users/#{user_id}", {}, access_token
   end
 
-  def get_access_token(access_token)
-    params = {access_token: access_token}
+  def get_access_token_info(access_token)
+    params = { access_token: access_token }
     http_get "/tokeninfo", params, access_token
-  end
-
-  def refresh_access_token(access_token)
-
   end
 
   def extend_elevated_session(access_token)

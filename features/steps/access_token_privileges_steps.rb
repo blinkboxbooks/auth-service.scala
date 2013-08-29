@@ -5,7 +5,7 @@ Given(/^I obtain an access token using my email address and password$/) do
 end
 
 Given(/^I request information about the access token$/) do
-  $zuul.get_access_token(@me.access_token)
+  $zuul.get_access_token_info(@me.access_token)
 end
 
 Then(/^it is (not elevated|elevated to critical)$/) do |elevation|
@@ -13,19 +13,19 @@ Then(/^it is (not elevated|elevated to critical)$/) do |elevation|
   validate_access_token_info_response(token_elevation = elev)
 end
 
-Then(/^the critical privileges expire (#{CAPTURE_INTEGER}) minutes from now$/) do |minutes|
-  expect(last_response_json["token_elevation_expires_in"]).to be_within(10).of(minutes * 60)
+Then(/^the critical privileges expire (#{CAPTURE_INTEGER}) minutes from now$/) do |num_of_minutes|
+  expect(last_response_json["token_elevation_expires_in"]).to be_within(10.seconds).of(num_of_minutes.minutes)
 end
 
-Given(/^I wait for (?:over )?(#{CAPTURE_INTEGER}) minutes$/) do |minutes|
-  sleep(minutes*60)
+Given(/^I wait for (?:over )?(#{CAPTURE_INTEGER}) minutes$/) do |num_of_minutes|
+  sleep(num_of_minutes.minutes)
 end
 
 When(/^I request that my elevated session be extended$/) do
-  $zuul.extend_elevated_session(@me.accees_token)
+  $zuul.extend_elevated_session(@me.access_token)
 end
 
-Then(/^the request fails because I am not authorised$/) do
+Then(/^the request fails because I am unauthorised$/) do
   expect(last_response.status).to eq(401)
 end
 
