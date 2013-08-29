@@ -15,7 +15,9 @@ Then(/^the critical privileges expire (#{CAPTURE_INTEGER}) minutes from now$/) d
   expect(last_response_json["token_elevation_expires_in"]).to be_within(10.seconds).of(num_of_minutes.minutes)
 end
 
-Given(/^I wait for (?:over )?(#{CAPTURE_INTEGER}) minutes$/) do |num_of_minutes|
+Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) minutes$/) do |over, num_of_minutes|
+  sleep_time = num_of_minutes.minutes
+  sleep_time = sleep_time + 10.seconds if over
   sleep(num_of_minutes.minutes)
 end
 
