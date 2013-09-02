@@ -10,8 +10,8 @@ end
 
 Then(/^the request fails because it is invalid$/) do
   expect(last_response.status).to eq(400)
-  @response_json = MultiJson.load(last_response.body)
-  expect(@response_json["error"]).to eq("invalid_request")
+  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+  expect(authenticate_header["error"]).to eq("invalid_request")
 end
 
 Then(/^the request fails because I am unauthorised$/) do
