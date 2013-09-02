@@ -47,5 +47,6 @@ When(/^I submit the registration request$/) do
 end
 
 Then(/^the reason is that the email address is already taken$/) do
-  expect(last_response_json["error_reason"]).to eq("username_already_taken")
+  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+  expect(authenticate_header["error_reason"]).to eq("username_already_taken")
 end

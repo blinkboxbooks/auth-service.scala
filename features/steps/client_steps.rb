@@ -96,9 +96,11 @@ end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do
   expect(last_response.status).to eq(400)
-  expect(last_response_json["error"]).to eq("invalid_client")
+  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+  expect(authenticate_header["error"]).to eq("invalid_client")
 end
 
 Then(/^the reason is that the client limit has been reached$/) do
-  expect(last_response_json["error_reason"]).to eq("client_limit_reached")
+  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+  expect(authenticate_header["error_reason"]).to eq("client_limit_reached")
 end
