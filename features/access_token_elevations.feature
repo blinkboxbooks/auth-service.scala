@@ -1,4 +1,4 @@
-@live @privileges
+@live @elevations
 Feature: Access token elevation
   As a program that operates on personal user information
   I want to be able to get information about an access token
@@ -50,7 +50,7 @@ Feature: Access token elevation
     And the critical elevation expires eight minutes from now
 
   @slow
-  Scenario: Refreshing a non-elevated access token does not grant privileges
+  Scenario: Refreshing a non-elevated access token does not grant elevation
     Refreshing an access token is orthogonal to the concept of elevation. The act of
     refreshing doesn't prove your identity, so doesn't grant elevated access.
 
