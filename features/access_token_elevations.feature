@@ -7,14 +7,14 @@ Feature: Access token elevation
   Background:
     Given I have registered an account
 
-  Scenario: Authenticating with email address and password gives critical
+  Scenario: Authenticating with email address and password gives critical elevation
     Given I obtain an access token using my email address and password
     When I request information about the access token
     Then its elevation is critical
     And the critical elevation expires ten minutes from now
 
   @slow
-  Scenario: After ten minutes of non-elevated activity, elevation drop to none
+  Scenario: After ten minutes of non-elevated activity, elevation drops to none
     Given I obtain an access token using my email address and password
     And I wait for over ten minutes
     When I request information about the access token
@@ -25,8 +25,8 @@ Feature: Access token elevation
     Given I obtain an access token using my email address and password
     And I wait for nine minutes
     When I submit the access token refresh request
-    Then I request information about the access token
-    And its elevation is critical
+    And I request information about the access token
+    Then its elevation is critical
     And the critical elevation expires ten minutes from now
 
   @slow
