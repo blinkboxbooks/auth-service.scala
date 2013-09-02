@@ -25,10 +25,6 @@ When(/^I request that my elevated session be extended$/) do
   $zuul.extend_elevated_session(@me.access_token)
 end
 
-Then(/^the request fails because I am unauthorised$/) do
-  expect(last_response.status).to eq(401)
-end
-
 Then(/^the reason is that my identity is considered unverified$/) do
   expect(last_response_json["error_reason"]).to eq("unverified_identity")
 end
