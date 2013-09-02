@@ -1,32 +1,52 @@
 
-Given(/^I have registered an account$/, :register_new_user)
-Given(/^I have provided valid registration details$/, :generate_user_registration_details) 
-
-Given(/^I have not accepted the terms and conditions$/) do
-  @user_registration_details["accepted_terms_and_conditions"] = false
+Given(/^I have registered an account$/) do
+  @me = TestUser.new.generate_details
+  @me.register
+  expect(last_response.status).to eq(200)
 end
 
-Given(/^I have not allowed marketing communications$/) do
-  @user_registration_details["allow_marketing_communications"] = false
+Given(/^another user has registered an account$/) do
+  @you = TestUser.new.generate_details
+  @you.register
+  expect(last_response.status).to eq(200)
 end
 
-Given(/^I have provided valid registration details, except (.+) which is missing$/) do |name|
-  generate_user_registration_details
-  @user_registration_details.delete(oauth_param_name(name))
+When(/^I provide valid registration details$/) do
+  @me = TestUser.new.generate_details
+end 
+
+When(/^I have( not)? accepted the terms and conditions$/) do |not_accepted|
+  @me.accepted_terms_and_conditions = !not_accepted
 end
 
-Given(/^I have provided valid registration details, except (.+) which is "(.*)"$/) do |name, value|
-  generate_user_registration_details
-  @user_registration_details[oauth_param_name(name)] = value
+When(/^I have( not)? allowed marketing communications$/) do |not_allowed|
+  @me.allow_marketing_communications = !not_allowed
 end
 
-Given(/^my (.+) is "(.+)"$/) do |name, value|
-  @user_registration_details[oauth_param_name(name)] = value
+When(/^I provide valid registration details, except (.+) which is missing$/) do |name|
+  @me ||= TestUser.new.generate_details
+  method_name = "#{oauth_param_name(name)}="
+  @me.send(method_name, nil)
+end
+
+When(/^I provide valid registration details, except (.+) which is "(.*)"$/) do |name, value|
+  @me ||= TestUser.new.generate_details
+  method_name = "#{oauth_param_name(name)}="
+  @me.send(method_name, value)
+end
+
+When(/^my (.+) is "(.+)"$/) do |name, value|
+  method_name = "#{oauth_param_name(name)}="
+  @me.send(method_name, value)
 end
 
 When(/^I provide the same registration details I previously registered with$/, :noop)
-When(/^I submit the registration request$/, :submit_user_registration_request)
+
+When(/^I submit the registration request$/) do
+  @me.register
+end
 
 Then(/^the reason is that the email address is already taken$/) do
-  expect(@response_json["error_reason"]).to eq("username_already_taken")
+  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+  expect(authenticate_header["error_reason"]).to eq("username_already_taken")
 end

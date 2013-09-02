@@ -1,26 +1,21 @@
 
-def use_username_and_password_credentials
+def use_username_and_password_credentials(user = @me)
   @credentials = {
     "grant_type" => "password",
-    "username" => @user_registration_details["username"],
-    "password" => @user_registration_details["password"]
+    "username" => user.username,
+    "password" => user.password
   }
 end
 
-def use_refresh_token_credentials
+def use_refresh_token_credentials(user = @me)
   @credentials = {
     "grant_type" => "refresh_token",
-    "refresh_token" => @user_tokens["refresh_token"]
+    "refresh_token" => user.refresh_token
   }
 end
 
-def include_client_credentials
+def include_client_credentials(client = @my_client)
   expect(@credentials).to_not be_nil
-  @credentials["client_id"] = @client_info["client_id"]
-  @credentials["client_secret"] = @client_info["client_secret"]
-end
-
-def submit_authentication_request
-  expect(@credentials).to_not be_nil
-  post_www_form_request("/oauth2/token", @credentials)
+  @credentials["client_id"] = client.id
+  @credentials["client_secret"] = client.secret
 end

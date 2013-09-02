@@ -7,6 +7,7 @@ module Blinkbox::Zuul::Server
     has_one :refresh_token
 
     validates :name, length: { within: 1..50 }
+    validates :model, length: { within: 1..50 }
     validates :user, presence: true
     validates :client_secret, presence: true
 

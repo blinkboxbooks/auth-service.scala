@@ -1,8 +1,7 @@
 require_relative "../default_options"
 
 class CreateRefreshTokens < ActiveRecord::Migration
-
-  def self.up
+  def change
     create_table :refresh_tokens, options: default_create_table_options do |t|
       t.timestamps
       t.integer :user_id
@@ -13,10 +12,4 @@ class CreateRefreshTokens < ActiveRecord::Migration
     end
     add_index :refresh_tokens, :token, unique: true
   end
-
-  def self.down
-    remove_index :refresh_tokens, :token
-    drop_table :refresh_tokens
-  end
-
 end

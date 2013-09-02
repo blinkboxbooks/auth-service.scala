@@ -5,33 +5,33 @@ Feature: Registration
   So that I can use services that require my identity
   
   Scenario: Registering with all the required information
-    Given I have provided valid registration details
-    When I submit the registration request
+    When I provide valid registration details
+    And I submit the registration request
     Then the response contains an access token and a refresh token
-    And it contains basic user information matching the registration details
+    And it contains basic user information matching my details
     And it is not cacheable
 
   Scenario: Registering with a name containing international characters
-    Given I have provided valid registration details
+    When I provide valid registration details
     And my first name is "Iñtërnâtiônàlizætiøn"
     And my last name is "中国扬声器可以阅读本"
-    When I submit the registration request
+    And I submit the registration request
     Then the response contains an access token and a refresh token
-    And it contains basic user information matching the registration details
+    And it contains basic user information matching my details
     And it is not cacheable
   
   Scenario: Registering without allowing marketing communications
-    Given I have provided valid registration details
+    When I provide valid registration details
     And I have not allowed marketing communications
-    When I submit the registration request
+    And I submit the registration request
     Then the response contains an access token and a refresh token
-    And it contains basic user information matching the registration details
-    And the response is not cacheable
+    And it contains basic user information matching my details
+    And it is not cacheable
 
   Scenario: Trying to register without accepting the terms and conditions
-    Given I have provided valid registration details
+    When I provide valid registration details
     But I have not accepted the terms and conditions
-    When I submit the registration request
+    And I submit the registration request
     Then the request fails because it is invalid
 
   Scenario: Trying to register with an email address that is already registered
@@ -42,8 +42,8 @@ Feature: Registration
     And the reason is that the email address is already taken
 
   Scenario Outline: Trying to register with missing details
-    Given I have provided valid registration details, except <detail> which is missing
-    When I submit the registration request
+    When I provide valid registration details, except <detail> which is missing
+    And I submit the registration request
     Then the request fails because it is invalid
 
     Examples: Required details
@@ -57,8 +57,8 @@ Feature: Registration
       | allow marketing communications |
 
   Scenario Outline: Trying to register with invalid details
-    Given I have provided valid registration details, except <detail> which is "<value>"
-    When I submit the registration request
+    When I provide valid registration details, except <detail> which is "<value>"
+    And I submit the registration request
     Then the request fails because it is invalid
 
     Examples: Malformed email address

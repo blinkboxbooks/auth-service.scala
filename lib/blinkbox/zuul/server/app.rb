@@ -33,7 +33,8 @@ module Blinkbox::Zuul::Server
       end
 
       client = Client.new do |c|
-        c.name = params[:client_name] || "Unknown Client"
+        c.name = params["client_name"] || "Unnamed Client"
+        c.model = params["client_model"] || "Unknown Device"
         c.user = current_user
         c.client_secret = generate_opaque_token
       end
@@ -44,18 +45,33 @@ module Blinkbox::Zuul::Server
         invalid_request e.message
       end
 
-      json build_client_information(client, include_client_secret: true)
+      json build_client_info(client, include_client_secret: true)
     end
 
     get "/clients", provides: :json do
-      client_infos = current_user.clients.map { |client| build_client_information(client) }
+      client_infos = current_user.clients.map { |client| build_client_info(client) }
       json({ "clients" => client_infos })
     end
 
     get "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user
-      json build_client_information(client)
+      json build_client_info(client)
+    end
+
+    patch "/clients/:client_id", provides: :json do |client_id|
+      client = Client.find_by_id(client_id)
+      halt 404 if client.nil? || client.user != current_user
+
+      updateable = ["name", "model"]
+      updates = params.select { |k, v| updateable.include?(k) }
+      begin
+        client.update_attributes!(updates)
+      rescue => e
+        invalid_request e.message
+      end
+
+      json build_client_info(client)
     end
 
     get "/oauth2/token", provides: :json do
@@ -66,15 +82,42 @@ module Blinkbox::Zuul::Server
       handle_token_request(params)
     end
 
+    post "/tokens/revoke" do
+      token_value = params["refresh_token"]
+      invalid_request "The refresh token is required for this grant type" if token_value.nil?
+
+      refresh_token = RefreshToken.find_by_token(token_value)
+      invalid_grant "The refresh token is invalid" if refresh_token.nil?
+
+      refresh_token.revoked = true
+      refresh_token.save!
+      nil # no entity-body needed
+    end
+
     get "/users/:user_id", provides: :json do |user_id|
       halt 404 unless user_id == current_user.id.to_s
+      json build_user_info(current_user)
+    end
+
+    patch "/users/:user_id", provides: :json do |user_id|
+      halt 404 unless user_id == current_user.id.to_s
+      invalid_request "Cannot change acceptance of terms and conditions" if params["accepted_terms_and_conditions"]
+
+      updateable = ["username", "first_name", "last_name", "allow_marketing_communications"]
+      updates = params.select { |k, v| updateable.include?(k) }
+      begin
+        current_user.update_attributes!(updates)
+      rescue => e
+        invalid_request e.message
+      end
+
       json build_user_info(current_user)
     end
 
     private
 
     def handle_token_request(params)
-      case params[:grant_type]
+      case params["grant_type"]
       when "password"
         handle_password_flow(params)
       when "refresh_token"
@@ -82,19 +125,19 @@ module Blinkbox::Zuul::Server
       when "urn:blinkbox:oauth:grant-type:registration"
         handle_registration_flow(params)
       else
-        invalid_request "The grant type '#{params[:grant_type]}' is not supported"
+        invalid_request "The grant type '#{params["grant_type"]}' is not supported"
       end
     end
 
     def handle_registration_flow(params)
-      invalid_request "You must accept the terms and conditions" unless params[:accepted_terms_and_conditions] == "true"
+      invalid_request "You must accept the terms and conditions" unless params["accepted_terms_and_conditions"] == "true"
 
       user = User.new do |u|
-        u.first_name = params[:first_name]
-        u.last_name = params[:last_name]
-        u.username = params[:username]
-        u.password = params[:password]
-        u.allow_marketing_communications = params[:allow_marketing_communications]
+        u.first_name = params["first_name"]
+        u.last_name = params["last_name"]
+        u.username = params["username"]
+        u.password = params["password"]
+        u.allow_marketing_communications = params["allow_marketing_communications"]
       end
 
       begin
@@ -111,7 +154,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_password_flow(params)
-      username, password = params[:username], params[:password]
+      username, password = params["username"], params["password"]
       invalid_request "The username and password are required for this grant type" if username.nil? || password.nil?
 
       user = User.authenticate(username, password)
@@ -122,7 +165,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_refresh_token_flow(params)
-      token_value = params[:refresh_token]
+      token_value = params["refresh_token"]
       invalid_request "The refresh token is required for this grant type" if token_value.nil?
 
       refresh_token = RefreshToken.find_by_token(token_value)
@@ -138,11 +181,13 @@ module Blinkbox::Zuul::Server
       end
 
       refresh_token.extend_lifetime
+      refresh_token.save!
+
       issue_access_token(refresh_token)
     end
 
     def authenticate_client(params, user)
-      client_id, client_secret = params[:client_id], params[:client_secret]
+      client_id, client_secret = params["client_id"], params["client_secret"]
       unless client_id.nil?
         client = Client.authenticate(client_id, client_secret)
         invalid_client "The client id and/or client secret is incorrect." if client.nil?
@@ -152,35 +197,35 @@ module Blinkbox::Zuul::Server
     end
 
     def issue_refresh_token(user, client = nil)
-      # note: this method and issue_access_token are effectively a pair of methods; this one always
-      # calls that one to save the refresh token which means this one doesn't need to do it. it's
-      # a little bit dirty i guess, but there's no point in saving the refresh token twice.
       refresh_token = RefreshToken.new do |rt|
         rt.user = user
         rt.client = client
         rt.token = generate_opaque_token
       end
+      refresh_token.save!
+
       issue_access_token(refresh_token, include_refresh_token: true)
     end
 
     def issue_access_token(refresh_token, include_refresh_token = false)
-      refresh_token.access_token = AccessToken.new
-      refresh_token.save!
-
+      expires_in = settings.properties[:access_token_duration].to_i
       token_info = {
-        "access_token" => build_access_token(refresh_token),
+        "access_token" => build_access_token(refresh_token, expires_in),
         "token_type" => "bearer",
-        "expires_in" => AccessToken::LIFETIME_IN_SECONDS
+        "expires_in" => expires_in
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
-      json token_info.merge(build_user_info(refresh_token.user, format: :basic))
+      token_info.merge!(build_user_info(refresh_token.user, format: :basic))
+      token_info.merge!(build_client_info(refresh_token.client)) unless refresh_token.client.nil?
+      json token_info
     end
 
-    def build_client_information(client, include_client_secret = false)
+    def build_client_info(client, include_client_secret = false)
       client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
         "client_uri" => "#{base_url}/clients/#{client.id}",
-        "client_name" => client.name
+        "client_name" => client.name,
+        "client_model" => client.model
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
       client_info
@@ -200,20 +245,20 @@ module Blinkbox::Zuul::Server
       user_info
     end
 
-    def build_access_token(refresh_token)
-      access_token = refresh_token.access_token
+    def build_access_token(refresh_token, expires_in)
+      expires_at = DateTime.now + (expires_in  / 86400.0)
       claims = {
         "sub" => "urn:blinkbox:zuul:user:#{refresh_token.user.id}",
-        "exp" => access_token.expires_at.to_i,
-        "jti" => "urn:blinkbox:zuul:access-token:#{access_token.id}"
+        "exp" => expires_at.to_i
       }
       claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
+      claims["zl/rti"] = refresh_token.id # for checking whether the issuing token has been revoked
 
-      sig_key_id = settings.properties["signing_key_id"]
+      sig_key_id = settings.properties[:signing_key_id]
       signer = Sandal::Sig::ES256.new(File.read("./keys/#{sig_key_id}/private.pem"))
       jws_token = Sandal.encode_token(claims, signer, { "kid" => sig_key_id })
       
-      enc_key_id = settings.properties["encryption_key_id"]
+      enc_key_id = settings.properties[:encryption_key_id]
       encrypter = Sandal::Enc::A128GCM.new(Sandal::Enc::Alg::RSA_OAEP.new(File.read("./keys/#{enc_key_id}/public.pem")))
       Sandal.encrypt_token(jws_token, encrypter, { "kid" => enc_key_id, "cty" => "JWT" })
     end
