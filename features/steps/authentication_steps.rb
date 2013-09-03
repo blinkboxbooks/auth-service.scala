@@ -61,5 +61,6 @@ end
 
 Then(/^the response indicates that my (?:credentials are|refresh token is) (?:incorrect|invalid)$/) do
   expect(last_response.status).to eq(400)
-  expect(last_response_json["error"]).to eq("invalid_grant")
+  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+  expect(authenticate_header["error"]).to eq("invalid_grant")
 end
