@@ -10,7 +10,8 @@ Feature: Access token elevation
   Scenario: Authenticating with email address and password gives critical elevation
     Given I obtain an access token using my email address and password
     When I request information about the access token
-    Then its elevation is critical
+    Then the response contains access token information
+    And its elevation is critical
     And the critical elevation expires ten minutes from now
 
   @slow
@@ -18,7 +19,8 @@ Feature: Access token elevation
     Given I obtain an access token using my email address and password
     And I wait for over ten minutes
     When I request information about the access token
-    Then it is not elevated
+    Then the response contains access token information
+    And it is not elevated
 
   @slow
   Scenario: Elevated session lifetime can be extended
@@ -26,7 +28,8 @@ Feature: Access token elevation
     And I wait for nine minutes
     When I submit the access token refresh request
     And I request information about the access token
-    Then its elevation is critical
+    Then the response contains access token information
+    And its elevation is critical
     And the critical elevation expires ten minutes from now
 
   @slow
@@ -46,7 +49,8 @@ Feature: Access token elevation
     And I wait for two minutes
     When I submit the access token refresh request
     And I request information about the access token
-    Then its elevation is critical
+    Then the response contains access token information
+    And its elevation is critical
     And the critical elevation expires eight minutes from now
 
   @slow
@@ -57,4 +61,5 @@ Feature: Access token elevation
     Given I have a non-elevated access token
     When I submit the access token refresh request
     And I request information about the access token
-    Then it is not elevated
+    Then the response contains access token information
+    And it is not elevated
