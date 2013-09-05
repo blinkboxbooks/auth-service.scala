@@ -10,12 +10,13 @@ module Sinatra
     def oauth_error(code, *args)
       case args.length
       when 0
-        halt 400, json({ "error" => code })
+        headers['WWW-Authenticate'] = "Bearer error=\"#{code}\""
       when 1
-        halt 400, json({ "error" => code, "error_description" => args[0] })
+        headers['WWW-Authenticate'] = "Bearer error=\"#{code}\", error_description=\"#{args[0]}\""
       else
-        halt 400, json({ "error" => code, "error_reason" => args[0], "error_description" => args[1] })
+        headers['WWW-Authenticate'] = "Bearer error=\"#{code}\", error_reason=\"#{args[0]}\", error_description=\"#{args[1]}\""
       end
+      halt 400
     end
 
     def method_missing(method_sym, *args)

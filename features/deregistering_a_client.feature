@@ -1,5 +1,5 @@
 @clients @deregistration @client_deregistration
-Feature: Deegistering a client
+Feature: Deregistering a client
   As a user
   I want to be able to register my client
   So that clients I no longer use/own are able to act on my behalf
