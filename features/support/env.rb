@@ -5,6 +5,7 @@ require "cucumber/rest/status"
 
 SERVER_URI = URI.parse(ENV["AUTH_SERVER"] || "http://localhost:9393/")
 PROXY_URI = ENV["PROXY_SERVER"] ? URI.parse(ENV["PROXY_SERVER"]) : nil
+TIME_MEASUREMENT= ENV["TIME_MEASUREMENT"] || "minutes"
 
 Before do
   $zuul = ZuulClient.new(SERVER_URI, PROXY_URI)

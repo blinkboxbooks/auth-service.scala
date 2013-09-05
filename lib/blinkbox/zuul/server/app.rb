@@ -210,7 +210,8 @@ module Blinkbox::Zuul::Server
       token_info = {
         "access_token" => build_access_token(refresh_token, expires_in),
         "token_type" => "bearer",
-        "expires_in" => expires_in
+        "expires_in" => expires_in,
+        "token_elevation" => "critical"
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       token_info.merge!(build_user_info(refresh_token.user, format: :basic))

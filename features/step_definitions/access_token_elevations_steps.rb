@@ -16,9 +16,9 @@ Then(/^the critical elevation expires (#{CAPTURE_INTEGER}) minutes from now$/) d
 end
 
 Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) minutes$/) do |over, num_of_minutes|
-  sleep_time = num_of_minutes.minutes
+  sleep_time = num_of_minutes.send(TIME_MEASUREMENT)
   sleep_time = sleep_time + 10.seconds if over
-  sleep(sleep_time.minutes)
+  sleep(sleep_time)
 end
 
 When(/^I request that my elevated session be extended$/) do
@@ -31,5 +31,5 @@ end
 
 Given(/^I have a non-elevated access token$/) do
   obtain_access_and_token
-  sleep(10.minutes)
+  sleep(10.send(TIME_MEASUREMENT))
 end
