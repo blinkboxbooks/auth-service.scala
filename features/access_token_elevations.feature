@@ -37,7 +37,7 @@ Feature: Access token elevation
     When I submit the access token refresh request
     And I request information about the access token
     Then the response contains access token information
-    And it is critically elevated
+    And its elevation is critical
     And the elevation expires ten minutes from now
 
   @slow
