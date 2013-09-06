@@ -21,7 +21,6 @@ Feature: Getting a client's last used date
     And I request client information for my client
     Then the response contains client information, excluding the client secret
     And its last used date is two seconds ago
-    And it is not cacheable
 
   Scenario: Client last used date is updated when a refresh token bound to it is used to generate an access token
     Given I have bound my tokens to my client
@@ -32,4 +31,3 @@ Feature: Getting a client's last used date
     And I request client information for my client
     Then the response contains client information, excluding the client secret
     And its last used date is two seconds ago
-    And it is not cacheable
