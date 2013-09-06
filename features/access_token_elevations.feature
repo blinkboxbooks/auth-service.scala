@@ -12,7 +12,7 @@ Feature: Access token elevation
     When I request information about the access token
     Then the response contains access token information
     And its elevation is critical
-    And the critical elevation expires ten minutes from now
+    And the elevation expires ten minutes from now
 
   @slow
   Scenario: After ten minutes of non-elevated activity, elevation drops to elevated
@@ -21,6 +21,7 @@ Feature: Access token elevation
     When I request information about the access token
     Then the response contains access token information
     And it is elevated
+    And the elevation expires one day from now
 
   @extremely_slow
   Scenario: After one day of non-elevated activity, elevation drops to none
@@ -55,7 +56,7 @@ Feature: Access token elevation
     Given I have a non-elevated access token
     When I request that my elevated session be extended
     Then the request fails because I am unauthorised
-    And the reason is that my identity is considered unverified
+    And the reason is that my identity is unverified
 
   @slow
   Scenario: Refreshing a elevated access token does not extend the elevated session lifetime
