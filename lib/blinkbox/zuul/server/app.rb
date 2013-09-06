@@ -61,8 +61,11 @@ module Blinkbox::Zuul::Server
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user
 
-      updateable = ["name", "model"]
-      updates = params.select { |k, v| updateable.include?(k) }
+      updates = {}
+      %w{name model}.each do |key|
+        updates[key] = params["client_#{key}"] if params["client_#{key}"]
+      end
+      
       begin
         client.update_attributes!(updates)
       rescue => e
