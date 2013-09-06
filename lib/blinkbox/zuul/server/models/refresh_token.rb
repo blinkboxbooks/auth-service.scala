@@ -28,7 +28,8 @@ module Blinkbox::Zuul::Server
     validates :token, length: { within: 30..50 }, uniqueness: true
     validates :expires_at, presence: true
 
-    after_initialize :extend_lifetime, :extend_elevation_lifetime
+    after_initialize :extend_lifetime
+    after_create :extend_elevation_lifetime
 
     def extend_lifetime
       self.expires_at = DateTime.now + RefreshToken::LifeSpan::TOKEN_LIFETIME_IN_DAYS
@@ -36,8 +37,9 @@ module Blinkbox::Zuul::Server
 
     def extend_elevation_lifetime
       self.status = RefreshToken::Status::VALID
-      self.elevation = RefreshToken::Elevation::CRITICAL
       self.elevation_expires_at = DateTime.now + RefreshToken::LifeSpan::ELEVATION_LIFETIME_IN_SECONDS
+      self.elevation = RefreshToken::Elevation::CRITICAL
+      self.save!
     end
 
   end

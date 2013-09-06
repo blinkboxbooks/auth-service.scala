@@ -236,7 +236,8 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_extend_token_info_request(refresh_token)
-      invalid_request "unverified_identity", status_code: 401 if refresh_token.elevation_expires_at < DateTime.now
+      readable_reason = "It has been too long since you last verified your credentials."
+      invalid_request("unverified_identity",  readable_reason , status_code: 401) if (refresh_token.elevation_expires_at < DateTime.now)
       refresh_token.elevation_expires_at = DateTime.now + RefreshToken::LifeSpan::ELEVATION_LIFETIME_IN_SECONDS
 
       handle_token_info_request(refresh_token)
