@@ -22,3 +22,4 @@ Feature: Listing client information
   Scenario: Trying to list client information without authorisation
     When I request client information for all my clients, without my access token
     Then the request fails because I am unauthorised
+    And the response indicates that the client credentials are incorrect

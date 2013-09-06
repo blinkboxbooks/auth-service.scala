@@ -95,7 +95,7 @@ Then(/^the client (.+) is "(.+)"$/) do |name, value|
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do
-  expect(last_response.status).to eq(400)
+  expect(last_response.status / 100).to eq(4), "The response status code should be in the 400s"
   authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
   expect(authenticate_header["error"]).to eq("invalid_client")
 end
