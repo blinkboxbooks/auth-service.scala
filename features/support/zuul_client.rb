@@ -46,8 +46,8 @@ class ZuulClient
 
   def update_client(client, access_token)
     params = {}
-    params[:name] = client.name if client.name_changed?
-    params[:model] = client.model if client.model_changed?
+    params[:client_name] = client.name if client.name_changed?
+    params[:client_model] = client.model if client.model_changed?
     http_patch "/clients/#{client.local_id}", params, access_token
   end
 
