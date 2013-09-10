@@ -32,10 +32,6 @@ module Blinkbox
           Dir.glob(File.join(File.dirname(__FILE__), "models", "*.rb")).each { |file| require file }
         end
 
-        configure(:development) do
-
-        end
-
       end
     end
   end

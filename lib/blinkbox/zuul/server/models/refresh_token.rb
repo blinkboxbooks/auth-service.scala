@@ -15,11 +15,7 @@ module Blinkbox::Zuul::Server
 
     module LifeSpan
       TOKEN_LIFETIME_IN_DAYS = 90.0
-      CRITICAL_ELEVATION_LIFETIME_IN_SECONDS = if ENV["ELEVATION_TIMESPAN"]
-                                                 10.send(ENV["ELEVATION_TIMESPAN"])
-                                               else
-                                                 10.minutes
-                                               end
+      CRITICAL_ELEVATION_LIFETIME_IN_SECONDS = 10.minutes
 
       NORMAL_ELEVATION_LIFETIME_IN_SECONDS = 1.days
     end
@@ -40,9 +36,9 @@ module Blinkbox::Zuul::Server
     end
 
     def elevation
-      if not self.critical_elevation_expires_at.past?
+      if self.critical_elevation_expires_at.future?
         Elevation::CRITICAL
-      elsif not self.elevation_expires_at.past?
+      elsif self.elevation_expires_at.future?
         Elevation::ELEVATED
       else
         Elevation::NONE

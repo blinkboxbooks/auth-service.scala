@@ -201,7 +201,7 @@ module Blinkbox::Zuul::Server
       refresh_token = RefreshToken.find(env["zuul.claims"]["zl/rti"]) rescue nil
       if refresh_token.nil?
         headers['WWW-Authenticate'] = 'Bearer error="invalid_token", error_reason="unverified_identity" error_description="Access token is invalid"'
-            halt 401
+        halt 401
       end
 
       #invalid_grant "The refresh token is invalid" if refresh_token.nil?
@@ -228,9 +228,9 @@ module Blinkbox::Zuul::Server
                       end
 
         token_info = {
-            "token_status" => refresh_token.status,
-            "token_elevation" => refresh_token.elevation,
-            "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
+          "token_status" => refresh_token.status,
+          "token_elevation" => refresh_token.elevation,
+          "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
         }
 
       else
@@ -242,9 +242,6 @@ module Blinkbox::Zuul::Server
               "token_status" => refresh_token.status
           }
         end
-
-        refresh_token.save!
-
       end
 
       json token_info
