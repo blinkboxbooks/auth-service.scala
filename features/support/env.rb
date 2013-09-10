@@ -4,6 +4,7 @@ require "cucumber/rest/steps/caching"
 require "cucumber/rest/status"
 require "rack/test"
 require "timecop"
+require "thin"
 require_relative "../../lib/blinkbox/zuul/server"
 
 SERVER_URI = URI.parse(ENV["AUTH_SERVER"] || "http://localhost:9393/")
@@ -12,14 +13,17 @@ TIME_MEASUREMENT= ENV["TIME_MEASUREMENT"]
 
 Before do
   $zuul = ZuulClient.new(SERVER_URI, PROXY_URI)
+  $server_ready = false
   if TIME_MEASUREMENT and not $server_up
     Thread.new {
-      Rack::Handler::Thin.run(Blinkbox::Zuul::Server::App, :Port => 9393)
+      $server =  Thin::Server.new('0.0.0.0', 9393, Blinkbox::Zuul::Server::App)
+      $server.start
     }
-    Kernel.sleep(5)
+
     $server_up = true
   end
 
+  loop until (not $server.nil?) and $server.running?
 end
 
 module KnowsAboutResponses

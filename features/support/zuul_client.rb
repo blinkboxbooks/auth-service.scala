@@ -76,7 +76,7 @@ class ZuulClient
     headers = {"Accept" => "application/json"}
     headers["Authorization"] = "Bearer #{access_token}" if access_token
     self.class.get(uri.to_s, headers: headers, query: params)
-    File.open("last_response_get.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
+    #File.open("last_response_get.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
     HttpCapture::RESPONSES.last
   end
 

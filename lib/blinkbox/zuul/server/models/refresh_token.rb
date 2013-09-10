@@ -50,7 +50,7 @@ module Blinkbox::Zuul::Server
     end
 
     def extend_elevation_time
-      update_elevation
+      update_status
 
       case self.elevation
         when Elevation::CRITICAL
@@ -64,7 +64,7 @@ module Blinkbox::Zuul::Server
 
     end
 
-    def update_elevation
+    def update_status
       if self.expires_at.past?
         self.status = Status::INVALID
         self.save!

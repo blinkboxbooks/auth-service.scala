@@ -194,33 +194,29 @@ module Blinkbox::Zuul::Server
       refresh_token.extend_lifetime
       refresh_token.save!
 
-      # must include refresh token
       issue_access_token(refresh_token, true)
     end
 
     def validate_refresh_token
-      token_value = ""
-
-      begin
-        token_value = RefreshToken.find(env["zuul.claims"]["zl/rti"]).token
-      rescue
-        invalid_request "unverified_identity", "The refresh token is required for this request", status_code: 401 if token_value.nil? or token_value.empty?
+      refresh_token = RefreshToken.find(env["zuul.claims"]["zl/rti"]) rescue nil
+      if refresh_token.nil?
+        headers['WWW-Authenticate'] = 'Bearer error="invalid_token", error_reason="unverified_identity" error_description="Access token is invalid"'
+            halt 401
       end
 
-      refresh_token = RefreshToken.find_by_token(token_value)
       #invalid_grant "The refresh token is invalid" if refresh_token.nil?
       readable_reason = "It has been too long since you last verified your credentials."
-      invalid_token = refresh_token.status == RefreshToken::Status::INVALID or refresh_token.elevation_expires_at.past?
-      invalid_request("unverified_identity", readable_reason, status_code: 401) if invalid_token
+      invalid_token = refresh_token.status == refresh_token.expires_at.past?
+      if invalid_token
+        headers['WWW-Authenticate'] = "Bearer error=\"invalid_token\" error_reason=\"unverified_identity\", error_description=\"#{readable_reason}\""
+        halt 401
+      end
       refresh_token
     end
 
     def handle_token_info_request(refresh_token)
-      # To do, check which one is bigger between expiry time and now
-
-      p DateTime.now
       token_info = {}
-      refresh_token.update_elevation
+      refresh_token.update_status
 
       if refresh_token.elevation_expires_at.future?
 
@@ -237,11 +233,9 @@ module Blinkbox::Zuul::Server
             "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
         }
 
-        p refresh_token.elevation
-        p expiry_time
       else
         if refresh_token.status == RefreshToken::Status::INVALID
-          token_info = { "token_status" => RefreshToken::Status::INVALID }
+          token_info = {"token_status" => RefreshToken::Status::INVALID}
         else
           token_info = {
               "token_elevation" => refresh_token.elevation,
