@@ -39,6 +39,16 @@ module Blinkbox::Zuul::Server
       self.expires_at = DateTime.now + LifeSpan::TOKEN_LIFETIME_IN_DAYS
     end
 
+    def elevation
+      if not self.critical_elevation_expires_at.past?
+        Elevation::CRITICAL
+      elsif not self.elevation_expires_at.past?
+        Elevation::ELEVATED
+      else
+        Elevation::NONE
+      end
+    end
+
     def extend_elevation_time
       update_elevation
 
@@ -55,18 +65,10 @@ module Blinkbox::Zuul::Server
     end
 
     def update_elevation
-      if self.critical_elevation_expires_at.future?
-        self.elevation = Elevation::CRITICAL
-      elsif self.elevation_expires_at.future?
-        self.elevation = Elevation::ELEVATED
-      elsif self.expires_at.past?
-        self.elevation = Elevation::NONE
+      if self.expires_at.past?
         self.status = Status::INVALID
-      else
-        self.elevation = Elevation::NONE
+        self.save!
       end
-
-      self.save!
     end
 
     private
@@ -75,7 +77,6 @@ module Blinkbox::Zuul::Server
       self.status = RefreshToken::Status::VALID
       self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
       self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
-      self.elevation = RefreshToken::Elevation::CRITICAL
       self.save!
     end
   end
