@@ -44,8 +44,15 @@ Feature: Registering a client
     And it is not cacheable
 
   Scenario: Trying to register a client without user authorisation
+    # RFC 6750 § 3.1:
+    #   If the request lacks any authentication information (e.g., the client
+    #   was unaware that authentication is necessary or attempted using an
+    #   unsupported authentication method), the resource server SHOULD NOT
+    #   include an error code or other error information.
+
     When I submit a client registration request, without my access token
     Then the request fails because I am unauthorised
+    And the response does not include any error information
 
   Scenario: Trying to register a client with an empty name
     Not providing a name is OK because it's optional, but providing an empty name means that an
