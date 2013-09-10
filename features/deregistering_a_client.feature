@@ -30,8 +30,15 @@ Feature: Deregistering a client
     And I have got one registered client
 
   Scenario: Trying to deregister a client without authorisation
+    # RFC 6750 § 3.1:
+    #   If the request lacks any authentication information (e.g., the client
+    #   was unaware that authentication is necessary or attempted using an
+    #   unsupported authentication method), the resource server SHOULD NOT
+    #   include an error code or other error information.
+
     When I request that my current client be deregistered, without my access token
     Then the request fails because I am unauthorised
+    And the response does not include any error information
 
   Scenario: Trying to deregister a nonexistent client
     When I request that a nonexistent client be deregistered
