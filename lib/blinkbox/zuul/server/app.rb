@@ -24,7 +24,6 @@ module Blinkbox::Zuul::Server
       response["Date"] = response["Expires"] = Time.now.rfc822.to_s
       response["Pragma"] = "no-cache"
       response['X-Application-Version'] = VERSION
-      response['X-Application-Version'] << ('+'+COMMIT) if defined?(COMMIT)
     end
 
     post "/clients", provides: :json do
