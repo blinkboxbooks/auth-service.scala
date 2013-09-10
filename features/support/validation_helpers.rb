@@ -40,7 +40,7 @@ def validate_access_token_info_response
   expect(token_info["token_status"]).to match(Regexp.new(%w{VALID INVALID}.join('|')))
 
   if (token_info["token_status"] == 'VALID')
-    expect(token_info["token_elevation"]).to match(Regexp.new(%w{NONE CRITICAL}.join('|')))
+    expect(token_info["token_elevation"]).to match(Regexp.new(%w{NONE ELEVATED CRITICAL}.join('|')))
     if token_info["token_elevation"] == 'NONE'
       expect(token_info["token_elevation_expires_in"]).to be_nil
     else

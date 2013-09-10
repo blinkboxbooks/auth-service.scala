@@ -23,33 +23,33 @@ class ZuulClient
   end
 
   def get_access_token_info(access_token)
-    http_get "/tokeninfo", {} , access_token
+    http_get "/tokeninfo", {}, access_token
   end
 
   def extend_elevated_session(access_token)
-    http_post "/tokeninfo", {} , access_token
+    http_post "/tokeninfo", {}, access_token
   end
 
   def register_client(client, access_token)
-    params = { client_name: client.name, client_model: client.model }
+    params = {client_name: client.name, client_model: client.model}
     http_post "/clients", params, access_token
   end
 
   def register_user(user)
     params = {
-      grant_type: "urn:blinkbox:oauth:grant-type:registration",
-      username: user.username,
-      password: user.password,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      accepted_terms_and_conditions: user.accepted_terms_and_conditions,
-      allow_marketing_communications: user.allow_marketing_communications
+        grant_type: "urn:blinkbox:oauth:grant-type:registration",
+        username: user.username,
+        password: user.password,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        accepted_terms_and_conditions: user.accepted_terms_and_conditions,
+        allow_marketing_communications: user.allow_marketing_communications
     }
     http_post "/oauth2/token", params
   end
 
   def revoke(refresh_token, access_token = nil)
-    http_post "/tokens/revoke", { refresh_token: refresh_token }, access_token
+    http_post "/tokens/revoke", {refresh_token: refresh_token}, access_token
   end
 
   def update_client(client, access_token)
@@ -73,7 +73,7 @@ class ZuulClient
   private
 
   def http_get(uri, params = {}, access_token = nil)
-    headers = { "Accept" => "application/json" }
+    headers = {"Accept" => "application/json"}
     headers["Authorization"] = "Bearer #{access_token}" if access_token
     self.class.get(uri.to_s, headers: headers, query: params)
     File.open("last_response_get.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
@@ -88,13 +88,13 @@ class ZuulClient
     http_send(:post, uri, body_params, access_token)
   end
 
-  def http_send(verb, uri, body_params, access_token = nil)    
-    headers = { "Accept" => "application/json", "Content-Type" => "application/x-www-form-urlencoded" }
+  def http_send(verb, uri, body_params, access_token = nil)
+    headers = {"Accept" => "application/json", "Content-Type" => "application/x-www-form-urlencoded"}
     headers["Authorization"] = "Bearer #{access_token}" if access_token
     body_params.reject! { |k, v| v.nil? }
     body_params = URI.encode_www_form(body_params) unless body_params.is_a?(String)
-    self.class.send(verb, uri.to_s, headers: headers, body: body_params)  
-    File.open("last_response_send.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
+    self.class.send(verb, uri.to_s, headers: headers, body: body_params)
+    #File.open("last_response_send.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
     HttpCapture::RESPONSES.last
   end
 

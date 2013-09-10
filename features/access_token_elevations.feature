@@ -17,7 +17,7 @@ Feature: Access token elevation
   @slow
   Scenario: After ten minutes of non-elevated activity, elevation drops to elevated
     Given I obtain an access token using my email address and password
-    And I wait for just over ten minutes
+    And I wait for over ten minutes
     When I request information about the access token
     Then the response contains access token information
     And it is elevated
@@ -27,6 +27,7 @@ Feature: Access token elevation
   Scenario: After one day of non-elevated activity, elevation drops to none
     Given I obtain an access token using my email address and password
     And I wait for over one day
+    And I submit the access token refresh request
     When I request information about the access token
     Then the response contains access token information
     And it is not elevated
@@ -44,7 +45,7 @@ Feature: Access token elevation
   @slow
   Scenario: Extending elevation while elevated only extends elevated session (not critically elevated session)
     Given I obtain an access token using my email address and password
-    And I wait for just over ten minutes
+    And I wait for over ten minutes
     When I submit the access token refresh request
     And I request information about the access token
     Then the response contains access token information

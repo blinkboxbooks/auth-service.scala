@@ -65,7 +65,7 @@ module Blinkbox::Zuul::Server
       %w{name model}.each do |key|
         updates[key] = params["client_#{key}"] if params["client_#{key}"]
       end
-      
+
       begin
         client.update_attributes!(updates)
       rescue => e
@@ -116,23 +116,12 @@ module Blinkbox::Zuul::Server
     end
 
     get "/tokeninfo" do
-      token_value = RefreshToken.find(env["zuul.claims"]["zl/rti"]).token
-      invalid_request "The refresh token is required for this request" if token_value.nil?
-
-      refresh_token = RefreshToken.find_by_token(token_value)
-      invalid_grant "The refresh token is invalid" if refresh_token.nil?
-
+      refresh_token = validate_refresh_token
       handle_token_info_request(refresh_token)
     end
 
     post "/tokeninfo" do
-      token_value = RefreshToken.find(env["zuul.claims"]["zl/rti"]).token
-
-      invalid_request "The refresh token is required for this request" if token_value.nil?
-
-      refresh_token = RefreshToken.find_by_token(token_value)
-      invalid_grant "The refresh token is invalid" if refresh_token.nil?
-
+      refresh_token = validate_refresh_token
       handle_extend_token_info_request(refresh_token)
     end
 
@@ -192,7 +181,7 @@ module Blinkbox::Zuul::Server
 
       refresh_token = RefreshToken.find_by_token(token_value)
       invalid_grant "The refresh token is invalid" if refresh_token.nil?
-      invalid_grant "The refresh token has expired" if refresh_token.expires_at < DateTime.now
+      invalid_grant "The refresh token has expired" if refresh_token.expires_at.past?
       invalid_grant "The refresh token has been revoked" if refresh_token.revoked
 
       client = authenticate_client(params, refresh_token.user)
@@ -209,25 +198,57 @@ module Blinkbox::Zuul::Server
       issue_access_token(refresh_token, true)
     end
 
+    def validate_refresh_token
+      token_value = ""
+
+      begin
+        token_value = RefreshToken.find(env["zuul.claims"]["zl/rti"]).token
+      rescue
+        invalid_request "unverified_identity", "The refresh token is required for this request", status_code: 401 if token_value.nil? or token_value.empty?
+      end
+
+      refresh_token = RefreshToken.find_by_token(token_value)
+      #invalid_grant "The refresh token is invalid" if refresh_token.nil?
+      readable_reason = "It has been too long since you last verified your credentials."
+      invalid_token = refresh_token.status == RefreshToken::Status::INVALID or refresh_token.elevation_expires_at.past?
+      invalid_request("unverified_identity", readable_reason, status_code: 401) if invalid_token
+      refresh_token
+    end
+
     def handle_token_info_request(refresh_token)
       # To do, check which one is bigger between expiry time and now
 
+      p DateTime.now
       token_info = {}
+      refresh_token.update_elevation
 
-      if refresh_token.elevation_expires_at > DateTime.now
+      if refresh_token.elevation_expires_at.future?
+
+        expiry_time = case refresh_token.elevation
+                        when RefreshToken::Elevation::CRITICAL
+                          refresh_token.critical_elevation_expires_at
+                        else
+                          refresh_token.elevation_expires_at
+                      end
 
         token_info = {
             "token_status" => refresh_token.status,
             "token_elevation" => refresh_token.elevation,
-            "token_elevation_expires_in" => refresh_token.elevation_expires_at.to_i - DateTime.now.to_i
+            "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
         }
 
+        p refresh_token.elevation
+        p expiry_time
       else
+        if refresh_token.status == RefreshToken::Status::INVALID
+          token_info = { "token_status" => RefreshToken::Status::INVALID }
+        else
+          token_info = {
+              "token_elevation" => refresh_token.elevation,
+              "token_status" => refresh_token.status
+          }
+        end
 
-        token_info = {
-            "token_status" => RefreshToken::Status::INVALID
-        }
-        refresh_token.status = RefreshToken::Status::INVALID
         refresh_token.save!
 
       end
@@ -236,10 +257,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_extend_token_info_request(refresh_token)
-      readable_reason = "It has been too long since you last verified your credentials."
-      invalid_request("unverified_identity",  readable_reason , status_code: 401) if (refresh_token.elevation_expires_at < DateTime.now)
-      refresh_token.elevation_expires_at = DateTime.now + RefreshToken::LifeSpan::ELEVATION_LIFETIME_IN_SECONDS
-
+      refresh_token.extend_elevation_time
       handle_token_info_request(refresh_token)
     end
 
@@ -261,7 +279,7 @@ module Blinkbox::Zuul::Server
       end
       refresh_token.save!
 
-      issue_access_token(refresh_token, include_refresh_token: true)
+      issue_access_token(refresh_token, include_refresh_token: false)
     end
 
     def issue_access_token(refresh_token, include_refresh_token = false)

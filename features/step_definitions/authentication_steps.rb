@@ -50,12 +50,18 @@ When(/^I do not provide my refresh token$/) do
   @credentials.delete("refresh_token")
 end
 
-When(/^I provide a nonexistent refresh token$/) do  
+When(/^I provide a nonexistent refresh token$/) do
   use_refresh_token_credentials
   @credentials["refresh_token"] = random_password
 end
 
-When(/^I submit the (?:authentication|access token refresh) request$/) do
+When(/^I submit the (authentication|access token refresh) request$/) do |request_type|
+  if request_type == "access token refresh"
+    use_refresh_token_credentials
+  else
+    use_username_and_password_credentials
+  end
+
   @me.authenticate(@credentials)
 end
 
