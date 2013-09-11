@@ -1,4 +1,3 @@
-
 Given(/^I have registered a client$/) do
   @my_client = TestClient.new.generate_details
   @me.register_client(@my_client)
@@ -66,7 +65,7 @@ When(/^I change my( other)? client's (.+) to "(.+)"$/) do |other_client, name, v
 end
 
 When(/^I request my( other)? client's information be updated(, without my access token)?$/) do |other_client, no_token|
-  client = other_client ? @my_other_client : @my_client  
+  client = other_client ? @my_other_client : @my_client
   access_token = @me.access_token unless no_token
   $zuul.update_client(client, access_token)
 end

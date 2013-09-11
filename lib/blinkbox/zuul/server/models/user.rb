@@ -13,7 +13,7 @@ module Blinkbox::Zuul::Server
     validates :password_hash, presence: true
     validate :validate_password
 
-    def password=(password)  
+    def password=(password)
       if password
         @password_length = password.length
         self.password_hash = SCrypt::Password.create(password, max_time: 0.2, max_mem: 16 * 1024 * 1024)
@@ -26,10 +26,14 @@ module Blinkbox::Zuul::Server
     def self.authenticate(username, password)
       return nil if username.nil? || password.nil?
       user = User.find_by_username(username)
-      if user && SCrypt::Password.new(user.password_hash) == password then user else nil end
+      if user && SCrypt::Password.new(user.password_hash) == password then
+        user
+      else
+        nil
+      end
     end
 
-    private 
+    private
 
     def validate_password
       # this validation is only needed when the password is changed, in which case we recorded

@@ -16,7 +16,7 @@ Before do
   $server_ready = false
   if TIME_MEASUREMENT and not $server_up
     Thread.new {
-      $server =  Thin::Server.new('0.0.0.0', 9393, Blinkbox::Zuul::Server::App)
+      $server = Thin::Server.new('0.0.0.0', 9393, Blinkbox::Zuul::Server::App)
       $server.start
     }
 

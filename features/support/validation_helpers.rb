@@ -1,4 +1,3 @@
-
 def validate_client_information_response(client_secret = :required)
   expect(last_response.status).to eq(200)
   client_info = last_response_json

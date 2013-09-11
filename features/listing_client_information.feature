@@ -4,7 +4,7 @@ Feature: Listing client information
   I want to be able to list information about all my clients
   So that I can use and display the details
 
-  Background:  
+  Background:
     Given I have registered an account
 
   Scenario: Listing client information for no clients

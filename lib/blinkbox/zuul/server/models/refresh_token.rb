@@ -25,7 +25,7 @@ module Blinkbox::Zuul::Server
     belongs_to :client
     has_one :access_token
 
-    validates :token, length: {within: 30..50}, uniqueness: true
+    validates :token, length: { within: 30..50 }, uniqueness: true
     validates :expires_at, presence: true
 
     after_initialize :extend_lifetime
@@ -49,11 +49,11 @@ module Blinkbox::Zuul::Server
       update_status
 
       case self.elevation
-        when Elevation::CRITICAL
-          self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
-        when Elevation::ELEVATED
-          self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
-        else
+      when Elevation::CRITICAL
+        self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
+      when Elevation::ELEVATED
+        self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
+      else
       end
 
       self.save!
