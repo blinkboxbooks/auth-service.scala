@@ -29,7 +29,7 @@ module Blinkbox::Zuul::Server
     validates :expires_at, presence: true
 
     after_initialize :extend_lifetime
-    after_create :extend_critical_elevation_lifetime
+    after_create :set_initial_critical_elevation
 
     def extend_lifetime
       self.expires_at = DateTime.now + LifeSpan::TOKEN_LIFETIME_IN_DAYS
@@ -66,7 +66,7 @@ module Blinkbox::Zuul::Server
 
     private
 
-    def extend_critical_elevation_lifetime
+    def set_initial_critical_elevation
       self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
       self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
       self.save!
