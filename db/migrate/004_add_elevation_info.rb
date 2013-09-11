@@ -1,6 +1,6 @@
 require_relative "../default_options"
 
-class CreateTokenInfo < ActiveRecord::Migration
+class AddElevationInfo < ActiveRecord::Migration
 
   def change
     change_table :refresh_tokens do |t|
