@@ -1,4 +1,3 @@
-
 Then(/^the response contains an access token and a refresh token$/, :validate_user_token_response)
 Then(/^the response contains an access token$/) do
   validate_user_token_response(refresh_token: :optional)

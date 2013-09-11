@@ -1,5 +1,4 @@
-
-Given(/^I have bound my tokens to my client$/) do  
+Given(/^I have bound my tokens to my client$/) do
   use_refresh_token_credentials
   include_client_credentials
   @me.authenticate(@credentials)
@@ -51,12 +50,13 @@ When(/^I do not provide my refresh token$/) do
   @credentials.delete("refresh_token")
 end
 
-When(/^I provide a nonexistent refresh token$/) do  
+When(/^I provide a nonexistent refresh token$/) do
   use_refresh_token_credentials
   @credentials["refresh_token"] = random_password
 end
 
 When(/^I submit the (?:authentication|access token refresh) request$/) do
+  # The assumption is that you have called a step with "I provide my ..." before you call this as set up to @credentials
   @me.authenticate(@credentials)
 end
 

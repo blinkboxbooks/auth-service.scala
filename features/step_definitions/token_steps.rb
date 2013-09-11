@@ -1,4 +1,3 @@
-
 Given(/^I have revoked my refresh token$/) do
   $zuul.revoke(@me.refresh_token)
   expect(last_response.status).to eq(200)

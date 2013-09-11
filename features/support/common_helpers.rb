@@ -1,5 +1,5 @@
-
-def noop; end
+def noop;
+end
 
 def random_email
   chars = [*("A".."Z"), *("a".."z"), *("0".."9")]

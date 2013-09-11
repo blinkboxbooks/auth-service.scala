@@ -20,7 +20,7 @@ Feature: Password authentication
     And I submit the authentication request
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
-    And it is not cacheable  
+    And it is not cacheable
 
   Scenario: Trying to authenticate without a password
     When I provide my email address

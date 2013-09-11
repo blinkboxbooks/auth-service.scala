@@ -1,4 +1,3 @@
-
 When(/^I request user information for myself(, without my access token)?$/) do |no_token|
   access_token = @me.access_token unless no_token
   $zuul.get_user_info(@me.local_id, access_token)

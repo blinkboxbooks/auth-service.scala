@@ -10,7 +10,7 @@ Feature: Refreshing an access token
   Scenario: Refreshing an access token using a refresh token
     When I provide my refresh token
     And I submit the access token refresh request
-    Then the response contains an access token 
+    Then the response contains an access token
     And it contains basic user information matching my details
     And it is not cacheable
 
@@ -44,7 +44,7 @@ Feature: Refreshing an access token
     And I have bound my tokens to my client
     When I provide my refresh token and client credentials
     And I submit the access token refresh request
-    Then the response contains an access token 
+    Then the response contains an access token
     And it contains basic user information matching my details
     And it contains client information, excluding the client secret
     And it is not cacheable

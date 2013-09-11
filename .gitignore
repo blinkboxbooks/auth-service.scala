@@ -6,3 +6,4 @@ pkg/
 *.db
 last_response.html
 migration.sql
+.idea/

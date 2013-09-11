@@ -1,4 +1,3 @@
-
 Given(/^I have registered an account$/) do
   @me = TestUser.new.generate_details
   @me.register
@@ -13,7 +12,7 @@ end
 
 When(/^I provide valid registration details$/) do
   @me = TestUser.new.generate_details
-end 
+end
 
 When(/^I have( not)? accepted the terms and conditions$/) do |not_accepted|
   @me.accepted_terms_and_conditions = !not_accepted

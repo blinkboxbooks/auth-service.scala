@@ -43,9 +43,9 @@ Feature: Updating a user's information
     And the response does not include any error information
 
   Scenario: Trying to update user information for a different user
-    For security reasons we don't distinguish between a user that doesn't exist and a user that 
+    For security reasons we don't distinguish between a user that doesn't exist and a user that
     does exist but is not the current user. In either case we say it was not found.
-    
+
     Given another user has registered an account
     When I request the other user's information be updated
     Then the request fails because the user was not found

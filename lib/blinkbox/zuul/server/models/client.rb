@@ -16,8 +16,12 @@ module Blinkbox::Zuul::Server
       return nil if id.nil? || secret.nil?
       numeric_id = id.match(/\Aurn:blinkbox:zuul:client:(\d+)\Z/)[1]
       client = Client.find_by_id(numeric_id.to_i) if numeric_id
-      if client && client.client_secret == secret then client else nil end
+      if client && client.client_secret == secret then
+        client
+      else
+        nil
+      end
     end
-    
+
   end
 end

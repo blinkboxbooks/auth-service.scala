@@ -57,7 +57,7 @@ Feature: Registering a client
   Scenario: Trying to register a client with an empty name
     Not providing a name is OK because it's optional, but providing an empty name means that an
     invalid name has been provided, which should return an error.
-    
+
     When I provide a client name of ""
     And I submit the client registration request
     Then the request fails because it is invalid
@@ -65,21 +65,21 @@ Feature: Registering a client
   Scenario: Trying to register a client with an empty model
     Not providing a model is OK because it's optional, but providing an empty model means that an
     invalid model has been provided, which should return an error.
-    
+
     When I provide a client model of ""
     And I submit the client registration request
     Then the request fails because it is invalid
 
   Scenario: Trying to register a client with a name that is too long
     The client name can't be more than 50 characters.
-    
+
     When I provide a client name of "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
     And I submit the client registration request
     Then the request fails because it is invalid
 
   Scenario: Trying to register a client with a model that is too long
     The client model can't be more than 50 characters.
-    
+
     When I provide a client model of "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
     And I submit the client registration request
     Then the request fails because it is invalid
