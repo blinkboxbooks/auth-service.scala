@@ -46,38 +46,38 @@ Feature: Registration
     And I submit the registration request
     Then the request fails because it is invalid
 
-  Examples: Required details
-    These details are required for registration
-    | detail                         |
-    | first name                     |
-    | last name                      |
-    | email address                  |
-    | password                       |
-    | accepted terms and conditions  |
-    | allow marketing communications |
+    Examples: Required details
+      These details are required for registration
+      | detail                         |
+      | first name                     |
+      | last name                      |
+      | email address                  |
+      | password                       |
+      | accepted terms and conditions  |
+      | allow marketing communications |
 
   Scenario Outline: Trying to register with invalid details
     When I provide valid registration details, except <detail> which is "<value>"
     And I submit the registration request
     Then the request fails because it is invalid
 
-  Examples: Malformed email address
-    The email address must have one @ symbol with a . after it and characters at each end and in between
-    | detail        | value             |
-    | email address | user.example.org  |
-    | email address | user@example      |
-    | email address | user.example@com  |
-    | email address | user@@example.org |
-    | email address | user@example.     |
-    | email address | @example.org      |
+    Examples: Malformed email address
+      The email address must have one @ symbol with a . after it and characters at each end and in between
+      | detail        | value             |
+      | email address | user.example.org  |
+      | email address | user@example      |
+      | email address | user.example@com  |
+      | email address | user@@example.org |
+      | email address | user@example.     |
+      | email address | @example.org      |
 
-  Examples: Password too short
-    The password must be at least six characters in length
-    | detail   | value |
-    | password | aY9!w |
+    Examples: Password too short
+      The password must be at least six characters in length
+      | detail   | value |
+      | password | aY9!w |
 
-  Examples: Name too long
-    The first name and/or last name can't be more than fifty characters
-    | detail     | value                                                |
-    | first name | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
-    | last name  | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
+    Examples: Name too long
+      The first name and/or last name can't be more than fifty characters
+      | detail     | value                                                |
+      | first name | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
+      | last name  | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
