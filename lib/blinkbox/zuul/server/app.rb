@@ -216,7 +216,6 @@ module Blinkbox::Zuul::Server
 
     def handle_token_info_request(refresh_token)
       token_info = {}
-      refresh_token.update_status
 
       if refresh_token.elevation_expires_at.future?
 

@@ -60,17 +60,13 @@ module Blinkbox::Zuul::Server
 
     end
 
-    def update_status
-      if self.expires_at.past?
-        self.status = Status::INVALID
-        self.save!
-      end
+    def status
+      self.expires_at.past? ? Status::INVALID : Status::VALID
     end
 
     private
 
     def extend_critical_elevation_lifetime
-      self.status = RefreshToken::Status::VALID
       self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
       self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
       self.save!

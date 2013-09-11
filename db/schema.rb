@@ -31,7 +31,6 @@ ActiveRecord::Schema.define(version: 4) do
     t.string   "token",                         limit: 50
     t.datetime "expires_at"
     t.boolean  "revoked"
-    t.string   "status"
     t.datetime "elevation_expires_at"
     t.datetime "critical_elevation_expires_at"
   end
