@@ -15,9 +15,9 @@ Feature: Getting a client's information
     And it is not cacheable
 
   Scenario: Getting one of my other client's information
-  Users can get the information for any of their clients from anywhere as long as
-  they are authenticated; it doesn't have to be done from the same client. This is so
-  that they can manage all their clients from a central location.
+    Users can get the information for any of their clients from anywhere as long as
+    they are authenticated; it doesn't have to be done from the same client. This is so
+    that they can manage all their clients from a central location.
 
     Given I have registered another client
     When I request client information for my other client
@@ -33,8 +33,8 @@ Feature: Getting a client's information
     Then the request fails because the client was not found
 
   Scenario: Trying to get client information for another user's client
-  For security reasons we don't distinguish between a client that doesn't exist and a client that
-  does exist but the user isn't allowed to access. In either case we say it was not found.
+    For security reasons we don't distinguish between a client that doesn't exist and a client that
+    does exist but the user isn't allowed to access. In either case we say it was not found.
 
     Given another user has registered an account
     And another user has registered a client

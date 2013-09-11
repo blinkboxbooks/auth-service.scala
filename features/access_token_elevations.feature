@@ -64,8 +64,8 @@ Feature: Access token elevation
 
   @slow
   Scenario: Refreshing a elevated access token does not extend the elevated session lifetime
-  Refreshing an access token is orthogonal to the concept of elevation, so refreshing a
-  token doesn't affect the elevated session in any way.
+    Refreshing an access token is orthogonal to the concept of elevation, so refreshing a
+    token doesn't affect the elevated session in any way.
 
     Given I obtain an access token using my email address and password
     And I wait for two minutes
@@ -78,8 +78,8 @@ Feature: Access token elevation
 
   @slow
   Scenario: Refreshing an elevated access token does not grant critical elevation
-  Refreshing an access token is orthogonal to the concept of elevation. The act of
-  refreshing doesn't prove your identity, so doesn't grant elevated access.
+    Refreshing an access token is orthogonal to the concept of elevation. The act of
+    refreshing doesn't prove your identity, so doesn't grant elevated access.
 
     Given I have an elevated access token
     When I provide my refresh token
@@ -90,8 +90,8 @@ Feature: Access token elevation
 
   @extremely_slow
   Scenario: Refreshing a non-elevated access token does not grant elevation
-  Refreshing an access token is orthogonal to the concept of elevation. The act of
-  refreshing doesn't prove your identity, so doesn't grant elevated access.
+    Refreshing an access token is orthogonal to the concept of elevation. The act of
+    refreshing doesn't prove your identity, so doesn't grant elevated access.
 
     Given I have a non-elevated access token
     When I provide my refresh token

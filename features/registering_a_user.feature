@@ -47,7 +47,7 @@ Feature: Registration
     Then the request fails because it is invalid
 
   Examples: Required details
-  These details are required for registration
+    These details are required for registration
     | detail                         |
     | first name                     |
     | last name                      |
@@ -62,7 +62,7 @@ Feature: Registration
     Then the request fails because it is invalid
 
   Examples: Malformed email address
-  The email address must have one @ symbol with a . after it and characters at each end and in between
+    The email address must have one @ symbol with a . after it and characters at each end and in between
     | detail        | value             |
     | email address | user.example.org  |
     | email address | user@example      |
@@ -72,12 +72,12 @@ Feature: Registration
     | email address | @example.org      |
 
   Examples: Password too short
-  The password must be at least six characters in length
+    The password must be at least six characters in length
     | detail   | value |
     | password | aY9!w |
 
   Examples: Name too long
-  The first name and/or last name can't be more than fifty characters
+    The first name and/or last name can't be more than fifty characters
     | detail     | value                                                |
     | first name | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
     | last name  | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |

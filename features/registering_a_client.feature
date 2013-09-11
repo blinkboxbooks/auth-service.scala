@@ -71,7 +71,7 @@ Feature: Registering a client
     Then the request fails because it is invalid
 
   Scenario: Trying to register a client with a model that is too long
-  The client model can't be more than 50 characters.
+    The client model can't be more than 50 characters.
 
     When I provide a client model of "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
     And I submit the client registration request
