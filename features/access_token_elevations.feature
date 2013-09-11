@@ -27,6 +27,7 @@ Feature: Access token elevation
   Scenario: After one day of non-elevated activity, elevation drops to none
     Given I obtain an access token using my email address and password
     And I wait for over one day
+    When I provide my refresh token
     And I submit the access token refresh request
     When I request information about the access token
     Then the response contains access token information
@@ -36,7 +37,8 @@ Feature: Access token elevation
   Scenario: Critically elevated session lifetime can be extended
     Given I obtain an access token using my email address and password
     And I wait for nine minutes
-    When I submit the access token refresh request
+    When I provide my refresh token
+    And I submit the access token refresh request
     And I request information about the access token
     Then the response contains access token information
     And its elevation is critical
@@ -46,7 +48,8 @@ Feature: Access token elevation
   Scenario: Extending elevation while elevated only extends elevated session (not critically elevated session)
     Given I obtain an access token using my email address and password
     And I wait for over ten minutes
-    When I submit the access token refresh request
+    When I provide my refresh token
+    And I submit the access token refresh request
     And I request information about the access token
     Then the response contains access token information
     And it is elevated
@@ -66,7 +69,8 @@ Feature: Access token elevation
     
     Given I obtain an access token using my email address and password
     And I wait for two minutes
-    When I submit the access token refresh request
+    When I provide my refresh token
+    And I submit the access token refresh request
     And I request information about the access token
     Then the response contains access token information
     And its elevation is critical
@@ -78,7 +82,8 @@ Feature: Access token elevation
     refreshing doesn't prove your identity, so doesn't grant elevated access.
 
     Given I have an elevated access token
-    When I submit the access token refresh request
+    When I provide my refresh token
+    And I submit the access token refresh request
     And I request information about the access token
     Then the response contains access token information
     And it is elevated
@@ -89,7 +94,8 @@ Feature: Access token elevation
     refreshing doesn't prove your identity, so doesn't grant elevated access.
 
     Given I have a non-elevated access token
-    When I submit the access token refresh request
+    When I provide my refresh token
+    And I submit the access token refresh request
     And I request information about the access token
     Then the response contains access token information
     And it is not elevated

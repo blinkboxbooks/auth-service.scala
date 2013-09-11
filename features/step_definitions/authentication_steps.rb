@@ -56,12 +56,7 @@ When(/^I provide a nonexistent refresh token$/) do
 end
 
 When(/^I submit the (authentication|access token refresh) request$/) do |request_type|
-  if request_type == "access token refresh"
-    use_refresh_token_credentials
-  else
-    use_username_and_password_credentials
-  end
-
+  # The assumption is that you have called a step with "I provide my ..." before you call this as set up to @credentials
   @me.authenticate(@credentials)
 end
 
