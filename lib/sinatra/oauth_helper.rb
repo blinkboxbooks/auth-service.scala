@@ -7,16 +7,15 @@ module Sinatra
       @base_url ||= "#{request.env["rack.url_scheme"]}://#{request.env["HTTP_HOST"]}"
     end
 
-    def oauth_error(code, *args, status_code: 400)
+    def oauth_error(code, *args)
       case args.length
       when 0
-        headers['WWW-Authenticate'] = "Bearer error=\"#{code}\""
+        halt 400, json({ "error" => code })
       when 1
-        headers['WWW-Authenticate'] = "Bearer error=\"#{code}\", error_description=\"#{args[0]}\""
+        halt 400, json({ "error" => code, "error_description" => args[0] })
       else
-        headers['WWW-Authenticate'] = "Bearer error=\"#{code}\", error_reason=\"#{args[0]}\", error_description=\"#{args[1]}\""
+        halt 400, json({ "error" => code, "error_reason" => args[0], "error_description" => args[1] })
       end
-      halt status_code
     end
 
     def method_missing(method_sym, *args, status_code: 400)

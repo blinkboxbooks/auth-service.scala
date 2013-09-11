@@ -20,6 +20,12 @@ Feature: Listing client information
     And it is not cacheable
 
   Scenario: Trying to list client information without authorisation
+    # RFC 6750 § 3.1:
+    #   If the request lacks any authentication information (e.g., the client
+    #   was unaware that authentication is necessary or attempted using an
+    #   unsupported authentication method), the resource server SHOULD NOT
+    #   include an error code or other error information.
+
     When I request client information for all my clients, without my access token
     Then the request fails because I am unauthorised
-    And the response indicates that the client credentials are incorrect
+    And the response does not include any error information

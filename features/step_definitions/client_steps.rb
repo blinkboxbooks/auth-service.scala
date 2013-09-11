@@ -94,12 +94,10 @@ Then(/^the client (.+) is "(.+)"$/) do |name, value|
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do
-  expect(last_response.status / 100).to eq(4), "The response status code should be in the 400s"
-  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
-  expect(authenticate_header["error"]).to eq("invalid_client")
+  expect(last_response.status).to eq(400)
+  expect(last_response_json["error"]).to eq("invalid_client")
 end
 
 Then(/^the reason is that the client limit has been reached$/) do
-  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
-  expect(authenticate_header["error_reason"]).to eq("client_limit_reached")
+  expect(last_response_json["error_reason"]).to eq("client_limit_reached")
 end
