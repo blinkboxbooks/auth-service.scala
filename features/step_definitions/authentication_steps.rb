@@ -55,7 +55,7 @@ When(/^I provide a nonexistent refresh token$/) do
   @credentials["refresh_token"] = random_password
 end
 
-When(/^I submit the (authentication|access token refresh) request$/) do |request_type|
+When(/^I submit the (?:authentication|access token refresh) request$/) do
   # The assumption is that you have called a step with "I provide my ..." before you call this as set up to @credentials
   @me.authenticate(@credentials)
 end

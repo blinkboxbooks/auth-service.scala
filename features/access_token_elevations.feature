@@ -77,7 +77,7 @@ Feature: Access token elevation
     And the elevation expires eight minutes from now
 
   @slow
-  Scenario: Refreshing an elevated access token does not grant elevation
+  Scenario: Refreshing an elevated access token does not grant critical elevation
     Refreshing an access token is orthogonal to the concept of elevation. The act of
     refreshing doesn't prove your identity, so doesn't grant elevated access.
 

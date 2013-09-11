@@ -42,10 +42,10 @@ end
 
 When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now$/) do |num, time_unit|
   delta = case
-            when "days"
-              "minutes"
-            else
-              "seconds"
+          when "days"
+            "minutes"
+          else
+            "seconds"
           end
   expect(last_response_json["token_elevation_expires_in"]).to be_within(11.send(delta)).of(num.send(time_unit))
 end

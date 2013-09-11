@@ -31,7 +31,7 @@ class ZuulClient
   end
 
   def register_client(client, access_token)
-    params = {client_name: client.name, client_model: client.model}
+    params = { client_name: client.name, client_model: client.model }
     http_post "/clients", params, access_token
   end
 
@@ -49,7 +49,7 @@ class ZuulClient
   end
 
   def revoke(refresh_token, access_token = nil)
-    http_post "/tokens/revoke", {refresh_token: refresh_token}, access_token
+    http_post "/tokens/revoke", { refresh_token: refresh_token }, access_token
   end
 
   def update_client(client, access_token)

@@ -23,7 +23,7 @@ Before do
     $server_up = true
   end
 
-  loop until (not $server.nil?) and $server.running?
+  loop until !$server.nil? && $server.running?
 end
 
 module KnowsAboutResponses
