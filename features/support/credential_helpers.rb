@@ -1,15 +1,15 @@
 def use_username_and_password_credentials(user = @me)
   @credentials = {
-      "grant_type" => "password",
-      "username" => user.username,
-      "password" => user.password
+    "grant_type" => "password",
+    "username" => user.username,
+    "password" => user.password
   }
 end
 
 def use_refresh_token_credentials(user = @me)
   @credentials = {
-      "grant_type" => "refresh_token",
-      "refresh_token" => user.refresh_token
+    "grant_type" => "refresh_token",
+    "refresh_token" => user.refresh_token
   }
 end
 

@@ -227,9 +227,9 @@ module Blinkbox::Zuul::Server
                       end
 
         token_info = {
-            "token_status" => refresh_token.status,
-            "token_elevation" => refresh_token.elevation,
-            "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
+          "token_status" => refresh_token.status,
+          "token_elevation" => refresh_token.elevation,
+          "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
         }
 
       else
@@ -237,8 +237,8 @@ module Blinkbox::Zuul::Server
           token_info = { "token_status" => RefreshToken::Status::INVALID }
         else
           token_info = {
-              "token_elevation" => refresh_token.elevation,
-              "token_status" => refresh_token.status
+            "token_elevation" => refresh_token.elevation,
+            "token_status" => refresh_token.status
           }
         end
       end
@@ -275,9 +275,9 @@ module Blinkbox::Zuul::Server
     def issue_access_token(refresh_token, include_refresh_token = false)
       expires_in = settings.properties[:access_token_duration].to_i
       token_info = {
-          "access_token" => build_access_token(refresh_token, expires_in),
-          "token_type" => "bearer",
-          "expires_in" => expires_in,
+        "access_token" => build_access_token(refresh_token, expires_in),
+        "token_type" => "bearer",
+        "expires_in" => expires_in,
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       token_info.merge!(build_user_info(refresh_token.user, format: :basic))
@@ -287,10 +287,10 @@ module Blinkbox::Zuul::Server
 
     def build_client_info(client, include_client_secret = false)
       client_info = {
-          "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-          "client_uri" => "#{base_url}/clients/#{client.id}",
-          "client_name" => client.name,
-          "client_model" => client.model
+        "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
+        "client_uri" => "#{base_url}/clients/#{client.id}",
+        "client_name" => client.name,
+        "client_model" => client.model
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
       client_info
@@ -298,11 +298,11 @@ module Blinkbox::Zuul::Server
 
     def build_user_info(user, format = :complete)
       user_info = {
-          "user_id" => "urn:blinkbox:zuul:user:#{user.id}",
-          "user_uri" => "#{base_url}/users/#{user.id}",
-          "user_username" => user.username,
-          "user_first_name" => user.first_name,
-          "user_last_name" => user.last_name
+        "user_id" => "urn:blinkbox:zuul:user:#{user.id}",
+        "user_uri" => "#{base_url}/users/#{user.id}",
+        "user_username" => user.username,
+        "user_first_name" => user.first_name,
+        "user_last_name" => user.last_name
       }
       if format == :complete
         user_info["user_allow_marketing_communications"] = user.allow_marketing_communications
@@ -313,8 +313,8 @@ module Blinkbox::Zuul::Server
     def build_access_token(refresh_token, expires_in)
       expires_at = DateTime.now + (expires_in / 86400.0)
       claims = {
-          "sub" => "urn:blinkbox:zuul:user:#{refresh_token.user.id}",
-          "exp" => expires_at.to_i
+        "sub" => "urn:blinkbox:zuul:user:#{refresh_token.user.id}",
+        "exp" => expires_at.to_i
       }
       claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
       claims["zl/rti"] = refresh_token.id # for checking whether the issuing token has been revoked

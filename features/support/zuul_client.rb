@@ -37,13 +37,13 @@ class ZuulClient
 
   def register_user(user)
     params = {
-        grant_type: "urn:blinkbox:oauth:grant-type:registration",
-        username: user.username,
-        password: user.password,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        accepted_terms_and_conditions: user.accepted_terms_and_conditions,
-        allow_marketing_communications: user.allow_marketing_communications
+      grant_type: "urn:blinkbox:oauth:grant-type:registration",
+      username: user.username,
+      password: user.password,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      accepted_terms_and_conditions: user.accepted_terms_and_conditions,
+      allow_marketing_communications: user.allow_marketing_communications
     }
     http_post "/oauth2/token", params
   end
