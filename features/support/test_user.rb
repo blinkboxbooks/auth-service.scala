@@ -6,8 +6,8 @@ class TestUser
 
   tracked_attr_accessor :username,
                         :password,
-                        :first_name, 
-                        :last_name, 
+                        :first_name,
+                        :last_name,
                         :accepted_terms_and_conditions,
                         :allow_marketing_communications
 

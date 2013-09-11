@@ -23,6 +23,9 @@ group :development, :test do
   gem "simplecov"
   gem "sqlite3"
   gem "yard"
+  gem "thin"
+  gem "rack-test"
+  gem "timecop"
 end
 
 group :mysql do

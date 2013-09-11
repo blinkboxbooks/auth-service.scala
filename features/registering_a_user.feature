@@ -3,7 +3,7 @@ Feature: Registration
   As a user
   I want to be able to register an account
   So that I can use services that require my identity
-  
+
   Scenario: Registering with all the required information
     When I provide valid registration details
     And I submit the registration request
@@ -19,7 +19,7 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
-  
+
   Scenario: Registering without allowing marketing communications
     When I provide valid registration details
     And I have not allowed marketing communications
@@ -62,7 +62,7 @@ Feature: Registration
     Then the request fails because it is invalid
 
     Examples: Malformed email address
-      The email address must have one @ symbol with a . after it and characters at each end and in between 
+      The email address must have one @ symbol with a . after it and characters at each end and in between
       | detail        | value             |
       | email address | user.example.org  |
       | email address | user@example      |

@@ -1,7 +1,25 @@
 module Blinkbox::Zuul::Server
   class RefreshToken < ActiveRecord::Base
 
-    LIFETIME_IN_DAYS = 90.0
+    module Status
+      VALID = "VALID"
+      INVALID = "INVALID"
+      NONE = "NONE"
+    end
+
+    module Elevation
+      CRITICAL = "CRITICAL"
+      ELEVATED = "ELEVATED"
+      NONE = "NONE"
+    end
+
+    module LifeSpan
+      TOKEN_LIFETIME_IN_DAYS = 90.0
+      CRITICAL_ELEVATION_LIFETIME_IN_SECONDS = 10.minutes
+
+      NORMAL_ELEVATION_LIFETIME_IN_SECONDS = 1.days
+    end
+
 
     belongs_to :user
     belongs_to :client
@@ -11,10 +29,46 @@ module Blinkbox::Zuul::Server
     validates :expires_at, presence: true
 
     after_initialize :extend_lifetime
+    after_create :set_initial_critical_elevation
 
     def extend_lifetime
-      self.expires_at = DateTime.now + LIFETIME_IN_DAYS
+      self.expires_at = DateTime.now + LifeSpan::TOKEN_LIFETIME_IN_DAYS
     end
 
+    def elevation
+      if self.critical_elevation_expires_at.future?
+        Elevation::CRITICAL
+      elsif self.elevation_expires_at.future?
+        Elevation::ELEVATED
+      else
+        Elevation::NONE
+      end
+    end
+
+    def extend_elevation_time
+
+      case self.elevation
+      when Elevation::CRITICAL
+        self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
+      when Elevation::ELEVATED
+        self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
+      else
+      end
+
+      self.save!
+
+    end
+
+    def status
+      self.expires_at.past? ? Status::INVALID : Status::VALID
+    end
+
+    private
+
+    def set_initial_critical_elevation
+      self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
+      self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
+      self.save!
+    end
   end
 end

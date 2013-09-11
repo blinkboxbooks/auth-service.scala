@@ -18,9 +18,9 @@ module Sinatra
       end
     end
 
-    def method_missing(method_sym, *args)
+    def method_missing(method_sym, *args, status_code: 400)
       if method_sym =~ /invalid_[a-z]+/
-        oauth_error(method_sym.to_s, *args)
+        oauth_error(method_sym.to_s, *args, status_code: status_code)
       else
         super
       end

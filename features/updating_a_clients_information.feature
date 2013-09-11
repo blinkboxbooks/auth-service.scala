@@ -20,7 +20,7 @@ Feature: Updating a client's information
 
   Scenario: Updating one of my other client's name and model
     Users can update the information for any of their clients from anywhere as long as
-    they are authenticated; it doesn't have to be done from the same client. This is so 
+    they are authenticated; it doesn't have to be done from the same client. This is so
     that they can manage all their clients from a central location.
 
     Given I have registered another client
@@ -33,13 +33,20 @@ Feature: Updating a client's information
     And it is not cacheable
 
   Scenario: Trying to update client information without authorisation
+    # RFC 6750 § 3.1:
+    #   If the request lacks any authentication information (e.g., the client
+    #   was unaware that authentication is necessary or attempted using an
+    #   unsupported authentication method), the resource server SHOULD NOT
+    #   include an error code or other error information.
+    
     When I request my client's information be updated, without my access token
     Then the request fails because I am unauthorised
+    And the response does not include any error information
 
   Scenario: Trying to update client information for a different user's client
-    For security reasons we don't distinguish between a user that doesn't exist and a user that 
+    For security reasons we don't distinguish between a user that doesn't exist and a user that
     does exist but is not the current user. In either case we say it was not found.
-    
+
     Given another user has registered an account
     And another user has registered a client
     When I request the other user's client's information be updated

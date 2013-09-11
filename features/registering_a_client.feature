@@ -44,13 +44,20 @@ Feature: Registering a client
     And it is not cacheable
 
   Scenario: Trying to register a client without user authorisation
+    # RFC 6750 § 3.1:
+    #   If the request lacks any authentication information (e.g., the client
+    #   was unaware that authentication is necessary or attempted using an
+    #   unsupported authentication method), the resource server SHOULD NOT
+    #   include an error code or other error information.
+
     When I submit a client registration request, without my access token
     Then the request fails because I am unauthorised
+    And the response does not include any error information
 
   Scenario: Trying to register a client with an empty name
     Not providing a name is OK because it's optional, but providing an empty name means that an
     invalid name has been provided, which should return an error.
-    
+
     When I provide a client name of ""
     And I submit the client registration request
     Then the request fails because it is invalid
@@ -58,21 +65,21 @@ Feature: Registering a client
   Scenario: Trying to register a client with an empty model
     Not providing a model is OK because it's optional, but providing an empty model means that an
     invalid model has been provided, which should return an error.
-    
+
     When I provide a client model of ""
     And I submit the client registration request
     Then the request fails because it is invalid
 
   Scenario: Trying to register a client with a name that is too long
     The client name can't be more than 50 characters.
-    
+
     When I provide a client name of "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
     And I submit the client registration request
     Then the request fails because it is invalid
 
   Scenario: Trying to register a client with a model that is too long
     The client model can't be more than 50 characters.
-    
+
     When I provide a client model of "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
     And I submit the client registration request
     Then the request fails because it is invalid

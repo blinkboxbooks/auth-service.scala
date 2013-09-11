@@ -23,6 +23,7 @@ module Blinkbox::Zuul::Server
       cache_control :no_store
       response["Date"] = response["Expires"] = Time.now.rfc822.to_s
       response["Pragma"] = "no-cache"
+      response['X-Application-Version'] = VERSION
     end
 
     post "/clients", provides: :json do
@@ -61,8 +62,11 @@ module Blinkbox::Zuul::Server
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user
 
-      updateable = ["name", "model"]
-      updates = params.select { |k, v| updateable.include?(k) }
+      updates = {}
+      %w{name model}.each do |key|
+        updates[key] = params["client_#{key}"] if params["client_#{key}"]
+      end
+
       begin
         client.update_attributes!(updates)
       rescue => e
@@ -112,6 +116,16 @@ module Blinkbox::Zuul::Server
       json build_user_info(current_user)
     end
 
+    get "/tokeninfo" do
+      refresh_token = validate_refresh_token
+      handle_token_info_request(refresh_token)
+    end
+
+    post "/tokeninfo" do
+      refresh_token = validate_refresh_token
+      handle_extend_token_info_request(refresh_token)
+    end
+
     private
 
     def handle_token_request(params)
@@ -141,7 +155,7 @@ module Blinkbox::Zuul::Server
       begin
         user.save!
       rescue ActiveRecord::RecordInvalid => e
-        if user.errors[:username].include?(user.errors.generate_message(:username, :taken)) 
+        if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
           invalid_request "username_already_taken", e.message
         else
           invalid_request e.message
@@ -168,7 +182,7 @@ module Blinkbox::Zuul::Server
 
       refresh_token = RefreshToken.find_by_token(token_value)
       invalid_grant "The refresh token is invalid" if refresh_token.nil?
-      invalid_grant "The refresh token has expired" if refresh_token.expires_at < DateTime.now
+      invalid_grant "The refresh token has expired" if refresh_token.expires_at.past?
       invalid_grant "The refresh token has been revoked" if refresh_token.revoked
 
       client = authenticate_client(params, refresh_token.user)
@@ -181,7 +195,61 @@ module Blinkbox::Zuul::Server
       refresh_token.extend_lifetime
       refresh_token.save!
 
-      issue_access_token(refresh_token)
+      issue_access_token(refresh_token, true)
+    end
+
+    def validate_refresh_token
+      refresh_token = RefreshToken.find(env["zuul.claims"]["zl/rti"]) rescue nil
+      if refresh_token.nil?
+        headers['WWW-Authenticate'] = 'Bearer error="invalid_token", error_reason="unverified_identity" error_description="Access token is invalid"'
+        halt 401
+      end
+
+      #invalid_grant "The refresh token is invalid" if refresh_token.nil?
+      readable_reason = "It has been too long since you last verified your credentials."
+      invalid_token = refresh_token.status == refresh_token.expires_at.past?
+      if invalid_token
+        headers['WWW-Authenticate'] = "Bearer error=\"invalid_token\" error_reason=\"unverified_identity\", error_description=\"#{readable_reason}\""
+        halt 401
+      end
+      refresh_token
+    end
+
+    def handle_token_info_request(refresh_token)
+      token_info = {}
+
+      if refresh_token.elevation_expires_at.future?
+
+        expiry_time = case refresh_token.elevation
+                      when RefreshToken::Elevation::CRITICAL
+                        refresh_token.critical_elevation_expires_at
+                      else
+                        refresh_token.elevation_expires_at
+                      end
+
+        token_info = {
+          "token_status" => refresh_token.status,
+          "token_elevation" => refresh_token.elevation,
+          "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
+        }
+
+      else
+        if refresh_token.status == RefreshToken::Status::INVALID
+          token_info = { "token_status" => RefreshToken::Status::INVALID }
+        else
+          token_info = {
+            "token_elevation" => refresh_token.elevation,
+            "token_status" => refresh_token.status
+          }
+        end
+      end
+
+      json token_info
+    end
+
+    def handle_extend_token_info_request(refresh_token)
+      refresh_token.extend_elevation_time
+      handle_token_info_request(refresh_token)
     end
 
     def authenticate_client(params, user)
@@ -202,7 +270,7 @@ module Blinkbox::Zuul::Server
       end
       refresh_token.save!
 
-      issue_access_token(refresh_token, include_refresh_token: true)
+      issue_access_token(refresh_token, include_refresh_token: false)
     end
 
     def issue_access_token(refresh_token, include_refresh_token = false)
@@ -210,7 +278,7 @@ module Blinkbox::Zuul::Server
       token_info = {
         "access_token" => build_access_token(refresh_token, expires_in),
         "token_type" => "bearer",
-        "expires_in" => expires_in
+        "expires_in" => expires_in,
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       token_info.merge!(build_user_info(refresh_token.user, format: :basic))
@@ -235,7 +303,7 @@ module Blinkbox::Zuul::Server
         "user_uri" => "#{base_url}/users/#{user.id}",
         "user_username" => user.username,
         "user_first_name" => user.first_name,
-        "user_last_name" => user.last_name        
+        "user_last_name" => user.last_name
       }
       if format == :complete
         user_info["user_allow_marketing_communications"] = user.allow_marketing_communications
@@ -244,7 +312,7 @@ module Blinkbox::Zuul::Server
     end
 
     def build_access_token(refresh_token, expires_in)
-      expires_at = DateTime.now + (expires_in  / 86400.0)
+      expires_at = DateTime.now + (expires_in / 86400.0)
       claims = {
         "sub" => "urn:blinkbox:zuul:user:#{refresh_token.user.id}",
         "exp" => expires_at.to_i
@@ -255,7 +323,7 @@ module Blinkbox::Zuul::Server
       sig_key_id = settings.properties[:signing_key_id]
       signer = Sandal::Sig::ES256.new(File.read("./keys/#{sig_key_id}/private.pem"))
       jws_token = Sandal.encode_token(claims, signer, { "kid" => sig_key_id })
-      
+
       enc_key_id = settings.properties[:encryption_key_id]
       encrypter = Sandal::Enc::A128GCM.new(Sandal::Enc::Alg::RSA_OAEP.new(File.read("./keys/#{enc_key_id}/public.pem")))
       Sandal.encrypt_token(jws_token, encrypter, { "kid" => enc_key_id, "cty" => "JWT" })

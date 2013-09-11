@@ -1,4 +1,3 @@
-
 def use_username_and_password_credentials(user = @me)
   @credentials = {
     "grant_type" => "password",
