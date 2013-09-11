@@ -9,12 +9,12 @@ require_relative "../../lib/blinkbox/zuul/server"
 
 SERVER_URI = URI.parse(ENV["AUTH_SERVER"] || "http://localhost:9393/")
 PROXY_URI = ENV["PROXY_SERVER"] ? URI.parse(ENV["PROXY_SERVER"]) : nil
-TIME_MEASUREMENT= ENV["TIME_MEASUREMENT"]
+IN_PROC= ENV["IN_PROC"]
 
 Before do
   $zuul = ZuulClient.new(SERVER_URI, PROXY_URI)
   $server_ready = false
-  if TIME_MEASUREMENT and not $server_up
+  if IN_PROC and not $server_up
     Thread.new {
       $server = Thin::Server.new('0.0.0.0', 9393, Blinkbox::Zuul::Server::App)
       $server.start

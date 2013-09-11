@@ -46,7 +46,6 @@ module Blinkbox::Zuul::Server
     end
 
     def extend_elevation_time
-      update_status
 
       case self.elevation
       when Elevation::CRITICAL
