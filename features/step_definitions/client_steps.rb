@@ -44,6 +44,12 @@ When(/^I request client information for my( other)? client(, without my access t
   $zuul.get_client_info(client.local_id, access_token)
 end
 
+When(/^I request client information for my client with a different refresh token$/) do
+  step "I provide my email address and password"
+  step "I submit the authentication request"
+  step "I request client information for my client"
+end
+
 When(/^I request client information for a nonexistent client$/) do
   nonexistent_client_id = @my_client.local_id.to_i + 1000
   $zuul.get_client_info(nonexistent_client_id, @me.access_token)
@@ -91,6 +97,11 @@ end
 
 Then(/^the client (.+) is "(.+)"$/) do |name, value|
   expect(last_response_json["client_#{name}"]).to eq(value)
+end
+
+Then(/^its last used date is (#{CAPTURE_INTEGER}) days ago$/) do |num_days|
+  required_date = (Time.now.utc - num_days.days).strftime("%Y-%m-%d")
+  expect(last_response_json["last_used_date"]).to eq(required_date)
 end
 
 Then(/^the response indicates that the client credentials are incorrect$/) do

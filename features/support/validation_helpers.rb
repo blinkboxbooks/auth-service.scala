@@ -1,5 +1,5 @@
 def validate_client_information_response(client_secret = :required)
-  expect(last_response.status).to eq(200)
+  expect(last_response.status).to eq(200), "Expected status code 200. Got #{last_response.status}: #{www_auth_header['error']} (#{www_auth_header['error_description']})"
   client_info = last_response_json
   expect(client_info["client_id"]).to_not be_nil
   expect(client_info["client_uri"]).to_not be_nil
@@ -7,6 +7,7 @@ def validate_client_information_response(client_secret = :required)
   expect(client_info["client_model"]).to_not be_nil
   expect(client_info["client_secret"]).to_not be_nil if client_secret == :required
   expect(client_info["client_secret"]).to be_nil if client_secret == :prohibited
+  expect(client_info["last_used_date"]).to_not be_nil
 end
 
 def validate_user_information_response(format)

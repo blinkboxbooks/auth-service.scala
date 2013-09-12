@@ -36,8 +36,7 @@ When(/^I request that my elevated session be extended$/) do
 end
 
 Then(/^the reason is that my identity is unverified$/) do
-  authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
-  expect(authenticate_header["error_reason"]).to eq("unverified_identity")
+  expect(www_auth_header["error_reason"]).to eq("unverified_identity")
 end
 
 When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now$/) do |num, time_unit|
