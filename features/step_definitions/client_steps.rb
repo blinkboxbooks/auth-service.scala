@@ -112,3 +112,10 @@ end
 Then(/^the reason is that the client limit has been reached$/) do
   expect(last_response_json["error_reason"]).to eq("client_limit_reached")
 end
+
+Then(/^each client has a last used date$/) do
+  client_list = last_response_json
+  client_list["clients"].each do |client|
+    expect(client["last_used_date"]).to match(/^\d\d\d\d-\d\d-\d\d$/)
+  end
+end
