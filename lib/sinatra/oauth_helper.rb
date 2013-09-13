@@ -4,7 +4,10 @@ module Sinatra
   module OAuthHelper
 
     def base_url
-      @base_url ||= "#{request.env["rack.url_scheme"]}://#{request.env["HTTP_HOST"]}"
+      # Pound load balancer sends the forwarded protocol in the HTTP_X_FORWARDED_PROTO header
+      # we make the assumption that it is ensuring the user isn't overwriting this.
+      scheme = request.ev['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"]
+      @base_url ||= "#{scheme}://#{request.env["HTTP_HOST"]}"
     end
 
     def oauth_error(code, *args)
