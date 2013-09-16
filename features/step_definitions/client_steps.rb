@@ -44,7 +44,7 @@ When(/^I request client information for my( other)? client(, without my access t
   $zuul.get_client_info(client.local_id, access_token)
 end
 
-When(/^I request client information for my client with a different refresh token$/) do
+When(/^I request client information for my client, using an access token that is not bound to it$/) do
   step "I provide my email address and password"
   step "I submit the authentication request"
   step "I request client information for my client"

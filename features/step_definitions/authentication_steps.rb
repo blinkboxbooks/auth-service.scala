@@ -60,6 +60,11 @@ When(/^I submit the (?:authentication|access token refresh) request$/) do
   @me.authenticate(@credentials)
 end
 
+When(/^I bind my tokens to my client$/) do
+  step "I provide my refresh token and client credentials"
+  step "I submit the access token refresh request"
+end
+
 Then(/^the response indicates that my (?:credentials are|refresh token is) (?:incorrect|invalid)$/) do
   expect(last_response.status).to eq(400)
   expect(last_response_json["error"]).to eq("invalid_grant")
