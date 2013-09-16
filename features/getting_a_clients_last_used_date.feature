@@ -14,6 +14,7 @@ Feature: Getting a client's last used date
     Then the response contains client information, excluding the client secret
     And its last used date is two days ago
 
+  @extremely_slow
   Scenario: Client last used date is updated when a refresh token is bound to a client
     Given I have registered a client
     When I wait for three days
@@ -23,6 +24,7 @@ Feature: Getting a client's last used date
     Then the response contains client information, excluding the client secret
     And its last used date is two days ago
 
+  @extremely_slow
   Scenario: Client last used date is updated when a refresh token bound to it is used to generate an access token
     Given I have registered a client
     And I have bound my tokens to my client
