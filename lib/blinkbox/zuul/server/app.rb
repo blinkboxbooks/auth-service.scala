@@ -192,6 +192,7 @@ module Blinkbox::Zuul::Server
         invalid_client "Your client is not authorised to use this refresh token."
       end
 
+      client.touch unless client.nil?
       refresh_token.extend_lifetime
       refresh_token.save!
 
@@ -291,7 +292,8 @@ module Blinkbox::Zuul::Server
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
         "client_uri" => "#{base_url}/clients/#{client.id}",
         "client_name" => client.name,
-        "client_model" => client.model
+        "client_model" => client.model,
+        "last_used_date" => client.updated_at.utc.strftime("%F")
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
       client_info
