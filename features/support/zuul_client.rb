@@ -35,6 +35,10 @@ class ZuulClient
     http_post "/clients", params, access_token
   end
 
+  def deregister_client(client_id, access_token)
+    http_delete "/clients/#{client_id}", {}, access_token
+  end
+
   def register_user(user)
     params = {
       grant_type: "urn:blinkbox:oauth:grant-type:registration",
@@ -86,6 +90,10 @@ class ZuulClient
 
   def http_post(uri, body_params, access_token = nil)
     http_send(:post, uri, body_params, access_token)
+  end
+
+  def http_delete(uri, body_params, access_token = nil)
+    http_send(:delete, uri, body_params, access_token)
   end
 
   def http_send(verb, uri, body_params, access_token = nil)
