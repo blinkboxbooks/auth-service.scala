@@ -60,7 +60,7 @@ module Blinkbox::Zuul::Server
     end
 
     def status
-      self.expires_at.past? ? Status::INVALID : Status::VALID
+      self.expires_at.past? || self.revoked ? Status::INVALID : Status::VALID
     end
 
     private

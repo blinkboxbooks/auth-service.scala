@@ -48,19 +48,19 @@ module Blinkbox::Zuul::Server
     end
 
     get "/clients", provides: :json do
-      client_infos = current_user.clients.map { |client| build_client_info(client) }
+      client_infos = current_user.clients.select { |client| not client.deregistered }.map { |client| build_client_info(client) }
       json({ "clients" => client_infos })
     end
 
     get "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
-      halt 404 if client.nil? || client.user != current_user
+      halt 404 if client.nil? || client.user != current_user || client.deregistered
       json build_client_info(client)
     end
 
     patch "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
-      halt 404 if client.nil? || client.user != current_user
+      halt 404 if client.nil? || client.user != current_user || client.deregistered
 
       updates = {}
       %w{name model}.each do |key|
@@ -74,6 +74,18 @@ module Blinkbox::Zuul::Server
       end
 
       json build_client_info(client)
+    end
+
+    delete "/clients/:client_id", provides: :json do |client_id|
+      client = Client.find_by_id(client_id)
+      halt 404 if client.nil? || client.user != current_user || client.deregistered
+
+      client.deregistered = true
+      if client.refresh_token
+        client.refresh_token.revoked = true
+        client.refresh_token.save!
+      end
+      client.save!
     end
 
     get "/oauth2/token", provides: :json do
@@ -207,9 +219,11 @@ module Blinkbox::Zuul::Server
 
       #invalid_grant "The refresh token is invalid" if refresh_token.nil?
       readable_reason = "It has been too long since you last verified your credentials."
-      invalid_token = refresh_token.status == refresh_token.expires_at.past?
+      invalid_token_reason = "invalid_token"
+      invalid_token = refresh_token.status == RefreshToken::Status::INVALID || refresh_token.expires_at.past?
       if invalid_token
-        headers['WWW-Authenticate'] = "Bearer error=\"invalid_token\" error_reason=\"unverified_identity\", error_description=\"#{readable_reason}\""
+        reason = refresh_token.expires_at.past? && !refresh_token.revoked ? readable_reason : invalid_token_reason
+        headers['WWW-Authenticate'] = "Bearer error=\"invalid_request\" error_reason=\"unverified_identity\", error_description=\"#{reason}\""
         halt 401
       end
       refresh_token

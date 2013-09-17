@@ -15,20 +15,20 @@ end
 
 Then(/^my refresh token and access token are (valid|invalid because they have been revoked)$/) do |validity|
   step("I request information about the access token")
-  step("the response contains access token information")
   if validity == "valid"
+    step("the response contains access token information")
     expect(last_response_json['token_status']).to eql('VALID')
   else
     step("the request fails because I am unauthorised")
-    @response_json = MultiJson.load(last_response.body)
-    expect(@response_json["error"]).to eq("invalid_request")
     authenticate_header = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+    expect(authenticate_header["error"]).to eq("invalid_request")
     expect(authenticate_header["error_description"]).to eq("invalid_token")
   end
 end
 
-Then(/^I have got #{CAPTURE_INTEGER} registered clients?$/) do |num|
-  expect(@clients.size).to eq num
+Then(/^I have got (#{CAPTURE_INTEGER}) registered clients?$/) do |num|
+  step("I request client information for all my clients")
+  expect(last_response_json["clients"].size).to eq num
 end
 
 
