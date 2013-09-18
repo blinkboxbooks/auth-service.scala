@@ -45,5 +45,5 @@ module SleepsByTimeTravel
 end
 
 World(KnowsAboutResponses)
-World(SleepsByTimeTravel)
+World(SleepsByTimeTravel) if IN_PROC
 
