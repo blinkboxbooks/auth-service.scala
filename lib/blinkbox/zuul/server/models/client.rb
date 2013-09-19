@@ -11,10 +11,9 @@ module Blinkbox::Zuul::Server
     validates :user, presence: true
     validates :client_secret, presence: true
 
-    # TODO: Should probably hash the client secret...
     def self.authenticate(id, secret)
       return nil if id.nil? || secret.nil?
-      numeric_id = id.match(/\Aurn:blinkbox:zuul:client:(\d+)\Z/)[1]
+      /\Aurn:blinkbox:zuul:client:(?<numeric_id>\d+)\Z/ =~ id
       client = Client.find_by_id(numeric_id.to_i) if numeric_id
       if client && client.client_secret == secret then
         client
