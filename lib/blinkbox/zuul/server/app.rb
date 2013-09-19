@@ -255,6 +255,8 @@ module Blinkbox::Zuul::Server
 
     def authenticate_client(params, user)
       client_id, client_secret = params["client_id"], params["client_secret"]
+      invalid_client "Both client id and client secret are required." if client_id.nil? ^ client_secret.nil?
+
       unless client_id.nil?
         client = Client.authenticate(client_id, client_secret)
         invalid_client "The client id and/or client secret is incorrect." if client.nil?

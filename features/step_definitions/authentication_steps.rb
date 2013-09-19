@@ -23,7 +23,7 @@ When(/^the email address is in a different case to the one I used to register$/)
   @credentials["username"] = @me.username.swapcase
 end
 
-When(/^I do not provide my (password|client secret)$/) do |name|
+When(/^I do not provide my (password|client id|client secret)$/) do |name|
   @credentials.delete(oauth_param_name(name))
 end
 
