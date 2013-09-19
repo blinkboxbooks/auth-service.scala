@@ -39,7 +39,7 @@ Feature: Access token elevation
     And I wait for nine minutes
     When I provide my refresh token
     And I submit the access token refresh request
-    And I request information about the access token
+    And I request that my elevated session be extended
     Then the response contains access token information
     And its elevation is critical
     And the elevation expires ten minutes from now

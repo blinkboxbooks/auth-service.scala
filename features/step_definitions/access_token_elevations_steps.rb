@@ -40,11 +40,13 @@ Then(/^the reason is that my identity is unverified$/) do
 end
 
 When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now$/) do |num, time_unit|
-  delta = case
-          when "days"
-            "minutes"
-          else
-            "seconds"
-          end
-  expect(last_response_json["token_elevation_expires_in"]).to be_within(11.send(delta)).of(num.send(time_unit))
+  time_delta = 11
+  delta_measurement = case time_unit
+                      when "days"
+                      when "day"
+                        "minutes"
+                      else
+                        "seconds"
+                      end
+  expect(last_response_json["token_elevation_expires_in"]).to be_within(time_delta.send(delta_measurement)).of(num.send(time_unit))
 end
