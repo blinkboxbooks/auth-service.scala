@@ -49,6 +49,22 @@ Feature: Refreshing an access token
     And it contains client information, excluding the client secret
     And it is not cacheable
 
+  Scenario: Trying to refresh an access token using a refresh token that is bound to a client, without the client id
+    Given I have registered a client
+    And I have bound my tokens to my client
+    When I provide my refresh token and client credentials
+    But I do not provide my client id
+    And I submit the access token refresh request
+    Then the response indicates that the client credentials are incorrect
+
+  Scenario: Trying to refresh an access token using a refresh token that is bound to a client, without the client secret
+    Given I have registered a client
+    And I have bound my tokens to my client
+    When I provide my refresh token and client credentials
+    But I do not provide my client secret
+    And I submit the access token refresh request
+    Then the response indicates that the client credentials are incorrect
+
   Scenario: Trying to refresh an access token using a refresh token that is bound to a client, without client credentials
     Given I have registered a client
     And I have bound my tokens to my client

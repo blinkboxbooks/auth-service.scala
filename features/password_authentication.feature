@@ -49,6 +49,13 @@ Feature: Password authentication
     And it contains client information, excluding the client secret
     And it is not cacheable
 
+  Scenario: Trying to authenticate with valid credentials but a missing client id
+    Given I have registered a client
+    When I provide my email address, password and client credentials
+    But I do not provide my client id
+    And I submit the authentication request
+    Then the response indicates that the client credentials are incorrect
+
   Scenario: Trying to authenticate with valid credentials but a missing client secret
     Given I have registered a client
     When I provide my email address, password and client credentials
