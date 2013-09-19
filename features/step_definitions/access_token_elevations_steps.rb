@@ -45,8 +45,10 @@ When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now$/) do
                       when "days"
                       when "day"
                         "minutes"
-                      else
+                      when "minutes"
                         "seconds"
+                      else
+                        raise "undefined unit of time for #{time_unit}"
                       end
   expect(last_response_json["token_elevation_expires_in"]).to be_within(time_delta.send(delta_measurement)).of(num.send(time_unit))
 end
