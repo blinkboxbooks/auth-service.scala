@@ -39,12 +39,17 @@ Then(/^the reason is that my identity is unverified$/) do
   expect(www_auth_header["error_reason"]).to eq("unverified_identity")
 end
 
-When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now$/) do |num, time_unit|
-  delta = case
-          when "days"
-            "minutes"
-          else
-            "seconds"
-          end
-  expect(last_response_json["token_elevation_expires_in"]).to be_within(11.send(delta)).of(num.send(time_unit))
+When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now(?: minus (#{CAPTURE_INTEGER}) (minutes|days?))?$/) do |num, time_unit, negate, negate_unit|
+  time_delta = 5
+  delta_measurement = case time_unit
+                      when /days?/
+                        "minutes"
+                      when /minutes/
+                        "seconds"
+                      else
+                        raise "undefined unit of time for #{time_unit}"
+                      end
+  time_period = num.send(time_unit)
+  time_period = time_period - negate.send(negate_unit) if negate
+  expect(last_response_json["token_elevation_expires_in"]).to be_within(time_delta.send(delta_measurement)).of(time_period)
 end

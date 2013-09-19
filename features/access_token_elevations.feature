@@ -21,7 +21,7 @@ Feature: Access token elevation
     When I request information about the access token
     Then the response contains access token information
     And it is elevated
-    And the elevation expires one day from now
+    And the elevation expires one day from now minus 10 minutes
 
   @extremely_slow
   Scenario: After one day of non-elevated activity, elevation drops to none
@@ -39,7 +39,7 @@ Feature: Access token elevation
     And I wait for nine minutes
     When I provide my refresh token
     And I submit the access token refresh request
-    And I request information about the access token
+    And I request that my elevated session be extended
     Then the response contains access token information
     And its elevation is critical
     And the elevation expires ten minutes from now
@@ -49,7 +49,7 @@ Feature: Access token elevation
     Given I obtain an access token using my email address and password
     And I wait for over ten minutes
     When I provide my refresh token
-    And I submit the access token refresh request
+    And I request that my elevated session be extended
     And I request information about the access token
     Then the response contains access token information
     And it is elevated
