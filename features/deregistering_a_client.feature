@@ -1,7 +1,7 @@
 @clients @deregistration @client_deregistration
 Feature: Deregistering a client
   As a user
-  I want to be able to register my client
+  I want to be able to de-register my client
   So that clients I no longer use/own are able to act on my behalf
 
   Background:
@@ -16,7 +16,7 @@ Feature: Deregistering a client
     When I request that my current client be deregistered
     Then the request succeeds
     And my refresh token and access token are invalid because they have been revoked
-    And I have got no registered clients
+    And I have no registered clients
 
   Scenario: Deregistering one of my other clients
     If you deregister another client though, it has no effect on your tokens. This is because the

@@ -16,3 +16,9 @@ def oauth_param_name(readable_name)
   param_name = "username" if ["email", "email address"].include?(readable_name)
   param_name.tr(" ", "_")
 end
+
+def www_auth_header
+  Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
+rescue
+  {}
+end

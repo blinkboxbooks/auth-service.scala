@@ -23,7 +23,7 @@ When(/^the email address is in a different case to the one I used to register$/)
   @credentials["username"] = @me.username.swapcase
 end
 
-When(/^I do not provide my (password|client secret)$/) do |name|
+When(/^I do not provide my (password|client id|client secret)$/) do |name|
   @credentials.delete(oauth_param_name(name))
 end
 
@@ -58,6 +58,11 @@ end
 When(/^I submit the (?:authentication|access token refresh) request$/) do
   # The assumption is that you have called a step with "I provide my ..." before you call this as set up to @credentials
   @me.authenticate(@credentials)
+end
+
+When(/^I bind my tokens to my client$/) do
+  step "I provide my refresh token and client credentials"
+  step "I submit the access token refresh request"
 end
 
 Then(/^the response indicates that my (?:credentials are|refresh token is) (?:incorrect|invalid)$/) do

@@ -23,7 +23,6 @@ module Blinkbox::Zuul::Server
 
     belongs_to :user
     belongs_to :client
-    has_one :access_token
 
     validates :token, length: { within: 30..50 }, uniqueness: true
     validates :expires_at, presence: true
