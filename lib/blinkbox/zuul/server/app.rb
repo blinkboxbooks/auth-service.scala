@@ -221,7 +221,7 @@ module Blinkbox::Zuul::Server
       #invalid_grant "The refresh token is invalid" if refresh_token.nil?
       readable_reason = "It has been too long since you last verified your credentials."
       invalid_token_reason = "invalid_token"
-      invalid_token = refresh_token.status == RefreshToken::Status::INVALID || refresh_token.expires_at.past?
+      invalid_token = (refresh_token.status == RefreshToken::Status::INVALID) || refresh_token.expires_at.past?
       if invalid_token
         reason = refresh_token.expires_at.past? && !refresh_token.revoked ? readable_reason : invalid_token_reason
         headers['WWW-Authenticate'] = "Bearer error=\"invalid_request\" error_reason=\"unverified_identity\", error_description=\"#{reason}\""
