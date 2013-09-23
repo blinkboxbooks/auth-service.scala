@@ -26,7 +26,7 @@ Then(/^my refresh token and access token are (valid|invalid because they have be
   end
 end
 
-Then(/^I have got (#{CAPTURE_INTEGER}) registered clients?$/) do |num|
+Then(/^I have (?:got )?(#{CAPTURE_INTEGER}) registered clients?$/) do |num|
   step("I request client information for all my clients")
   expect(last_response_json["clients"].size).to eq num
 end
