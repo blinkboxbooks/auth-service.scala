@@ -36,7 +36,7 @@ class ZuulClient
   end
 
   def deregister_client(client_id, access_token)
-    http_delete "/clients/#{client_id}", access_token
+    http_delete "/clients/#{client_id}", {}, access_token
   end
 
   def register_user(user)
@@ -76,10 +76,18 @@ class ZuulClient
 
   private
 
-  def http_get(uri, params = {}, access_token = nil)
+  def http_get(uri, params={}, access_token = nil)
+    http_call(:get, uri, params, access_token)
+  end
+
+  def http_delete(uri, params = {} , access_token = nil)
+    http_call(:delete, uri, params, access_token)
+  end
+
+  def http_call(verb, uri, params = {}, access_token = nil)
     headers = { "Accept" => "application/json" }
     headers["Authorization"] = "Bearer #{access_token}" if access_token
-    self.class.get(uri.to_s, headers: headers, query: params)
+    self.class.send(verb, uri.to_s, headers: headers, query: params)
     #File.open("last_response_get.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
     HttpCapture::RESPONSES.last
   end
@@ -90,10 +98,6 @@ class ZuulClient
 
   def http_post(uri, body_params, access_token = nil)
     http_send(:post, uri, body_params, access_token)
-  end
-
-  def http_delete(uri,  access_token = nil)
-    http_send(:delete, uri, {}, access_token)
   end
 
   def http_send(verb, uri, body_params, access_token = nil)
