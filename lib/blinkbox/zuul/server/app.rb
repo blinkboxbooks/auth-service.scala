@@ -48,7 +48,7 @@ module Blinkbox::Zuul::Server
     end
 
     get "/clients", provides: :json do
-      client_infos = current_user.clients.select { |client| not client.deregistered }.map { |client| build_client_info(client) }
+      client_infos = current_user.clients.select { |client| !client.deregistered }.map { |client| build_client_info(client) }
       json({ "clients" => client_infos })
     end
 
