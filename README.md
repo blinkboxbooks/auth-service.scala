@@ -2,36 +2,17 @@
 
 An OAuth 2.0 based authentication server, supporting user registration and profile management, and client registration and management.
 
-## Prerequisites
+## Requirements
 
-The authentication server requires Ruby 2.0.0 or later as it uses the AES-128-GCM encryption algorithm for tokens, which isn't supported in 1.9.x. Note that it does not run under JRuby as it uses ECDSA signatures which are not currently supported on that platform. 
+The authentication server requires Ruby 2.0.0 or later as it uses the AES/GCM encryption algorithm/mode for tokens, which isn't supported in 1.9.x. Note that it does not run under JRuby as it uses ECDSA signatures which are not currently supported on that platform. 
 
 You cannot run this server on Windows due to issues with Ruby versions and native gems. Use OS X or CentOS instead.
 
-### CentOS only
+## Developer install on OS X
 
-On the CentOS image, Ruby and OpenSSL should be already set up correctly.
+Install [RVM](https://rvm.io/) and make sure you're using Ruby 2.0.0 (if you `cd` to the root folder then RVM should automatically switch to 2.0.0 as it'll detect it from the Gemfile).
 
-If you're planning on doing development using SQLite (the default database) then you'll need to install its developer tools as a pre-requisite to allow the SQLite gems to compile their native extensions. To do this run:
-
-```
-$ yum install sqlite-devel
-```
-
-On the other hand, if you're planning on using MySQL you'll need to download the [MySQL developer RPM package](http://dev.mysql.com/get/Downloads/MySQL-5.6/MySQL-devel-5.6.12-1.el6.x86_64.rpm/from/http://cdn.mysql.com/) and then install that to allow the MySQL gems to compile their native extensions:
-
-```
-$ rpm -ivh /path/to/MySQL-devel-5.6.12-1.el6.x86_64.rpm
-```
-
-### OS X only
-
-- Install [RVM](https://rvm.io/).
-- Make sure you're using Ruby 2.0.0 (if you `cd` to the root folder then RVM should automatically switch to 2.0.0).
-
-### Checking the prerequisites
-
-In a terminal window run:
+To check that your Ruby environment is suitable, run:
 
 ```
 $ ruby -v  
@@ -45,7 +26,12 @@ $> OpenSSL::PKey::EC
   #=> should not print an error about this being undefined     
 ```
 
-## Installing dependencies
+Also install [Brew](http://brew.sh/) and then use it to install MySQL and RabbitMQ:
+
+```
+$ brew install mysql
+$ brew install rabbitmq
+```
 
 Ensure you have bundler installed, as it is used to load dependencies:
 
@@ -53,30 +39,40 @@ Ensure you have bundler installed, as it is used to load dependencies:
 $ gem install bundler
 ```
 
-For development or testing you can install all the dependencies using the `install` command. If you're only planning on doing development/testing against SQLite, you may want to use the `--without mysql` option as otherwise you'll need MySQL installed on your machine.
+For development or testing you can install all the dependencies using the `install` command:
 
 ```
 $ bundle install
 ```
 
-In production mode you're not going to need (or want) the development or testing gems so exclude those groups:
+## Rig install on CentOS
+
+On the CentOS image, the Ruby environment with OpenSSL should be already set up correctly. You can check this in the same way as the developer install.
+
+To allow the MySQL gems to compile their native extensions, you need to download and install the [MySQL developer RPM package](http://dev.mysql.com/get/Downloads/MySQL-5.6/MySQL-devel-5.6.12-1.el6.x86_64.rpm/from/http://cdn.mysql.com/).
+
+```
+$ rpm -ivh /path/to/MySQL-devel-5.6.12-1.el6.x86_64.rpm
+```
+
+Ensure you have bundler installed, as it is used to load dependencies:
+
+```
+$ gem install bundler
+```
+
+Install the production dependencies by excluding the development and test groups:
 
 ```
 $ bundle install --without development:test
 ```
 
-## Setting up the database
+## MySQL database creation
 
-### Using SQLite
-
-You don't need to do anything. A default instance of SQLite is checked into the repo, so it'll just work.
-
-### Using MySQL
-
-If you want to scale beyond one concurrent user then you probably won't want to use SQLite. You probably don't want to use MySQL either, but that's our currently approved database so you're stuck with it for now. This can be configured in the .properties file by changing the `database_url` property (note: do not commit the change) to something in this format:
+The database connection settings can be configured in the app.properties file by changing the `database_url` property. Note that this file is not committed to git, but you can clone one of the example files and edit it for your installation. An example connection setting is:
 
 ```
-database_url = mysql://user:pass@host:port/database
+database_url = mysql://username:password@host:port/database
 ```
 
 First create a database, e.g.
@@ -85,7 +81,14 @@ First create a database, e.g.
 $ mysql -e "CREATE DATABASE zuul"
 ```
 
-And then do all the necessary with users and permissions etc. To set up the database tables use the active record migrations:
+Then create a user and grant them permissions. For example the following creates a user called 'zuul' and grants the necessary permissions on the 'zuul' database:
+
+```
+$ mysql -e "CREATE USER zuul IDENTIFIED BY 'M0bc45T'"
+$ mysql -e "GRANT SELECT, INSERT, UPDATE, DELETE ON zuul.* to 'zuul'@'localhost'"
+```
+
+To set up the database tables use the active record migrations:
 
 ```
 $ rake db:migrate
@@ -103,27 +106,15 @@ This will output the SQL that was sent to the database in a file called "migrati
 $ rake db:migrate_with_ddl["my_file.sql"]
 ```
 
-## Running the server
+## Running the server in development/test mode
 
-### In dev mode
-
-To run the server in dev mode, just launch your favourite Rack development middleware, e.g.:
+The production server runs in Apache/Passenger and is not documented here. To start the server in development/test mode run: 
 
 ```
-$ shotgun
+$ rackup --port 9393
 ```
 
-(Note: you can use `rackup` but `shotgun` is a really handy server as it reloads your code changes automatically. If you haven't got it yet just run `gem install shotgun`.)
-
-The server will run against a local SQLite3 database which is fine for developing against.
-
-### In production mode
-
-Ensure your database URL is correct and run `rackup`:
-
-```
-$ rackup
-```
+Ensure that you're using a decent web server such as Thin, because WEBrick will fall over in a massive heap as soon as you put any load on it.
 
 ## Running the tests
 
@@ -139,4 +130,20 @@ The tests assume you're using Shotgun as your development server on your local m
 $ cucumber AUTH_SERVER=https://myserver:123/
 ```
 
+If you want to inspect what's going over the wire, then use an HTTP debugging proxy such as [Charles](http://www.charlesproxy.com/) and specify the `PROXY_SERVER` environment variable, e.g.
+
+```
+$ cucumber AUTH_SERVER=https://myserver:123/ PROXY_SERVER=http://localhost:8888/
+```
+
 They should all pass. If they don't, fix it or raise a bug.
+
+## Advanced: Using SQLite instead of MySQL for development
+
+Only use this option if you know what you're doing and why you need to be doing it. If you have to ask, don't use this option.
+
+If you're only planning on doing development/testing against SQLite, without MySQL, you can use the `--without mysql` argument to bundler. Your connection string will need to look something like this:
+
+    sqlite3:///db/zuul.db
+
+If you need any more help than this, don't use this option.
