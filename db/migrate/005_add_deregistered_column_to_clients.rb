@@ -4,7 +4,7 @@ class AddDeregisteredColumnToClients < ActiveRecord::Migration
 
   def change
     change_table :clients do |t|
-      t.boolean :deregistered
+      t.boolean :deregistered, default: false
     end
   end
 
