@@ -21,8 +21,8 @@ Then(/^my refresh token and access token are (valid|invalid because they have be
   else
     step("the request fails because I am unauthorised")
     authenticate_header = www_auth_header
-    expect(authenticate_header["error"]).to eq("invalid_request")
-    expect(authenticate_header["error_description"]).to eq("invalid_token")
+    expect(authenticate_header["error"]).to eq("invalid_token")
+    expect(authenticate_header["error_description"]).to eq("Unverified identity. Please re-authenticate.")
   end
 end
 

@@ -36,7 +36,7 @@ class ZuulClient
   end
 
   def deregister_client(client_id, access_token)
-    http_delete "/clients/#{client_id}", {}, access_token
+    http_delete "/clients/#{client_id}", access_token
   end
 
   def register_user(user)
@@ -92,8 +92,8 @@ class ZuulClient
     http_send(:post, uri, body_params, access_token)
   end
 
-  def http_delete(uri, body_params, access_token = nil)
-    http_send(:delete, uri, body_params, access_token)
+  def http_delete(uri,  access_token = nil)
+    http_send(:delete, uri, {}, access_token)
   end
 
   def http_send(verb, uri, body_params, access_token = nil)
