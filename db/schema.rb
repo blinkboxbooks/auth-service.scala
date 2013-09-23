@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 4) do
+ActiveRecord::Schema.define(version: 5) do
 
   create_table "clients", force: true do |t|
     t.datetime "created_at"
@@ -19,6 +19,7 @@ ActiveRecord::Schema.define(version: 4) do
     t.string   "name",          limit: 50
     t.string   "model",         limit: 50
     t.string   "client_secret", limit: 50
+    t.boolean  "deregistered"
   end
 
   add_index "clients", ["user_id"], name: "index_clients_on_user_id", using: :btree
