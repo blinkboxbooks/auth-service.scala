@@ -14,6 +14,17 @@ So that my account will be more difficult to break into
     Then the password for the account is changed
     And I am able to use my new password for all subsequent authentication attempts
 
+  Scenario: when authenticated, change password  to same as existing password
+    Given I have registered an account
+    And I am authenticated
+    And I create a request to change my password
+    And the request includes my desired new password
+    And the desired new password is the same as my previous password
+    And the request contains my correct existing password
+    When the request is submitted
+    Then the password for the account is changed
+    And I am able to use my new password for all subsequent authentication attempts
+
   Scenario: when authenticated, change password with correct existing password and new password that fails validation
     Given I have registered an account
     And I am authenticated
@@ -22,8 +33,11 @@ So that my account will be more difficult to break into
     And the request includes my desired new password
     And the desired new password fails validation
     When the request is submitted
-    Then the password for the account remains the same
-    And an error is returned
+    Then an error is returned
+    And the reason is the password fails validation
+    And the password for the account remains the same
+
+
 
   Scenario: when authenticated, change password with incorrect password
     Given I have registered an account
@@ -34,6 +48,7 @@ So that my account will be more difficult to break into
     When the request is submitted
     Then the password for the account remains the same
     And an error is returned
+    And the reason is the current password is missing or incorrect
 
   Scenario: when authenticated, change password with no new password specified
     Given I have registered an account
@@ -43,9 +58,11 @@ So that my account will be more difficult to break into
     When the request is submitted
     Then the password for the account remains the same
     And an error is returned
+    And the reason is no new password has been specified
 
   Scenario: when not authenticated, change password
     Given I am not authenticated
     And I create a request to change my password
     When the request is submitted
     Then an error is returned
+    And the reason is the user is not authenticated
