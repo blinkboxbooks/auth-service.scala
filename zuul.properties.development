@@ -1,0 +1,16 @@
+# the connection string to the database, in the format:
+# adapter://username:password@hostname/databasename
+database_url = mysql://zuul:mypass@localhost/zuul
+
+# key identifiers for the signing and encryption keys. these identifiers are used as
+# the path relative to the "keys" directory to locate the key files.
+signing_key_id = blinkbox/zuul/sig/ec/1
+encryption_key_id = blinkbox/plat/enc/rsa/1
+
+# the duration of issued access tokens in seconds. 1800 is a sensible secure default.
+# this value should never be more than about 3600 for security reasons.
+access_token_duration = 1800
+
+# the location of the MaxMind geo-IP data file. either the country or the city file is
+# supported, but it must be the binary file rather than the comma separated one.
+geoip_data_file = ./var/GeoIPCity.dat

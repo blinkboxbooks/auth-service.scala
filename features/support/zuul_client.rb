@@ -1,9 +1,12 @@
 class ZuulClient
   include HTTParty
 
+  attr_accessor :headers
+
   def initialize(server_uri, proxy_uri = nil)
     self.class.base_uri server_uri.to_s
     self.class.http_proxy proxy_uri.host, proxy_uri.port if proxy_uri
+    @headers = {}
   end
 
   def authenticate(params)
@@ -85,7 +88,7 @@ class ZuulClient
   end
 
   def http_call(verb, uri, params = {}, access_token = nil)
-    headers = { "Accept" => "application/json" }
+    headers = { "Accept" => "application/json" }.merge(@headers)
     headers["Authorization"] = "Bearer #{access_token}" if access_token
     self.class.send(verb, uri.to_s, headers: headers, query: params)
     #File.open("last_response_get.html", "w") { |f| f.write(HttpCapture::RESPONSES.last.body) }
@@ -101,7 +104,7 @@ class ZuulClient
   end
 
   def http_send(verb, uri, body_params, access_token = nil)
-    headers = { "Accept" => "application/json", "Content-Type" => "application/x-www-form-urlencoded" }
+    headers = { "Accept" => "application/json", "Content-Type" => "application/x-www-form-urlencoded" }.merge(@headers)
     headers["Authorization"] = "Bearer #{access_token}" if access_token
     body_params.reject! { |k, v| v.nil? }
     body_params = URI.encode_www_form(body_params) unless body_params.is_a?(String)

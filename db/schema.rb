@@ -19,7 +19,7 @@ ActiveRecord::Schema.define(version: 5) do
     t.string   "name",          limit: 50
     t.string   "model",         limit: 50
     t.string   "client_secret", limit: 50
-    t.boolean  "deregistered"
+    t.boolean  "deregistered",             default: false
   end
 
   add_index "clients", ["user_id"], name: "index_clients_on_user_id", using: :btree
