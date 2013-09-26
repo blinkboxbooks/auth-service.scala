@@ -1,7 +1,3 @@
-Given(/^I am (not )?authenticated$/) do |negative|
-  step("I request that my refresh token be revoked") if negative
-end
-
 Given(/^the desired new password (passes|fails) validation$/) do |validity|
   case validity
   when /passes/
@@ -13,24 +9,9 @@ Given(/^the desired new password (passes|fails) validation$/) do |validity|
   end
 end
 
-Given(/^the desired new password is the same as my previous password$/) do
-  @password_params[:new_password] = @me.password
-end
+When(/^I provide valid password change details$/) do
 
-Given(/^I create a request to change my password$/) do
-  @password_params = { old_password: nil, new_password: nil }
-end
-
-Given(/^the request (contains my correct|does not contain my) existing password$/) do |correct_password|
-  case correct_password
-  when /contains my correct/
-    @password_params[:old_password] = @me.password
-  when /does not contain my/
-    @password_params[:old_password] = "WrongRand0mPsswrd"
-    expect(@password_params[:old_password]).to_not eql @me.password
-  else
-    raise ("The step definition syntax is incorrect, please check your step syntax and try again")
-  end
+  @password_params = {old_password: @me.password, new_password: "sensibleNewPssw0rd"}
 end
 
 When(/^the request (does not include a|includes my desired) new password$/) do |include_password|
@@ -44,33 +25,56 @@ When(/^the request (does not include a|includes my desired) new password$/) do |
   end
 end
 
-When(/^the request is submitted$/) do
+When(/^I request my password be changed(, without my access token)?$/) do |without_access_token|
   access_token = @me.access_token rescue "failing_token"
   $zuul.change_password(@password_params, )
 end
 
-Then(/^an error is returned$/) do
-  expect(last_response.status).to_not eq(200)
-end
-
-Then(/^the password for the account (remains the same|is changed)$/) do |has_changed|
-  current_password = case has_changed
-                     when /remains the same/
-                       @password_params[:old_password]
-                     when /is changed/
-                       @password_params[:new_password]
-                     else
-                       raise("The step definition syntax is incorrect, please check your step syntax and try again")
-                     end
-
-  @me.password = current_password
+Then(/^I am (not )?(?:still )?able to use my (new|old) password to authenticate$/) do |negative, password|
+  @me.password = case password
+                 when "old"
+                   @password_params[:old_password]
+                 when "new"
+                   @password_params[:new_password]
+                 else
+                   raise("Do not know which password to use")
+                 end
   step("I provide my email address and password")
   step("I submit the authentication request")
-  expect(last_response.status).to eq(200)
+  verb = if negative
+         :to_not
+         else
+           :to
+  end
+  expect(last_response.status).send(verb).eq(200)
 end
 
-Then(/^I am able to use my new password for all subsequent authentication attempts$/) do
-  step("I provide my email address and password")
-  step("I submit the authentication request")
-  expect(last_response.status).to eq(200)
+Then(/^the reason is my provided (old password is wrong|new password is invalid)$/) do |reason|
+  expect(last_response.status).to eq(400)
+  @response_json = MultiJson.load(last_response.body)
+  expect(@response_json["error"]).to eq("invalid_request")
+
+  case reason
+  when /my provided old password is wrong/
+    expect(@response_json["error_reason"]).to eq("invalid_old_password")
+  when /no new password has been specified/
+    expect(@response_json["error_reason"]).to eq("invalid_new_password")
+  end
+end
+
+But(/^my new password is too short$/) do
+  @password_params[:new_password] = "short"
+end
+
+But(/^my new password is the same as my current password$/) do
+  @password_params[:new_password] = @password_params[:old_password]
+end
+
+But(/^I provide a wrong password as my current password$/) do
+  @password_params[:old_password] = "wrong_password"
+  expect(@me.password).to_not be eq(@password_params[:old_password])
+end
+
+But(/^I do not provide a new password$/) do
+  @password_params[:new_password] = ""
 end

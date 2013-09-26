@@ -3,66 +3,49 @@ As a registered user
 I want to be able to change my password from time to time
 So that my account will be more difficult to break into
 
-  Scenario: when authenticated, change password with correct existing password and new password that passes validation
+  Background:
     Given I have registered an account
-    And I am authenticated
-    And I create a request to change my password
-    And the request includes my desired new password
-    And the desired new password passes validation
-    And the request contains my correct existing password
-    When the request is submitted
-    Then the password for the account is changed
-    And I am able to use my new password for all subsequent authentication attempts
+
+  Scenario: when authenticated, change password with correct existing password and new password that passes validation
+    When I provide valid password change details
+    And I request my password be changed
+    Then I am able to use my new password to authenticate
+    And I am not able to use my old password to authenticate
 
   Scenario: when authenticated, change password  to same as existing password
-    Given I have registered an account
-    And I am authenticated
-    And I create a request to change my password
-    And the request includes my desired new password
-    And the desired new password is the same as my previous password
-    And the request contains my correct existing password
-    When the request is submitted
-    Then the password for the account is changed
-    And I am able to use my new password for all subsequent authentication attempts
+    When I provide valid password change details
+    But my new password is the same as my current password
+    And I request my password be changed
+    Then the request fails because it is invalid
+    And I am still able to use my old password to authenticate
 
   Scenario: when authenticated, change password with correct existing password and new password that fails validation
-    Given I have registered an account
-    And I am authenticated
-    And I create a request to change my password
-    And the request contains my correct existing password
-    And the request includes my desired new password
-    And the desired new password fails validation
-    When the request is submitted
-    Then an error is returned
-    And the reason is the password fails validation
-    And the password for the account remains the same
-
+    When I provide valid password change details
+    But my new password is too short
+    And I request my password be changed
+    Then the request fails because it is invalid
+    And the reason is my provided new password is invalid
+    And I am still able to use my old password to authenticate
 
 
   Scenario: when authenticated, change password with incorrect password
-    Given I have registered an account
-    And I am authenticated
-    And I create a request to change my password
-    And the request includes my desired new password
-    And the request does not contain my existing password
-    When the request is submitted
-    Then the password for the account remains the same
-    And an error is returned
-    And the reason is the current password is missing or incorrect
+    When I provide valid password change details
+    But I provide a wrong password as my current password
+    And I request my password be changed
+    Then the request fails because it is invalid
+    And the reason is my provided old password is wrong
+    And I am still able to use my old password to authenticate
 
   Scenario: when authenticated, change password with no new password specified
-    Given I have registered an account
-    And I am authenticated
-    And I create a request to change my password
-    And the request does not include a new password
-    When the request is submitted
-    Then the password for the account remains the same
-    And an error is returned
-    And the reason is no new password has been specified
+    When I provide valid password change details
+    But I do not provide a new password
+    And I request my password be changed
+    Then the request fails because it is invalid
+    And the reason is my provided new password is invalid
+    Then I am able to use my old password to authenticate
+    And I am not able to use my new password to authenticate
 
   Scenario: when not authenticated, change password
-    Given I am not authenticated
-    And I create a request to change my password
-    When the request is submitted
-    Then an error is returned
-    And the reason is the user is not authenticated
+    When I request my password be changed, without my access token
+    Then the request fails because I am unauthorised
+    And I am still able to use my old password to authenticate
