@@ -4,6 +4,10 @@ Feature: Registration
   I want to be able to register an account
   So that I can use services that require my identity
 
+  As a UK-based company
+  I want to prevent customers outside the UK from registering
+  So that I can manage my expansion to other countries
+
   Scenario: Registering with all the required information
     When I provide valid registration details
     And I submit the registration request
