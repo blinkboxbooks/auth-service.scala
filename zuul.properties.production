@@ -13,4 +13,4 @@ access_token_duration = 1800
 
 # the location of the MaxMind geo-IP data file. either the country or the city file is
 # supported, but it must be the binary file rather than the comma separated one.
-geoip_data_file = ./var/GeoIPCity.dat
+geoip_data_file = ./var/geoip/GeoIP.dat
