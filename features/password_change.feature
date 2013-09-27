@@ -13,13 +13,12 @@ So that my account will be more difficult to break into
     And I am able to use my new password to authenticate
     And I am not able to use my old password to authenticate
 
-  Scenario: when authenticated, change password  to same as existing password
+  Scenario: when authenticated, change password to same as existing password
     When I provide valid password change details
     But my new password is the same as my current password
     And I request my password be changed
     Then the request succeeds
-    And I am able to use my new password to authenticate
-    And I am not able to use my old password to authenticate
+    And I am still able to use my old password to authenticate
 
   Scenario: when authenticated, change password with correct existing password and new password that fails validation
     When I provide valid password change details

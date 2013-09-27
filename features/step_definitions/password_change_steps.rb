@@ -16,6 +16,7 @@ Given(/^I do not provide a new password$/) do
 end
 
 When(/^I provide valid password change details$/) do
+  @old_password = @me.password # we need this as the old_password in params can be changed
   @password_params = {old_password: @me.password, new_password: "sensibleNewPssw0rd"}
 end
 
@@ -31,14 +32,14 @@ When(/^the request (does not include a|includes my desired) new password$/) do |
 end
 
 When(/^I request my password be changed(, without my access token)?$/) do |without_access_token|
-  access_token = @me.access_token rescue "failing_token"
-  $zuul.change_password(@password_params, access_token)
+  access_token = without_access_token ? "" : @me.access_token rescue "failing_token"
+  $zuul.change_password(@password_params || {}, access_token)
 end
 
 Then(/^I am (not )?(?:still )?able to use my (new|old) password to authenticate$/) do |negative, password|
   @me.password = case password
                  when "old"
-                   @password_params[:old_password]
+                   @old_password || @me.password # if old_password is set, use it, else use the unaltered @me.password
                  when "new"
                    @password_params[:new_password]
                  else
@@ -47,7 +48,7 @@ Then(/^I am (not )?(?:still )?able to use my (new|old) password to authenticate$
   step("I provide my email address and password")
   step("I submit the authentication request")
   verb = negative ? :to_not : :to
-  expect(last_response.status).send(verb).eq(200)
+  expect(last_response.status).send(verb, eq(200))
 end
 
 Then(/^the reason is that the (old password is wrong|new password is too short|new password is missing)$/) do |reason|
@@ -60,6 +61,8 @@ Then(/^the reason is that the (old password is wrong|new password is too short|n
     expect(@response_json["error_reason"]).to eq("invalid_old_password")
   when "new password is too short"
     expect(@response_json["error_reason"]).to eq("new_password_too_short")
+  when "new password is missing"
+    expect(@response_json["error_reason"]).to eq("new_password_missing")
   else
     raise("No error reason covered for #{reason}")
   end
