@@ -17,7 +17,7 @@ So that my account will be more difficult to break into
     But my new password is the same as my current password
     And I request my password be changed
     Then the request fails because it is invalid
-    And the reason is my provided new password is not new
+    And the reason is that the new password is the same as the old one
     And I am still able to use my old password to authenticate
 
   Scenario: when authenticated, change password with correct existing password and new password that fails validation
@@ -25,16 +25,15 @@ So that my account will be more difficult to break into
     But my new password is too short
     And I request my password be changed
     Then the request fails because it is invalid
-    And the reason is my provided new password is invalid
+    And the reason is that the new password is too short
     And I am still able to use my old password to authenticate
-
 
   Scenario: when authenticated, change password with incorrect password
     When I provide valid password change details
     But I provide a wrong password as my current password
     And I request my password be changed
     Then the request fails because it is invalid
-    And the reason is my provided old password is wrong
+    And the reason is that the old password is wrong
     And I am still able to use my old password to authenticate
 
   Scenario: when authenticated, change password with no new password specified
@@ -42,7 +41,7 @@ So that my account will be more difficult to break into
     But I do not provide a new password
     And I request my password be changed
     Then the request fails because it is invalid
-    And the reason is my provided new password is invalid
+    And the reason is that the new password is missing
     Then I am able to use my old password to authenticate
 
   Scenario: when not authenticated, change password
