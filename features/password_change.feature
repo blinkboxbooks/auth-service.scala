@@ -44,7 +44,6 @@ So that my account will be more difficult to break into
     Then the request fails because it is invalid
     And the reason is my provided new password is invalid
     Then I am able to use my old password to authenticate
-    And I am not able to use my new password to authenticate
 
   Scenario: when not authenticated, change password
     When I request my password be changed, without my access token
