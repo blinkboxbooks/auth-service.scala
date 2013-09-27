@@ -50,7 +50,7 @@ Then(/^I am (not )?(?:still )?able to use my (new|old) password to authenticate$
   expect(last_response.status).send(verb).eq(200)
 end
 
-Then(/^the reason is that the (old password is wrong|new password is too short|new password is the same as the old one|new password is missing)$/) do |reason|
+Then(/^the reason is that the (old password is wrong|new password is too short|new password is missing)$/) do |reason|
   expect(last_response.status).to eq(400)
   @response_json = MultiJson.load(last_response.body)
   expect(@response_json["error"]).to eq("invalid_request")
@@ -60,8 +60,6 @@ Then(/^the reason is that the (old password is wrong|new password is too short|n
     expect(@response_json["error_reason"]).to eq("invalid_old_password")
   when "new password is too short"
     expect(@response_json["error_reason"]).to eq("new_password_too_short")
-  when "new password is not new"
-    expect(@response_json["error_reason"]).to eq("new_password_not_new")
   else
     raise("No error reason covered for #{reason}")
   end
