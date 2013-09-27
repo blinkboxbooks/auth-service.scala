@@ -46,11 +46,7 @@ Then(/^I am (not )?(?:still )?able to use my (new|old) password to authenticate$
                  end
   step("I provide my email address and password")
   step("I submit the authentication request")
-  verb = if negative
-         :to_not
-         else
-           :to
-  end
+  verb = negative ? :to_not : :to
   expect(last_response.status).send(verb).eq(200)
 end
 
