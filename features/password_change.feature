@@ -17,6 +17,7 @@ So that my account will be more difficult to break into
     But my new password is the same as my current password
     And I request my password be changed
     Then the request fails because it is invalid
+    And the reason is my provided new password is not new
     And I am still able to use my old password to authenticate
 
   Scenario: when authenticated, change password with correct existing password and new password that fails validation

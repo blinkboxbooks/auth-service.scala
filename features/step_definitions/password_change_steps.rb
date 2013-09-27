@@ -10,7 +10,6 @@ Given(/^the desired new password (passes|fails) validation$/) do |validity|
 end
 
 When(/^I provide valid password change details$/) do
-
   @password_params = {old_password: @me.password, new_password: "sensibleNewPssw0rd"}
 end
 
@@ -49,7 +48,7 @@ Then(/^I am (not )?(?:still )?able to use my (new|old) password to authenticate$
   expect(last_response.status).send(verb).eq(200)
 end
 
-Then(/^the reason is my provided (old password is wrong|new password is invalid)$/) do |reason|
+Then(/^the reason is my provided (old password is wrong|new password is invalid|new password is not new)$/) do |reason|
   expect(last_response.status).to eq(400)
   @response_json = MultiJson.load(last_response.body)
   expect(@response_json["error"]).to eq("invalid_request")
@@ -57,8 +56,12 @@ Then(/^the reason is my provided (old password is wrong|new password is invalid)
   case reason
   when /my provided old password is wrong/
     expect(@response_json["error_reason"]).to eq("invalid_old_password")
-  when /no new password has been specified/
+  when /new password has been specified$/
     expect(@response_json["error_reason"]).to eq("invalid_new_password")
+  when /new password is not new/
+    expect(@response_json["error_reason"]).to eq("invalid_new_password")
+  else
+    raise("No error reason covered for #{reason}")
   end
 end
 
