@@ -3,6 +3,7 @@ require "net/http/capture" # BUGBUG: httparty/capture should work; bug in HttpCa
 require "cucumber/rest/steps/caching"
 require "cucumber/rest/status"
 require "ipaddress"
+require "ipaddress/ipv4_loopback"
 require "rack/test"
 require "timecop"
 require "thin"
