@@ -3,6 +3,8 @@ source "https://rubygems.org"
 ruby "2.0.0"
 
 gem "activerecord", "~> 4.0"
+gem "geoip", "~> 1.3"
+gem "ipaddress", "~> 0.8"
 gem "java_properties", "~> 0.0", ">= 0.0.4"
 gem "multi_json", "~> 1.7"
 gem "rack-blinkbox-zuul-tokens", "~> 0.0"

@@ -45,6 +45,13 @@ For development or testing you can install all the dependencies using the `insta
 $ bundle install
 ```
 
+If you have cloned the code from git, then you'll need to ensure that the submodules are also initialised and up-to-date.
+
+```
+$ git submodule init
+$ git submodule update
+```
+
 ## Rig install on CentOS
 
 On the CentOS image, the Ruby environment with OpenSSL should be already set up correctly. You can check this in the same way as the developer install.
@@ -65,6 +72,13 @@ Install the production dependencies by excluding the development and test groups
 
 ```
 $ bundle install --without development:test
+```
+
+If you have cloned the code from git, then you'll need to ensure that the submodules are also initialised and up-to-date.
+
+```
+$ git submodule init
+$ git submodule update
 ```
 
 ## MySQL database creation
@@ -106,9 +120,19 @@ This will output the SQL that was sent to the database in a file called "migrati
 $ rake db:migrate_with_ddl["my_file.sql"]
 ```
 
-## Running the server in development/test mode
+## Running the server
 
-The production server runs in Apache/Passenger and is not documented here. To start the server in development/test mode run: 
+The production server runs in Apache/Passenger and is not documented here in any detail. However, it still needs to follow the same process to configure the application.
+
+To configure the app, select one of the example zuul.properties files and copy it to the real configuration file name, e.g.
+
+```
+$ cp zuul.properties.development zuul.properties
+```
+
+Once that is done, edit the file to ensure you have the correct settings. Most of them should be fine as they are, but you'll probably need to put the correct credentials in the `database_url` property, as described in setting up the database.
+
+To start the server in development/test mode run: 
 
 ```
 $ rackup --port 9393
@@ -118,25 +142,38 @@ Ensure that you're using a decent web server such as Thin, because WEBrick will 
 
 ## Running the tests
 
-The tests are written using Cucumber, so to run them just run:
+The tests are written using Cucumber. Some of them are very slow (as in they take days to run) so you probably want to exclude the `@slow` and `@extremely_slow` tests unless you're actually working on them.
 
 ```
-$ cucumber
+$ cucumber -t ~@slow -t ~@extremely_slow
 ```
 
 The tests assume you're using Shotgun as your development server on your local machine, so will attempt to run against `http://localhost:9393/` by default. You can change this by specifying the `AUTH_SERVER` environment variable, e.g.
 
 ```
-$ cucumber AUTH_SERVER=https://myserver:123/
+$ cucumber -t ~@slow -t ~@extremely_slow AUTH_SERVER=https://myserver:123/
 ```
 
 If you want to inspect what's going over the wire, then use an HTTP debugging proxy such as [Charles](http://www.charlesproxy.com/) and specify the `PROXY_SERVER` environment variable, e.g.
 
 ```
-$ cucumber AUTH_SERVER=https://myserver:123/ PROXY_SERVER=http://localhost:8888/
+$ cucumber -t ~@slow -t ~@extremely_slow PROXY_SERVER=http://localhost:8888/
 ```
 
-They should all pass. If they don't, fix it or raise a bug.
+Note that the `AUTH_SERVER` and `PROXY_SERVER` variables can be used together.
+
+All of the tests should pass. If they don't, fix it or raise a bug.
+
+## Updating GeoIP data files
+
+The GeoIP data files are stored in a git submodule, [geoip-data](https://git.mobcastdev.com/Zuul/geoip-data) to ensure that this repo doesn't get too large.
+
+To update the data files, update the GeoIP.dat file in the geoip-data repo with the latest country data file, and then run the following commands in your Zuul server directory:
+
+```
+$ git submodule init
+$ git submodule update
+```
 
 ## Advanced: Using SQLite instead of MySQL for development
 

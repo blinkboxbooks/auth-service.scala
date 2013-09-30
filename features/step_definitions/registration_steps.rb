@@ -10,6 +10,11 @@ Given(/^another user has registered an account$/) do
   expect(last_response.status).to eq(200)
 end
 
+When(/^I try to register an account$/) do
+  @me = TestUser.new.generate_details
+  @me.register
+end
+
 When(/^I provide valid registration details$/) do
   @me = TestUser.new.generate_details
 end

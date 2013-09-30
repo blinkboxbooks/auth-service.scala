@@ -1,3 +1,5 @@
+require "ipaddress"
+require "ipaddress/ipv4_loopback"
 require "multi_json"
 require "sandal"
 require "scrypt"
@@ -166,6 +168,14 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_registration_flow(params)
+      client_ip = IPAddress.parse(request.ip)
+      unless client_ip.loopback? || client_ip.private?
+        detected_country = @@geoip.country(request.ip)
+        if detected_country.nil? || !["GB", "IE"].include?(detected_country.country_code2)
+          invalid_request "country_geoblocked", "You must be in the UK to register"
+        end
+      end
+
       invalid_request "You must accept the terms and conditions" unless params["accepted_terms_and_conditions"] == "true"
 
       user = User.new do |u|

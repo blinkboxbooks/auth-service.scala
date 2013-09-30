@@ -4,6 +4,10 @@ Feature: Registration
   I want to be able to register an account
   So that I can use services that require my identity
 
+  As a UK-based company
+  I want to prevent customers outside the UK from registering
+  So that I can manage my expansion to other countries
+
   Scenario: Registering with all the required information
     When I provide valid registration details
     And I submit the registration request
@@ -81,3 +85,49 @@ Feature: Registration
       | detail     | value                                                |
       | first name | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
       | last name  | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
+
+  @wip
+  Scenario Outline: Registering while geolocated in permitted countries
+    Given my IP address would geolocate me in <country>
+    When I try to register an account
+    Then the request succeeds
+
+    Examples:
+      | country |
+      | GB      |
+      | IE      |
+
+  @wip
+  Scenario Outline: Registering while on the local machine or a private network
+    For development and testing purposes internally, we need to ensure that we do not prevent
+    registration from the local machine or private network addresses which cannot be geolocated
+
+    Given my IP address is in the range <range>
+    When I try to register an account
+    Then the request succeeds
+
+    Examples:
+      | range          |
+      | 127.0.0.1      |
+      | 192.168.0.0/16 |
+      | 172.16.0.0/12  |
+      | 10.0.0.0/8     |
+
+  @wip
+  Scenario Outline: Trying to register while geolocated outside permitted countries
+    Given my IP address would geolocate me in <country>
+    When I try to register an account
+    Then the request fails because it is invalid
+    And the reason is that my country is geoblocked
+
+    Examples:
+      | country |
+      | FR      |
+      | US      |
+
+  @wip
+  Scenario: Trying to register when geolocation cannot be determined
+    Given my IP address cannot be geolocated
+    When I try to register an account
+    Then the request fails because it is invalid
+    And the reason is that my country is geoblocked

@@ -4,6 +4,7 @@ doc/
 pkg/
 *.properties
 *.db
+*.dat
 last_response.html
 migration.sql
 .idea/
