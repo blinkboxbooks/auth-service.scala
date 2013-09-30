@@ -17,6 +17,7 @@ module Blinkbox::Zuul::Server
 
     require_user_authorization_for %r{^/clients(?:/.*)?}
     require_user_authorization_for %r{^/users(?:/.*)?}
+    require_user_authorization_for %r{^/password/change}
 
     after do
       # none of the responses from the auth server should be cached
@@ -136,6 +137,17 @@ module Blinkbox::Zuul::Server
     post "/tokeninfo" do
       refresh_token = validate_refresh_token
       handle_extend_token_info_request(refresh_token)
+    end
+
+    post "/password/change" do
+      new_password = @params[:new_password]
+      old_password = @params[:old_password]
+      invalid_request "new_password_missing", "The new password is not provided." if new_password.nil? || new_password.empty?
+      invalid_request "old_password_invalid", "Current password provided is incorrect." unless User.authenticate(current_user.username, old_password)
+
+      current_user.password = new_password
+      current_user.save! rescue invalid_request("new_password_too_short", "The new password is too short.")
+
     end
 
     private
