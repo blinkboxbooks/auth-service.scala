@@ -142,12 +142,11 @@ module Blinkbox::Zuul::Server
     post "/password/change" do
       new_password = @params[:new_password]
       old_password = @params[:old_password]
-      invalid_request "new_password_missing" if new_password.nil? || new_password.empty?
-      invalid_request "new_password_too_short" if new_password.length < User::MIN_PASSWORD_LENGTH
-      invalid_request "old_password_invalid" unless User.authenticate(current_user.username, old_password)
+      invalid_request "new_password_missing", "The new password is not provided." if new_password.nil? || new_password.empty?
+      invalid_request "old_password_invalid", "Current password provided is incorrect." unless User.authenticate(current_user.username, old_password)
 
       current_user.password = new_password
-      current_user.save!
+      current_user.save! rescue invalid_request("new_password_too_short", "The new password is too short.")
 
     end
 
