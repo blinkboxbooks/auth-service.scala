@@ -58,7 +58,7 @@ Then(/^the reason is that the (old password is wrong|new password is too short|n
 
   case reason
   when "old password is wrong"
-    expect(@response_json["error_reason"]).to eq("invalid_old_password")
+    expect(@response_json["error_reason"]).to eq("old_password_invalid")
   when "new password is too short"
     expect(@response_json["error_reason"]).to eq("new_password_too_short")
   when "new password is missing"
