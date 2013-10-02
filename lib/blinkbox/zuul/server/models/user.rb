@@ -13,6 +13,10 @@ module Blinkbox::Zuul::Server
     validates :password_hash, presence: true
     validate :validate_password
 
+    def name
+      "#{first_name} #{last_name}"
+    end
+
     def password=(password)
       if password
         @password_length = password.length

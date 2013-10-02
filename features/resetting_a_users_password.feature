@@ -10,9 +10,9 @@ Feature: Resetting a user's password
   Scenario: Requesting a password reset using my email address sends a password reset email
     When I request my password is reset using my email address
     Then the request succeeds
-    And I receive an email with the subject "blinkbox books password reset"
-    And the email contains a password reset link
-    And the email contains a password reset token
+    And I receive a password reset email
+    And it contains a secure password reset link
+    And it contains a password reset token with at least 32 characters
 
   Scenario: Requesting a password reset using my email address does not prevent password authentication
     Initiating a password reset should not stop a user from authenticating using their existing

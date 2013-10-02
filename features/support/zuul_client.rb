@@ -42,6 +42,10 @@ class ZuulClient
     http_post "/password/change", params, access_token
   end
 
+  def reset_password(params)
+    http_post "/password/reset", params
+  end
+
   def deregister_client(client_id, access_token)
     http_delete "/clients/#{client_id}", {}, access_token
   end

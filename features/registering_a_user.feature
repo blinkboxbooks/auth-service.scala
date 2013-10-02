@@ -86,7 +86,6 @@ Feature: Registration
       | first name | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
       | last name  | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
 
-  @wip
   Scenario Outline: Registering while geolocated in permitted countries
     Given my IP address would geolocate me in <country>
     When I try to register an account
@@ -97,7 +96,6 @@ Feature: Registration
       | GB      |
       | IE      |
 
-  @wip
   Scenario Outline: Registering while on the local machine or a private network
     For development and testing purposes internally, we need to ensure that we do not prevent
     registration from the local machine or private network addresses which cannot be geolocated
@@ -113,7 +111,6 @@ Feature: Registration
       | 172.16.0.0/12  |
       | 10.0.0.0/8     |
 
-  @wip
   Scenario Outline: Trying to register while geolocated outside permitted countries
     Given my IP address would geolocate me in <country>
     When I try to register an account
@@ -125,7 +122,6 @@ Feature: Registration
       | FR      |
       | US      |
 
-  @wip
   Scenario: Trying to register when geolocation cannot be determined
     Given my IP address cannot be geolocated
     When I try to register an account

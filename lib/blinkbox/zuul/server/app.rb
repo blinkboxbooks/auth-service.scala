@@ -9,6 +9,7 @@ require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/blinkbox/zuul/authorization"
 require "blinkbox/zuul/server/environment"
+require "blinkbox/zuul/server/email"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
@@ -150,6 +151,18 @@ module Blinkbox::Zuul::Server
       current_user.password = new_password
       current_user.save! rescue invalid_request("new_password_too_short", "The new password is too short.")
 
+    end
+
+    post "/password/reset" do
+      username = params[:username]
+      invalid_request "The username is required." if username.nil? || username.empty?
+
+      user = User.find_by_username(username)
+      if user
+        Blinkbox::Zuul::Server::Email.password_reset(user, "the link", "the token")
+      end
+
+      nil # no entity-body needed
     end
 
     private
