@@ -40,6 +40,7 @@ Feature: Resetting a user's password
 
     Given I have got a password reset token
     When I provide my password reset token and a new password
+    And I submit the password reset request
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
@@ -49,24 +50,51 @@ Feature: Resetting a user's password
     credentials. If performing a reset from a registered client, it should still provide the
     client credentials it was previously given when performing the password reset to authenticate.
 
-    Given I have got a password reset token
+    Given I have registered a client
+    And I have got a password reset token
     When I provide my password reset token, a new password, and my client credentials
+    And I submit the password reset request
     Then the response contains an access token
     And it contains basic user information matching my details
     And it contains client information, excluding the client secret
     And it is not cacheable
 
+  Scenario: Trying to reset a password without a password reset token
+    When I provide a new password, but not a password reset token
+    And I submit the password reset request
+    Then the request fails because it is invalid
+
+  Scenario: Trying to reset a password with an invalid password reset token
+    When I provide a new password, but an invalid password reset token
+    And I submit the password reset request
+    Then the response indicates that my password reset token is invalid
+
   Scenario: Trying to reset a password using a password reset token, without providing a new password
     Given I have got a password reset token
-    When I provide my password reset token
-    But I do not provide a new password
+    When I provide my password reset token, but not a new password
+    And I submit the password reset request
     Then the request fails because it is invalid
 
   Scenario: Trying to reset a password using a password reset token, with an invalid new password
     Given I have got a password reset token
     When I provide my password reset token and a new password
     But the new password does not satisfy the password policy
+    And I submit the password reset request
     Then the request fails because it is invalid
+
+  Scenario: Logging in with the new password after changing it
+    Given I have reset my password
+    When I provide my email address and new password
+    And I submit the authentication request
+    Then the response contains an access token and a refresh token
+    And it contains basic user information matching my details
+    And it is not cacheable
+
+  Scenario: Trying to log in with the old password after changing it
+    Given I have reset my password
+    When I provide my email address and old password
+    And I submit the authentication request
+    Then the response indicates that my credentials are incorrect
 
   Scenario: Trying to reset a password using a password reset token that has already been used
     Password reset tokens are single-use, so once it has been used you can't use it again.
@@ -74,26 +102,8 @@ Feature: Resetting a user's password
     Given I have got a password reset token
     And I have reset my password using my password reset token
     When I provide my password reset token and a new password
-    Then the request fails because the password reset token is invalid
-
-  Scenario: Trying to reset a password using a password reset token, after authenticating with a password
-    If the user requests a password reset token but then remembers their password and authenticates
-    using it then the password reset token should be revoked as it is clearly no longer needed.
-
-    Given I have got a password reset token
-    And I subsequently authenticate using my email address and password
-    When I provide my password reset token and a new password
-    Then the request fails because the password reset token is invalid
-
-  Scenario: Using a password reset token after another token has been requested
-    You can request multiple password reset tokens and they're all valid to use.
-
-    Given I have got a password reset token
-    And I have subsequently requested my password is reset using my email address
-    When I provide my password reset token and a new password
-    Then the response contains an access token and a refresh token
-    And it contains basic user information matching my details
-    And it is not cacheable
+    And I submit the password reset request
+    Then the response indicates that my password reset token is invalid
 
   Scenario: Trying to use a password reset token after another token has been used
     If you request multiple password reset tokens and then use one of them, then all of the other
@@ -102,10 +112,40 @@ Feature: Resetting a user's password
     Given I have got two password reset tokens
     And I have reset my password using the first password reset token
     When I provide the second password reset token and a new password
-    Then the request fails because the password reset token is invalid
+    And I submit the password reset request
+    Then the response indicates that my password reset token is invalid
+
+  Scenario: Using a password reset token after another token has been requested
+    You can request multiple password reset tokens and they're all valid to use. There's no real
+    security risk as they'll all go to the same account, and this caters for the scenario where they
+    may go to junk mail, then the user notices after requesting a couple of them and clicks on
+    an arbitrary link which may not be the last one that was issued.
+
+    Given I have got a password reset token
+    And I have subsequently requested my password is reset using my email address
+    When I provide my password reset token and a new password
+    And I submit the password reset request
+    Then the response contains an access token and a refresh token
+    And it contains basic user information matching my details
+    And it is not cacheable
+
+  Scenario: Using a password reset token after authenticating with a password
+    If the user requests a password reset token but then remembers their password and authenticates
+    using it then it seems like the tokens should be revoked as they're no longer needed. However,
+    a user may be resetting their password because somebody who has discovered their password has
+    hijacked their account, so they should be able to use the link to override this.
+
+    Given I have got a password reset token
+    And I subsequently authenticate using my email address and password
+    When I provide my password reset token and a new password
+    And I submit the password reset request
+    Then the response contains an access token and a refresh token
+    And it contains basic user information matching my details
+    And it is not cacheable
 
   Scenario: Trying to use an expired password reset token
     Given I have got a password reset token
     When I wait for over 24 hours
-    When I provide my password reset token and a new password
-    Then the request fails because the password reset token is invalid
+    And I provide my password reset token and a new password
+    And I submit the password reset request
+    Then the response indicates that my password reset token is invalid

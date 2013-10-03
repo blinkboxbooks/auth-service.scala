@@ -9,11 +9,11 @@ module Blinkbox::Zuul::Server
     validates :expires_at, presence: true
 
     after_initialize do
-      self.expires_at = DateTime.now + TOKEN_LIFETIME_IN_DAYS
+      self.expires_at = DateTime.now + TOKEN_LIFETIME_IN_DAYS if self.expires_at.nil?
     end
 
     def expired?
-      self.expires_at >= DateTime.now
+      self.expires_at.past?
     end
 
   end

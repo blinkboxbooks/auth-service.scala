@@ -8,8 +8,8 @@ Given(/^I have an? (non-)?elevated access token$/) do |negative|
   step("I wait for over #{time_unit}")
 end
 
-Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) (minutes|seconds|days?)$/) do |over, num_of_minutes, time_unit|
-  sleep_time = num_of_minutes.send(time_unit)
+Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) (seconds|minutes|hours|days?)$/) do |over, duration, time_unit|
+  sleep_time = duration.send(time_unit)
   sleep_time = sleep_time + 2.seconds if over
   sleep(sleep_time)
 end

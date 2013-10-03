@@ -51,6 +51,7 @@ class TestUser
       @refresh_token = token_info["refresh_token"] if token_info["refresh_token"]
       @id = token_info["user_id"]
       @local_id = @id[/\d+$/]
+      @password = credentials["password"] if credentials["password"] # handle password resets
     end
     response
   end

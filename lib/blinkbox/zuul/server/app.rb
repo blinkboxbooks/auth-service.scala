@@ -180,6 +180,8 @@ module Blinkbox::Zuul::Server
         handle_password_flow(params)
       when "refresh_token"
         handle_refresh_token_flow(params)
+      when "urn:blinkbox:oauth:grant-type:password-reset-token"
+        handle_password_reset_flow(params)
       when "urn:blinkbox:oauth:grant-type:registration"
         handle_registration_flow(params)
       else
@@ -246,11 +248,33 @@ module Blinkbox::Zuul::Server
         invalid_client "Your client is not authorised to use this refresh token."
       end
 
-      client.touch unless client.nil?
       refresh_token.extend_lifetime
       refresh_token.save!
 
       issue_access_token(refresh_token, true)
+    end
+
+    def handle_password_reset_flow(params)
+      token_value, new_password = params["password_reset_token"], params["password"]
+      invalid_request "A password reset token is required for this grant type" if token_value.nil? || token_value.empty?
+      invalid_request "A new password is required for this grant type" if new_password.nil? || new_password.empty?
+    
+      password_reset_token = PasswordResetToken.find_by_token(token_value)
+      invalid_grant "The password reset token is invalid" if password_reset_token.nil?
+      invalid_grant "The password reset token has expired" if password_reset_token.expired?
+      # invalid_grant "The password reset token has been revoked" if password_reset_token.revoked?
+
+      user = password_reset_token.user
+      client = authenticate_client(params, user)
+
+      user.password = new_password
+      begin
+        user.save!
+      rescue ActiveRecord::RecordInvalid => e
+        invalid_request e.message
+      end
+
+      issue_refresh_token(user, client)
     end
 
     def validate_refresh_token
@@ -316,6 +340,8 @@ module Blinkbox::Zuul::Server
         invalid_client "The client id and/or client secret is incorrect." if client.nil?
         invalid_client "You are not authorised to use this client." unless client.user == user
       end
+      
+      client.touch unless client.nil?
       client
     end
 
