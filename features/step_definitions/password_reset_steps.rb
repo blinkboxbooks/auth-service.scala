@@ -1,4 +1,7 @@
 
+# TODO: This file needs cleaning up and the step calls moved into methods
+# I'm just getting the functionality in as quickly as I can for the moment
+
 Given(/^I have (?:subsequently )?requested my password is reset using my email address$/) do
   $zuul.reset_password(username: @me.username)
 end
@@ -9,12 +12,26 @@ Given(/^I have got a password reset token$/) do
   @password_reset_token = email_message_value("/e:sendEmail/e:templateVariables/e:templateVariable[e:key='resetToken']/e:value")
 end
 
-Given(/^I have reset my password$/) do
+Given(/^I have got two password reset tokens$/) do
   step "I have got a password reset token"
+
+  step "I have requested my password is reset using my email address"
+  step "I receive a password reset email"
+  @password_reset_token_2 = email_message_value("/e:sendEmail/e:templateVariables/e:templateVariable[e:key='resetToken']/e:value")
+end
+
+Given(/^I have reset my password using (?:my|the first) password reset token$/) do
   step "I provide my password reset token and a new password"
   step "I submit the password reset request"
   step "the request succeeds"
 end
+
+Given(/^I have reset my password$/) do
+  step "I have got a password reset token"
+  step "I have reset my password using my password reset token"
+end
+
+Given(/^I subsequently authenticate using my email address and password$/, :obtain_access_and_token)
 
 When(/^I request my password is reset using my email address$/) do
   $zuul.reset_password(username: @me.username)
@@ -57,6 +74,10 @@ end
 When(/^I provide my email address and (new|old) password$/) do |password_version|
   use_username_and_password_credentials
   @credentials["password"] = @old_password if password_version == "old"
+end
+
+When(/^I provide the second password reset token and a new password$/) do
+  use_password_reset_token_credentials(@password_reset_token_2)
 end
 
 Then(/^I receive a (.+) email$/) do |email_type|

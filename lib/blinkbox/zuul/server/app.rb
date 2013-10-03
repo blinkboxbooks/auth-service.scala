@@ -262,16 +262,20 @@ module Blinkbox::Zuul::Server
       password_reset_token = PasswordResetToken.find_by_token(token_value)
       invalid_grant "The password reset token is invalid" if password_reset_token.nil?
       invalid_grant "The password reset token has expired" if password_reset_token.expired?
-      # invalid_grant "The password reset token has been revoked" if password_reset_token.revoked?
+      invalid_grant "The password reset token has been revoked" if password_reset_token.revoked?
 
       user = password_reset_token.user
       client = authenticate_client(params, user)
 
       user.password = new_password
-      begin
-        user.save!
-      rescue ActiveRecord::RecordInvalid => e
-        invalid_request e.message
+      user.password_reset_tokens.each { |token| token.revoked = true }
+      ActiveRecord::Base.transaction do
+        begin
+          user.save! 
+        rescue ActiveRecord::RecordInvalid => e
+          invalid_request e.message
+        end
+        user.password_reset_tokens.each { |token| token.save! if token.changed? }
       end
 
       issue_refresh_token(user, client)

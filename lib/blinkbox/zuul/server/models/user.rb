@@ -5,6 +5,7 @@ module Blinkbox::Zuul::Server
 
     has_many :refresh_tokens
     has_many :clients
+    has_many :password_reset_tokens
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
