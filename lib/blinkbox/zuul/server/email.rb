@@ -6,7 +6,7 @@ module Blinkbox
     module Server
       module Email
         def self.password_reset(user, link, token)
-          builder = Nokogiri::XML::Builder.new do |xml|
+          builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
             xml.sendEmail("xmlns" => "http://schemas.blinkbox.com/books/emails/sending/v1",
                           "xmlns:r" => "http://schemas.blinkbox.com/books/routing/v1",
                           "r:originator" => "zuul",

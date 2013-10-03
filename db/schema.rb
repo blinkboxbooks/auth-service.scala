@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 5) do
+ActiveRecord::Schema.define(version: 6) do
 
   create_table "clients", force: true do |t|
     t.datetime "created_at"
@@ -23,6 +23,18 @@ ActiveRecord::Schema.define(version: 5) do
   end
 
   add_index "clients", ["user_id"], name: "index_clients_on_user_id", using: :btree
+
+  create_table "password_reset_tokens", force: true do |t|
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "user_id"
+    t.string   "token",      limit: 50
+    t.datetime "expires_at"
+    t.boolean  "revoked",               default: false
+  end
+
+  add_index "password_reset_tokens", ["token"], name: "index_password_reset_tokens_on_token", unique: true, using: :btree
+  add_index "password_reset_tokens", ["user_id"], name: "index_password_reset_tokens_on_user_id", using: :btree
 
   create_table "refresh_tokens", force: true do |t|
     t.datetime "created_at"

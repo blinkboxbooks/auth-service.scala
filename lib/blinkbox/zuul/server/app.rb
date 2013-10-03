@@ -159,7 +159,14 @@ module Blinkbox::Zuul::Server
 
       user = User.find_by_username(username)
       if user
-        Blinkbox::Zuul::Server::Email.password_reset(user, "the link", "the token")
+        reset_token = PasswordResetToken.new do |t|
+          t.user = user
+          t.token = generate_opaque_token
+        end
+        reset_token.save!
+
+        reset_url = settings.properties[:password_reset_url] % { token: reset_token.token }
+        Blinkbox::Zuul::Server::Email.password_reset(user, reset_url, reset_token.token)
       end
 
       nil # no entity-body needed
