@@ -172,6 +172,17 @@ module Blinkbox::Zuul::Server
       nil # no entity-body needed
     end
 
+    post "/password/reset/validate-token" do
+      token_value = params["password_reset_token"]
+      invalid_request "A password reset token is required" if token_value.nil? || token_value.empty?
+      
+      password_reset_token = PasswordResetToken.find_by_token(token_value)
+      invalid_request "The password reset token is invalid" if password_reset_token.nil?
+      invalid_request "The password reset token has expired" if password_reset_token.expired?
+      invalid_request "The password reset token has been revoked" if password_reset_token.revoked?
+      nil # no entity-body needed
+    end
+
     private
 
     def handle_token_request(params)
@@ -258,7 +269,7 @@ module Blinkbox::Zuul::Server
       token_value, new_password = params["password_reset_token"], params["password"]
       invalid_request "A password reset token is required for this grant type" if token_value.nil? || token_value.empty?
       invalid_request "A new password is required for this grant type" if new_password.nil? || new_password.empty?
-    
+      
       password_reset_token = PasswordResetToken.find_by_token(token_value)
       invalid_grant "The password reset token is invalid" if password_reset_token.nil?
       invalid_grant "The password reset token has expired" if password_reset_token.expired?

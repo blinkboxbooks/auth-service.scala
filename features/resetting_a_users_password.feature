@@ -34,6 +34,18 @@ Feature: Resetting a user's password
     Then the request succeeds
     But no email is sent
 
+  Scenario: Checking whether a valid password reset token is valid
+    To allow clients to show a message to a user that the password reset token isn't valid before
+    prompting them to enter their password, they need a method to check its validity.
+
+    Given I have got a password reset token
+    When I check whether my password reset token is valid
+    Then the request succeeds
+
+  Scenario: Checking whether an invalid password reset token is valid
+    When I check whether an invalid password reset token is valid
+    Then the request fails because it is invalid
+
   Scenario: Resetting a password using a password reset token
     The password token is a single-use bearer token which is as legitimate a way to sign in as
     any other grant type, so we treat resetting the password as a sign in action.

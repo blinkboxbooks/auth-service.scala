@@ -1,11 +1,12 @@
 # Zuul Server Change Log
 
-## 0.3.0 (2013-10-04)
+## 0.3.0 (HEAD)
 
 ### New Features
 
 - New endpoint `POST /password/reset` to allow a user to request a password reset email.
-- New endpoint `POST /oauth2/token` with a grant type of `urn:blinkbox:oauth:grant-type:password-reset-token` to allow a user to reset their password using a reset token.
+- New endpoint `POST /password/reset/validate-token` to allow validation of a password reset token prior to trying to reset using it.
+- Endpoint `POST /oauth2/token` supports new grant type `urn:blinkbox:oauth:grant-type:password-reset-token` to allow a user to reset their password and authenticate using a reset token.
 
 ### Bug Fixes
 
@@ -21,14 +22,6 @@
 ### New Features
 
 - New endpoint `POST /password/change` to allow users to change their password.
-
-### Bug Fixes
-
-- None
-
-### Deployment Notes
-
-- None
 
 ## 0.1.0 (Baseline Release)
 

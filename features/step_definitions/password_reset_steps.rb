@@ -41,6 +41,14 @@ When(/^I request my password is reset using an unregistered email address$/) do
   $zuul.reset_password(username: random_email)
 end
 
+When(/^I check whether my password reset token is valid$/) do
+  $zuul.validate_password_reset_token(password_reset_token: @password_reset_token)
+end
+
+When(/^I check whether an invalid password reset token is valid$/) do
+  $zuul.validate_password_reset_token(password_reset_token: random_password)
+end
+
 When(/^I provide my password reset token and a new password$/) do
   @old_password = @me.password
   use_password_reset_token_credentials
