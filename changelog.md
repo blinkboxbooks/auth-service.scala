@@ -16,7 +16,9 @@
 ### Deployment Notes
 
 - A database migration to schema version 6 is required.
-- There is a new property, `password_reset_url`, required in the properties file.
+- New properties are required in the properties file:
+    - `password_reset_url` - The password reset URL template.
+    - `amqp_server_url` - The connection string to the AMQP server.
 
 ## 0.2.0 (2013-10-01 13:57)
 
