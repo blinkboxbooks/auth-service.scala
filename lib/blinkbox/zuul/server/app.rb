@@ -9,6 +9,7 @@ require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/blinkbox/zuul/authorization"
 require "blinkbox/zuul/server/environment"
+require "blinkbox/zuul/server/email"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
@@ -152,6 +153,36 @@ module Blinkbox::Zuul::Server
 
     end
 
+    post "/password/reset" do
+      username = params[:username]
+      invalid_request "The username is required." if username.nil? || username.empty?
+
+      user = User.find_by_username(username)
+      if user
+        reset_token = PasswordResetToken.new do |t|
+          t.user = user
+          t.token = generate_opaque_token
+        end
+        reset_token.save!
+
+        reset_url = settings.properties[:password_reset_url] % { token: reset_token.token }
+        Blinkbox::Zuul::Server::Email.password_reset(user, reset_url, reset_token.token)
+      end
+
+      nil # no entity-body needed
+    end
+
+    post "/password/reset/validate-token" do
+      token_value = params["password_reset_token"]
+      invalid_request "A password reset token is required" if token_value.nil? || token_value.empty?
+      
+      password_reset_token = PasswordResetToken.find_by_token(token_value)
+      invalid_request "The password reset token is invalid" if password_reset_token.nil?
+      invalid_request "The password reset token has expired" if password_reset_token.expired?
+      invalid_request "The password reset token has been revoked" if password_reset_token.revoked?
+      nil # no entity-body needed
+    end
+
     private
 
     def handle_token_request(params)
@@ -160,6 +191,8 @@ module Blinkbox::Zuul::Server
         handle_password_flow(params)
       when "refresh_token"
         handle_refresh_token_flow(params)
+      when "urn:blinkbox:oauth:grant-type:password-reset-token"
+        handle_password_reset_flow(params)
       when "urn:blinkbox:oauth:grant-type:registration"
         handle_registration_flow(params)
       else
@@ -226,11 +259,37 @@ module Blinkbox::Zuul::Server
         invalid_client "Your client is not authorised to use this refresh token."
       end
 
-      client.touch unless client.nil?
       refresh_token.extend_lifetime
       refresh_token.save!
 
       issue_access_token(refresh_token, true)
+    end
+
+    def handle_password_reset_flow(params)
+      token_value, new_password = params["password_reset_token"], params["password"]
+      invalid_request "A password reset token is required for this grant type" if token_value.nil? || token_value.empty?
+      invalid_request "A new password is required for this grant type" if new_password.nil? || new_password.empty?
+      
+      password_reset_token = PasswordResetToken.find_by_token(token_value)
+      invalid_grant "The password reset token is invalid" if password_reset_token.nil?
+      invalid_grant "The password reset token has expired" if password_reset_token.expired?
+      invalid_grant "The password reset token has been revoked" if password_reset_token.revoked?
+
+      user = password_reset_token.user
+      client = authenticate_client(params, user)
+
+      user.password = new_password
+      user.password_reset_tokens.each { |token| token.revoked = true }
+      ActiveRecord::Base.transaction do
+        begin
+          user.save! 
+        rescue ActiveRecord::RecordInvalid => e
+          invalid_request e.message
+        end
+        user.password_reset_tokens.each { |token| token.save! if token.changed? }
+      end
+
+      issue_refresh_token(user, client)
     end
 
     def validate_refresh_token
@@ -296,6 +355,8 @@ module Blinkbox::Zuul::Server
         invalid_client "The client id and/or client secret is incorrect." if client.nil?
         invalid_client "You are not authorised to use this client." unless client.user == user
       end
+      
+      client.touch unless client.nil?
       client
     end
 

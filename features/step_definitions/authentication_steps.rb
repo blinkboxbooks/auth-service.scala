@@ -55,7 +55,7 @@ When(/^I provide a nonexistent refresh token$/) do
   @credentials["refresh_token"] = random_password
 end
 
-When(/^I submit the (?:authentication|access token refresh) request$/) do
+When(/^I submit the (?:authentication|access token refresh|password reset) request$/) do
   # The assumption is that you have called a step with "I provide my ..." before you call this as set up to @credentials
   @me.authenticate(@credentials)
 end
@@ -65,7 +65,7 @@ When(/^I bind my tokens to my client$/) do
   step "I submit the access token refresh request"
 end
 
-Then(/^the response indicates that my (?:credentials are|refresh token is) (?:incorrect|invalid)$/) do
+Then(/^the response indicates that my (?:credentials|refresh token|password reset token) (?:is|are) (?:incorrect|invalid)$/) do
   expect(last_response.status).to eq(400)
   expect(last_response_json["error"]).to eq("invalid_grant")
 end

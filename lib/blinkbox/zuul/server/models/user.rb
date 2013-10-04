@@ -5,6 +5,7 @@ module Blinkbox::Zuul::Server
 
     has_many :refresh_tokens
     has_many :clients
+    has_many :password_reset_tokens
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
@@ -12,6 +13,10 @@ module Blinkbox::Zuul::Server
     validates :allow_marketing_communications, inclusion: { :in => [true, false] }
     validates :password_hash, presence: true
     validate :validate_password
+
+    def name
+      "#{first_name} #{last_name}"
+    end
 
     def password=(password)
       if password

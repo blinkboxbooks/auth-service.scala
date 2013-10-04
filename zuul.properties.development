@@ -14,3 +14,12 @@ access_token_duration = 1800
 # the location of the MaxMind geo-IP data file. either the country or the city file is
 # supported, but it must be the binary file rather than the comma separated one.
 geoip_data_file = ./var/geoip/GeoIP.dat
+
+# the url that users should be sent to complete their password reset flow; this must
+# be a secure (i.e. https) url, and contain a placeholder %{token} which is where the 
+# reset token will be inserted
+password_reset_url = https://localhost/resetpassword?token=%{token}
+
+# the connection string to the amqp server, in the format:
+# amqp://username:password@hostname:port/
+amqp_server_url = amqp://guest:guest@127.0.0.1:5672/

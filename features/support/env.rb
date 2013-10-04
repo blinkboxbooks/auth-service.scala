@@ -7,11 +7,12 @@ require "ipaddress/ipv4_loopback"
 require "rack/test"
 require "timecop"
 require "thin"
+require "blinkbox/zuul/server/email"
 
 $server_up = false
 SERVER_URI = URI.parse(ENV["AUTH_SERVER"] || "http://localhost:9393/")
 PROXY_URI = ENV["PROXY_SERVER"] ? URI.parse(ENV["PROXY_SERVER"]) : nil
-IN_PROC= ENV["IN_PROC"]
+IN_PROC= /^true$/i =~ ENV["IN_PROC"]
 
 require_relative "../../lib/blinkbox/zuul/server" if IN_PROC
 
@@ -48,6 +49,25 @@ module SleepsByTimeTravel
   end
 end
 
+module SendsMessagesToFakeQueues
+  module FakeEmail
+    def self.included(base)
+      base.instance_eval do
+        @sent_messages = []
+        def sent_messages
+          @sent_messages
+        end
+        def enqueue(message)
+          @sent_messages.push(message)
+        end
+      end
+    end
+  end  
+  def self.extended(base)
+    Blinkbox::Zuul::Server::Email.send(:include, FakeEmail)
+  end
+end
+
 World(KnowsAboutResponses)
 World(SleepsByTimeTravel) if IN_PROC
-
+World(SendsMessagesToFakeQueues) if IN_PROC
