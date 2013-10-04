@@ -1,3 +1,4 @@
+require "bunny"
 require "nokogiri"
 require "securerandom"
 
@@ -5,6 +6,7 @@ module Blinkbox
   module Zuul
     module Server
       module Email
+
         def self.password_reset(user, link, token)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
             xml.sendEmail("xmlns" => "http://schemas.blinkbox.com/books/emails/sending/v1",
@@ -41,8 +43,18 @@ module Blinkbox
         private
 
         def self.enqueue(message)
-
+          amqp_exchange.publish(message, persistent: true, nowait: false)
         end
+
+        def self.amqp_exchange
+          unless defined?(@amqp)
+            @amqp = { connection: Bunny.new(App.properties[:amqp_server_url]).start }
+            @amqp[:channel] = @amqp[:connection].create_channel
+            @amqp[:exchange] = @amqp[:channel].fanout("Emails.Outbound", durable: true)
+          end
+          @amqp[:exchange]
+        end
+
       end
     end
   end

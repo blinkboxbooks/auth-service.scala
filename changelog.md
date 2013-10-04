@@ -11,6 +11,7 @@
 ### Bug Fixes
 
 - Fixed an issue where error descriptions were being returned in the `error_reason` field instead of `error_description`.
+- Fixed an issue where the time a client was last used was not being updated in the password authentication flow.
 
 ### Deployment Notes
 
