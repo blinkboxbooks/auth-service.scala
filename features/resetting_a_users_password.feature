@@ -1,4 +1,4 @@
-@authentication @passwords @password_reset @wip
+@authentication @passwords @password_reset
 Feature: Resetting a user's password
   As a user
   I want to be able to reset my password
@@ -38,19 +38,20 @@ Feature: Resetting a user's password
     To allow clients to show a message to a user that the password reset token isn't valid before
     prompting them to enter their password, they need a method to check its validity.
 
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     When I check whether my password reset token is valid
     Then the request succeeds
 
   Scenario: Checking whether an invalid password reset token is valid
-    When I check whether an invalid password reset token is valid
+    Given I have got an invalid password reset token
+    When I check whether my password reset token is valid
     Then the request fails because it is invalid
 
   Scenario: Resetting a password using a password reset token
     The password token is a single-use bearer token which is as legitimate a way to sign in as
     any other grant type, so we treat resetting the password as a sign in action.
 
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     When I provide my password reset token and a new password
     And I submit the password reset request
     Then the response contains an access token and a refresh token
@@ -63,7 +64,7 @@ Feature: Resetting a user's password
     client credentials it was previously given when performing the password reset to authenticate.
 
     Given I have registered a client
-    And I have got a password reset token
+    And I have got a valid password reset token
     When I provide my password reset token, a new password, and my client credentials
     And I submit the password reset request
     Then the response contains an access token
@@ -82,13 +83,13 @@ Feature: Resetting a user's password
     Then the response indicates that my password reset token is invalid
 
   Scenario: Trying to reset a password using a password reset token, without providing a new password
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     When I provide my password reset token, but not a new password
     And I submit the password reset request
     Then the request fails because it is invalid
 
   Scenario: Trying to reset a password using a password reset token, with an invalid new password
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     When I provide my password reset token and a new password
     But the new password does not satisfy the password policy
     And I submit the password reset request
@@ -111,7 +112,7 @@ Feature: Resetting a user's password
   Scenario: Trying to reset a password using a password reset token that has already been used
     Password reset tokens are single-use, so once it has been used you can't use it again.
 
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     And I have reset my password using my password reset token
     When I provide my password reset token and a new password
     And I submit the password reset request
@@ -121,7 +122,7 @@ Feature: Resetting a user's password
     If you request multiple password reset tokens and then use one of them, then all of the other
     ones are revoked and cannot be used.
 
-    Given I have got two password reset tokens
+    Given I have got two valid password reset tokens
     And I have reset my password using the first password reset token
     When I provide the second password reset token and a new password
     And I submit the password reset request
@@ -133,7 +134,7 @@ Feature: Resetting a user's password
     may go to junk mail, then the user notices after requesting a couple of them and clicks on
     an arbitrary link which may not be the last one that was issued.
 
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     And I have subsequently requested my password is reset using my email address
     When I provide my password reset token and a new password
     And I submit the password reset request
@@ -147,7 +148,7 @@ Feature: Resetting a user's password
     a user may be resetting their password because somebody who has discovered their password has
     hijacked their account, so they should be able to use the link to override this.
 
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     And I subsequently authenticate using my email address and password
     When I provide my password reset token and a new password
     And I submit the password reset request
@@ -155,8 +156,9 @@ Feature: Resetting a user's password
     And it contains basic user information matching my details
     And it is not cacheable
 
+  @extremely_slow
   Scenario: Trying to use an expired password reset token
-    Given I have got a password reset token
+    Given I have got a valid password reset token
     When I wait for over 24 hours
     And I provide my password reset token and a new password
     And I submit the password reset request

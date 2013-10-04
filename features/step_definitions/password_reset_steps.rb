@@ -6,14 +6,18 @@ Given(/^I have (?:subsequently )?requested my password is reset using my email a
   $zuul.reset_password(username: @me.username)
 end
 
-Given(/^I have got a password reset token$/) do
+Given(/^I have got a valid password reset token$/) do
   step "I have requested my password is reset using my email address"
   step "I receive a password reset email"
   @password_reset_token = email_message_value("/e:sendEmail/e:templateVariables/e:templateVariable[e:key='resetToken']/e:value")
 end
 
-Given(/^I have got two password reset tokens$/) do
-  step "I have got a password reset token"
+Given(/^I have got an invalid password reset token$/) do
+  @password_reset_token = random_password
+end
+
+Given(/^I have got two valid password reset tokens$/) do
+  step "I have got a valid password reset token"
 
   step "I have requested my password is reset using my email address"
   step "I receive a password reset email"
@@ -27,7 +31,7 @@ Given(/^I have reset my password using (?:my|the first) password reset token$/) 
 end
 
 Given(/^I have reset my password$/) do
-  step "I have got a password reset token"
+  step "I have got a valid password reset token"
   step "I have reset my password using my password reset token"
 end
 
@@ -43,10 +47,6 @@ end
 
 When(/^I check whether my password reset token is valid$/) do
   $zuul.validate_password_reset_token(password_reset_token: @password_reset_token)
-end
-
-When(/^I check whether an invalid password reset token is valid$/) do
-  $zuul.validate_password_reset_token(password_reset_token: random_password)
 end
 
 When(/^I provide my password reset token and a new password$/) do
