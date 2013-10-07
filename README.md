@@ -142,13 +142,21 @@ Ensure that you're using a decent web server such as Thin, because WEBrick will 
 
 ## Running the tests
 
-The tests are written using Cucumber. Some of them are very slow (as in they take days to run) so you probably want to exclude the `@slow` and `@extremely_slow` tests unless you're actually working on them.
+The tests are written using Cucumber. By default the tests will start an in-process instance of the auth server on IP address 127.0.0.1 and port 9393 so all you have to do is run:
 
 ```
-$ cucumber -t ~@slow -t ~@extremely_slow
+$ cucumber
 ```
 
-The tests assume you're using Shotgun as your development server on your local machine, so will attempt to run against `http://localhost:9393/` by default. You can change this by specifying the `AUTH_SERVER` environment variable, e.g.
+Any loopback IP address for the auth server will start an in-process instance by default, whereas any non-loopback address will run the tests against an existing (out-of-process) server. This should normally be what you want, but you can force the tests to run out-of-process against a server on a loopback address by specifying `IN_PROC=false` as an environment variable.
+
+The reason that the tests run in-process by default is to reduce external dependencies on things like message queues and emailing services, and also because some of them are very slow (as in they take days to run). If you're going to run the tests out of process, you probably want to exclude the `@slow` and `@extremely_slow` tests unless you're actually working on them.
+
+```
+$ cucumber -t ~@slow -t ~@extremely_slow IN_PROC=false
+```
+
+To run against a different auth server you can specify the `AUTH_SERVER` environment variable, e.g.
 
 ```
 $ cucumber -t ~@slow -t ~@extremely_slow AUTH_SERVER=https://myserver:123/

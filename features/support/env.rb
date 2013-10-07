@@ -9,35 +9,26 @@ require "timecop"
 require "thin"
 require "blinkbox/zuul/server/email"
 
-$server_up = false
-SERVER_URI = URI.parse(ENV["AUTH_SERVER"] || "http://localhost:9393/")
-PROXY_URI = ENV["PROXY_SERVER"] ? URI.parse(ENV["PROXY_SERVER"]) : nil
-IN_PROC= /^true$/i =~ ENV["IN_PROC"]
+TEST_CONFIG = {}
+TEST_CONFIG[:server] = URI.parse(ENV["AUTH_SERVER"] || "http://127.0.0.1:9393/")
+TEST_CONFIG[:proxy] = ENV["PROXY_SERVER"] ? URI.parse(ENV["PROXY_SERVER"]) : nil
+TEST_CONFIG[:in_proc] = IPAddress.parse(TEST_CONFIG[:server].host).loopback? unless ENV["IN_PROC"] =~ /^false$/i
 
-require_relative "../../lib/blinkbox/zuul/server" if IN_PROC
+if TEST_CONFIG[:in_proc]
+  require_relative "../../lib/blinkbox/zuul/server" 
+  $server = Thin::Server.new(TEST_CONFIG[:server].host, TEST_CONFIG[:server].port, Blinkbox::Zuul::Server::App)
+  Thread.new { $server.start }
+  loop until $server.running?
+end
 
 Before do
-  $zuul = ZuulClient.new(SERVER_URI, PROXY_URI)
-  $server_ready = false
-  if IN_PROC && !$server_up
-
-    Thread.new {
-      $server = Thin::Server.new('0.0.0.0', 9393, Blinkbox::Zuul::Server::App)
-      $server.start
-    }
-
-    $server_up = true
-  end
-
-  loop until !$server.nil? && $server.running? if IN_PROC
+  $zuul = ZuulClient.new(TEST_CONFIG[:server], TEST_CONFIG[:proxy])
 end
 
 module KnowsAboutResponses
-
   def last_response
     HttpCapture::RESPONSES.last
   end
-
   def last_response_json
     MultiJson.load(last_response.body)
   end
@@ -69,5 +60,5 @@ module SendsMessagesToFakeQueues
 end
 
 World(KnowsAboutResponses)
-World(SleepsByTimeTravel) if IN_PROC
-World(SendsMessagesToFakeQueues) if IN_PROC
+World(SleepsByTimeTravel) if TEST_CONFIG[:in_proc]
+World(SendsMessagesToFakeQueues) if TEST_CONFIG[:in_proc]
