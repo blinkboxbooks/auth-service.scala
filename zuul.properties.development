@@ -18,7 +18,7 @@ geoip_data_file = ./var/geoip/GeoIP.dat
 # the url that users should be sent to complete their password reset flow; this must
 # be a secure (i.e. https) url, and contain a placeholder %{token} which is where the 
 # reset token will be inserted
-password_reset_url = https://localhost/resetpassword?token=%{token}
+password_reset_url = http://localhost/reset-password/%{token}
 
 # the connection string to the amqp server, in the format:
 # amqp://username:password@hostname:port/
