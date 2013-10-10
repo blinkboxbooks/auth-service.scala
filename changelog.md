@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.4.0 (2013-10-10 12.52)
+
+### New Features
+
+- Welcome email sent when a new user registered successfully.
+
 ## 0.3.0 (HEAD)
 
 ### New Features

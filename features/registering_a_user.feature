@@ -14,6 +14,7 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
+    Then I receive a welcome email
 
   Scenario: Registering with a name containing international characters
     When I provide valid registration details
@@ -23,6 +24,7 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
+    And I receive a welcome email
 
   Scenario: Registering without allowing marketing communications
     When I provide valid registration details
@@ -31,12 +33,14 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
+    And I receive a welcome email
 
   Scenario: Trying to register without accepting the terms and conditions
     When I provide valid registration details
     But I have not accepted the terms and conditions
     And I submit the registration request
     Then the request fails because it is invalid
+    And no email is sent
 
   Scenario: Trying to register with an email address that is already registered
     Given I have registered an account
@@ -44,11 +48,13 @@ Feature: Registration
     And I submit the registration request
     Then the request fails because it is invalid
     And the reason is that the email address is already taken
+    And no email is sent
 
   Scenario Outline: Trying to register with missing details
     When I provide valid registration details, except <detail> which is missing
     And I submit the registration request
     Then the request fails because it is invalid
+    And no email is sent
 
     Examples: Required details
       These details are required for registration
@@ -64,6 +70,7 @@ Feature: Registration
     When I provide valid registration details, except <detail> which is "<value>"
     And I submit the registration request
     Then the request fails because it is invalid
+    And no email is sent
 
     Examples: Malformed email address
       The email address must have one @ symbol with a . after it and characters at each end and in between
@@ -116,6 +123,7 @@ Feature: Registration
     When I try to register an account
     Then the request fails because it is invalid
     And the reason is that my country is geoblocked
+    And no email is sent
 
     Examples:
       | country |
@@ -127,3 +135,4 @@ Feature: Registration
     When I try to register an account
     Then the request fails because it is invalid
     And the reason is that my country is geoblocked
+    And no email is sent

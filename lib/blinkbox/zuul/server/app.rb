@@ -229,6 +229,7 @@ module Blinkbox::Zuul::Server
         end
       end
 
+      Blinkbox::Zuul::Server::Email.welcome(user)
       issue_refresh_token(user)
     end
 
