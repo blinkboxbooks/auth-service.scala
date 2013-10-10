@@ -129,12 +129,12 @@ module Blinkbox::Zuul::Server
       json build_user_info(current_user)
     end
 
-    get "/tokeninfo" do
+    get "/session" do
       refresh_token = validate_refresh_token
       handle_token_info_request(refresh_token)
     end
 
-    post "/tokeninfo" do
+    post "/session" do
       refresh_token = validate_refresh_token
       handle_extend_token_info_request(refresh_token)
     end
