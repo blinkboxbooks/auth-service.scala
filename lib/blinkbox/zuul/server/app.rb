@@ -221,7 +221,6 @@ module Blinkbox::Zuul::Server
 
       begin
         user.save!
-        Blinkbox::Zuul::Server::Email.welcome(user)
       rescue ActiveRecord::RecordInvalid => e
         if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
           invalid_request "username_already_taken", e.message
@@ -230,6 +229,7 @@ module Blinkbox::Zuul::Server
         end
       end
 
+      Blinkbox::Zuul::Server::Email.welcome(user)
       issue_refresh_token(user)
     end
 
