@@ -26,11 +26,11 @@ class ZuulClient
   end
 
   def get_access_token_info(access_token)
-    http_get "/tokeninfo", {}, access_token
+    http_get "/session", {}, access_token
   end
 
   def extend_elevated_session(access_token)
-    http_post "/tokeninfo", {}, access_token
+    http_post "/session", {}, access_token
   end
 
   def register_client(client, access_token)
