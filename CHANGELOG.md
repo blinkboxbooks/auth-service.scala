@@ -2,11 +2,19 @@
 
 ## 0.4.0 (2013-10-10 12.52)
 
+### Breaking Changes
+
+- Endpoint `/tokeninfo` has been renamed to `/session`.
+
 ### New Features
 
 - Welcome email sent when a new user registered successfully.
 
-## 0.3.0 (HEAD)
+### Bug Fixes
+
+- Password reset link format now matches what the website is expecting in example properties files.
+
+## 0.3.0 (2013-10-07 12:32)
 
 ### New Features
 
