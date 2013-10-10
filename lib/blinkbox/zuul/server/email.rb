@@ -11,6 +11,10 @@ module Blinkbox
           send_message("password_reset", user, salutation: user.first_name, resetLink: link, resetToken: token)
         end
 
+        def self.welcome(user)
+          send_message("welcome", user, salutation: user.first_name)
+        end
+
         private
 
         def self.send_message(template, *to, variables)

@@ -2,6 +2,7 @@ Given(/^I have registered an account$/) do
   @me = TestUser.new.generate_details
   @me.register
   expect(last_response.status).to eq(200)
+  Blinkbox::Zuul::Server::Email.sent_messages.pop rescue nil #Makes sure we have no emails so as not to affect other tests
 end
 
 Given(/^another user has registered an account$/) do
