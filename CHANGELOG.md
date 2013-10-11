@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.4.1 (2013-10-11 16:01)
+
+### Bug Fixes
+
+- [CP-607](https://tools.mobcastdev.com/jira/browse/CP-607) - Empty bearer tokens now have an `invalid_token` error code.
+
 ## 0.4.0 (2013-10-10 12:52)
 
 ### Breaking Changes
