@@ -1,6 +1,6 @@
 # Zuul Server Change Log
 
-## 0.4.0 (2013-10-10 12.52)
+## 0.4.0 (2013-10-10 12:52)
 
 ### Breaking Changes
 

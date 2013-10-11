@@ -21,5 +21,6 @@ geoip_data_file = ./var/geoip/GeoIP.dat
 password_reset_url = https://www.blinkboxbooks.com/reset-password/%{token}
 
 # the connection string to the amqp server, in the format:
-# amqp://username:password@hostname:port/
-amqp_server_url = amqp://guest:guest@127.0.0.1:5672/
+# amqp://username:password@hostname:port[/vhost]
+# IMPORTANT: DO NOT include a trailing slash unless you specify a vhost name
+amqp_server_url = amqp://guest:guest@127.0.0.1:5672
