@@ -18,20 +18,20 @@ module Sinatra
 
         def require_user_authorization_for(url_pattern)
           before url_pattern do
-            unless request.env['zuul.access_token']
-              headers['WWW-Authenticate'] = 'Bearer'
+            if request.env["zuul.access_token"].nil?
+              headers["WWW-Authenticate"] = "Bearer"
               halt 401
             end
 
-            if request.env['zuul.error']
-              headers['WWW-Authenticate'] = 'Bearer error="invalid_token", error_description="Access token is invalid"'
+            if request.env["zuul.access_token"].empty? || request.env["zuul.error"]
+              headers["WWW-Authenticate"] = 'Bearer error="invalid_token", error_description="Access token is invalid"'
               halt 401
             end
 
             user_id = request.env["zuul.user_id"]
             request.env["zuul.user"] = ::Blinkbox::Zuul::Server::User.find_by_id(user_id) if user_id
             if request.env["zuul.user"].nil?
-              headers['WWW-Authenticate'] = 'Bearer error="invalid_token", error_description="User not found"'
+              headers["WWW-Authenticate"] = 'Bearer error="invalid_token", error_description="User not found"'
               halt 401
             end
           end
