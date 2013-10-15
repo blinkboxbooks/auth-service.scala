@@ -72,6 +72,7 @@ module Blinkbox::Zuul::Server
       %w{name brand model os}.each do |key|
         updates[key] = params["client_#{key}"] if params["client_#{key}"]
       end
+      invalid_request "No updateable attributes specified" if updates.empty?
 
       begin
         client.update_attributes!(updates)
@@ -125,6 +126,7 @@ module Blinkbox::Zuul::Server
 
       updateable = ["username", "first_name", "last_name", "allow_marketing_communications"]
       updates = params.select { |k, v| updateable.include?(k) }
+      invalid_request "No updateable attributes specified" if updates.empty?
       begin
         current_user.update_attributes!(updates)
       rescue => e

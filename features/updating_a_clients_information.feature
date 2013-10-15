@@ -41,6 +41,11 @@ Feature: Updating a client's information
     Then the request fails because I am unauthorised
     And the response does not include any error information
 
+  Scenario: Trying to update client information
+    When I do not change my client's details
+    And I request my client's information be updated
+    Then the request fails because it is invalid
+
   Scenario: Trying to update client information for a different user's client
     For security reasons we don't distinguish between a user that doesn't exist and a user that
     does exist but is not the current user. In either case we say it was not found.

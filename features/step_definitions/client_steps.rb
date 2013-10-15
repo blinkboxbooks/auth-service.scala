@@ -74,6 +74,8 @@ When(/^I change my( other)? client's details to:$/) do |other_client, table|
   table.rows_hash.each { |k, v| client.send("#{oauth_param_name(k)}=", v) }
 end
 
+When(/^I do not change my client's details$/, :noop)
+
 When(/^I request my( other)? client's information be updated(, without my access token)?$/) do |other_client, no_token|
   client = other_client ? @my_other_client : @my_client
   access_token = @me.access_token unless no_token

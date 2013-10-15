@@ -9,8 +9,16 @@ class AddBrandAndOsToClients < ActiveRecord::Migration
       t.string :brand, limit: 50
       t.string :os, limit: 50
     end
-    Client.where(name: "Unnamed Client").update_all(name: nil)
-    Client.where(model: "Unknown Device").update_all(model: nil)
+    reversible do |direction|
+      direction.up do
+        Client.where(name: "Unnamed Client").update_all(name: nil)
+        Client.where(model: "Unknown Device").update_all(model: nil)
+      end
+      direction.down do
+        Client.where(name: nil).update_all(name: "Unnamed Client")
+        Client.where(model: nil).update_all(model: "Unknown Device")
+      end
+    end
   end
 
 end
