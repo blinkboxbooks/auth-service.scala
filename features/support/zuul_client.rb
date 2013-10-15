@@ -34,7 +34,12 @@ class ZuulClient
   end
 
   def register_client(client, access_token)
-    params = { client_name: client.name, client_model: client.model }
+    params = { 
+      client_name: client.name, 
+      client_brand: client.brand,
+      client_model: client.model,
+      client_os: client.os
+    }
     http_post "/clients", params, access_token
   end
 
@@ -74,7 +79,9 @@ class ZuulClient
   def update_client(client, access_token)
     params = {}
     params[:client_name] = client.name if client.name_changed?
+    params[:client_brand] = client.brand if client.brand_changed?
     params[:client_model] = client.model if client.model_changed?
+    params[:client_os] = client.os if client.os_changed?
     http_patch "/clients/#{client.local_id}", params, access_token
   end
 

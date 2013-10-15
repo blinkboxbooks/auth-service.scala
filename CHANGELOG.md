@@ -1,5 +1,16 @@
 # Zuul Server Change Log
 
+## 0.5.0 (2013-10-15 13:45)
+
+### New Features
+
+- [CP-490](https://tools.mobcastdev.com/jira/browse/CP-490) - A password changed confirmation email is sent on successful password change.
+- [CP-632](https://tools.mobcastdev.com/jira/browse/CP-632) - Clients now have `client_brand` and `client_os` details, which are optional on registration and updates.
+
+### Deployment Notes
+
+- A database migration to schema version 7 is required.
+
 ## 0.4.1 (2013-10-11 16:01)
 
 ### Bug Fixes
@@ -14,7 +25,7 @@
 
 ### New Features
 
-- Welcome email sent when a new user registered successfully.
+- [CP-482](https://tools.mobcastdev.com/jira/browse/CP-482) - A welcome email is sent when a new user registers successfully.
 
 ### Bug Fixes
 
@@ -24,9 +35,10 @@
 
 ### New Features
 
-- New endpoint `POST /password/reset` to allow a user to request a password reset email.
-- New endpoint `POST /password/reset/validate-token` to allow validation of a password reset token prior to trying to reset using it.
-- Endpoint `POST /oauth2/token` supports new grant type `urn:blinkbox:oauth:grant-type:password-reset-token` to allow a user to reset their password and authenticate using a reset token.
+- [CP-314](https://tools.mobcastdev.com/jira/browse/CP-314) - Password reset functionality is now available. The end-to-end flow relies on the mailer service.
+    - New endpoint `POST /password/reset` to allow a user to request a password reset email.
+    - New endpoint `POST /password/reset/validate-token` to allow validation of a password reset token prior to trying to reset using it.
+    - Endpoint `POST /oauth2/token` supports new grant type `urn:blinkbox:oauth:grant-type:password-reset-token` to allow a user to reset their password and authenticate using a reset token.
 
 ### Bug Fixes
 
@@ -44,7 +56,7 @@
 
 ### New Features
 
-- New endpoint `POST /password/change` to allow users to change their password.
+- [CP-552](https://tools.mobcastdev.com/jira/browse/CP-552) New endpoint `POST /password/change` to allow users to change their password.
 
 ## 0.1.0 (Baseline Release)
 
