@@ -2,6 +2,10 @@
 
 ## 0.5.0 (2013-10-15 13:45)
 
+### Breaking Changes
+
+- `PATCH /clients/{id}` and `PATCH /users/{id}` now return `400 Bad Request` instead of `200 OK` if no valid updateable attributes are specified.
+
 ### New Features
 
 - [CP-490](https://tools.mobcastdev.com/jira/browse/CP-490) - A password changed confirmation email is sent on successful password change.
