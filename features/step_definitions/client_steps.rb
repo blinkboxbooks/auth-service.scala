@@ -22,6 +22,11 @@ Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
   end
 end
 
+When(/^I provide the client registration details:$/) do |table|
+  @my_client ||= TestClient.new.generate_details
+  table.rows_hash.each { |k, v| @my_client.send("#{oauth_param_name(k)}=", v) }
+end
+
 When(/^I provide a client (.+?)(?: of "(.*)")?$/) do |name, value|
   @my_client ||= TestClient.new.generate_details
   @my_client.send("#{oauth_param_name(name)}=", value) if value
@@ -64,11 +69,12 @@ When(/^I request client information for all my clients(, without my access token
   $zuul.get_clients_info(access_token)
 end
 
-When(/^I change my( other)? client's (.+) to "(.+)"$/) do |other_client, name, value|
-  method_name = "#{oauth_param_name(name)}="
+When(/^I change my( other)? client's details to:$/) do |other_client, table|
   client = other_client ? @my_other_client : @my_client
-  client.send(method_name, value)
+  table.rows_hash.each { |k, v| client.send("#{oauth_param_name(k)}=", v) }
 end
+
+When(/^I do not change my client's details$/, :noop)
 
 When(/^I request my( other)? client's information be updated(, without my access token)?$/) do |other_client, no_token|
   client = other_client ? @my_other_client : @my_client
@@ -91,12 +97,15 @@ Then(/^(?:the response|it) contains a list of (#{CAPTURE_INTEGER}) client's info
   # TODO: Need to verify the client information looks correct
 end
 
-Then(/^the client (.+) matches the provided \1$/) do |name|
-  expect(last_response_json["client_#{name}"]).to eq(@my_client.send(name))
+Then(/^the( other)? client details match the provided details$/) do |other_client|
+  client = other_client ? @my_other_client : @my_client
+  %w{name brand model os}.each do |detail|
+    expect(last_response_json["client_#{detail}"]).to eq(client.send(detail))
+  end
 end
 
 Then(/^the client (.+) is "(.+)"$/) do |name, value|
-  expect(last_response_json["client_#{name}"]).to eq(value)
+  expect(last_response_json["client_#{name.downcase}"]).to eq(value)
 end
 
 Then(/^its last used date is (#{CAPTURE_INTEGER}) days ago$/) do |num_days|

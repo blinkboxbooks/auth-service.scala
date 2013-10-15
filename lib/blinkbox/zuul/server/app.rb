@@ -36,8 +36,10 @@ module Blinkbox::Zuul::Server
       end
 
       client = Client.new do |c|
-        c.name = params["client_name"] || "Unnamed Client"
-        c.model = params["client_model"] || "Unknown Device"
+        c.name = params["client_name"]
+        c.brand = params["client_brand"]
+        c.model = params["client_model"]
+        c.os = params["client_os"]
         c.user = current_user
         c.client_secret = generate_opaque_token
       end
@@ -67,9 +69,10 @@ module Blinkbox::Zuul::Server
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
       updates = {}
-      %w{name model}.each do |key|
+      %w{name brand model os}.each do |key|
         updates[key] = params["client_#{key}"] if params["client_#{key}"]
       end
+      invalid_request "No updateable attributes specified" if updates.empty?
 
       begin
         client.update_attributes!(updates)
@@ -123,6 +126,7 @@ module Blinkbox::Zuul::Server
 
       updateable = ["username", "first_name", "last_name", "allow_marketing_communications"]
       updates = params.select { |k, v| updateable.include?(k) }
+      invalid_request "No updateable attributes specified" if updates.empty?
       begin
         current_user.update_attributes!(updates)
       rescue => e
@@ -392,7 +396,9 @@ module Blinkbox::Zuul::Server
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
         "client_uri" => "#{base_url}/clients/#{client.id}",
         "client_name" => client.name,
+        "client_brand" => client.brand,
         "client_model" => client.model,
+        "client_os" => client.os,
         "last_used_date" => client.updated_at.utc.strftime("%F")
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
