@@ -151,6 +151,8 @@ module Blinkbox::Zuul::Server
       current_user.password = new_password
       current_user.save! rescue invalid_request("new_password_too_short", "The new password is too short.")
 
+      Blinkbox::Zuul::Server::Email.password_confirmed(current_user)
+      nil # no entity-body needed
     end
 
     post "/password/reset" do

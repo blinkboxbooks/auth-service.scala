@@ -7,6 +7,10 @@ module Blinkbox
     module Server
       module Email
 
+        def self.password_confirmed(user)
+          send_message("password_confirmed", user, salutation: user.first_name)
+        end
+
         def self.password_reset(user, link, token)
           send_message("password_reset", user, salutation: user.first_name, resetLink: link, resetToken: token)
         end
