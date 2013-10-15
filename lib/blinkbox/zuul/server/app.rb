@@ -36,10 +36,10 @@ module Blinkbox::Zuul::Server
       end
 
       client = Client.new do |c|
-        c.name = params["client_name"] || "Unnamed Client"
-        c.brand = params["client_brand"] || "Unknown Brand"
-        c.model = params["client_model"] || "Unknown Model"
-        c.os = params["client_os"] || "Unknown OS"
+        c.name = params["client_name"]
+        c.brand = params["client_brand"]
+        c.model = params["client_model"]
+        c.os = params["client_os"]
         c.user = current_user
         c.client_secret = generate_opaque_token
       end
