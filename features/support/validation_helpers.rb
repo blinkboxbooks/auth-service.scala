@@ -4,7 +4,9 @@ def validate_client_information_response(client_secret = :required)
   expect(client_info["client_id"]).to_not be_nil
   expect(client_info["client_uri"]).to_not be_nil
   expect(client_info["client_name"]).to_not be_nil
+  expect(client_info["client_brand"]).to_not be_nil
   expect(client_info["client_model"]).to_not be_nil
+  expect(client_info["client_os"]).to_not be_nil
   expect(client_info["client_secret"]).to_not be_nil if client_secret == :required
   expect(client_info["client_secret"]).to be_nil if client_secret == :prohibited
   expect(client_info["last_used_date"]).to_not be_nil
