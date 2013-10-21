@@ -1,5 +1,6 @@
 .DS_Store
 
+db/schema.rb
 doc/
 pkg/
 *.properties
