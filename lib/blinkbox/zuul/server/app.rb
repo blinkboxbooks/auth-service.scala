@@ -310,7 +310,7 @@ module Blinkbox::Zuul::Server
       reason = "It has been too long since you last verified your credentials."
       invalid_token = (refresh_token.status == RefreshToken::Status::INVALID) || refresh_token.expires_at.past?
       if invalid_token
-        headers['WWW-Authenticate'] = "Bearer error=\"invalid_token\" error_reason=\"unverified_identity\", error_description=\"#{reason}\""
+        headers['WWW-Authenticate'] = "Bearer error=\"invalid_token\", error_reason=\"unverified_identity\", error_description=\"#{reason}\""
         halt 401
       end
       refresh_token
