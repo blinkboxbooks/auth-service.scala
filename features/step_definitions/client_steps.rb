@@ -17,6 +17,7 @@ Given(/^another user has registered a client$/) do
 end
 
 Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
+  count -= @me.clients.count
   count.times do
     @me.register_client(TestClient.new.generate_details)
   end
