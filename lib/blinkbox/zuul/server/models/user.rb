@@ -28,6 +28,10 @@ module Blinkbox::Zuul::Server
       end
     end
 
+    def registered_clients
+      clients.select { |client| !client.deregistered }
+    end
+
     def self.authenticate(username, password)
       return nil if username.nil? || password.nil?
       user = User.find_by_username(username)
