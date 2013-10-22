@@ -78,7 +78,7 @@ Feature: Registering a client
       | OS     |
 
   Scenario: Trying to register more than the allowed number of clients
-    Given I have registered 12 clients
+    Given I have registered 12 clients in total
     When I submit a client registration request
     Then the request fails because it is invalid
     And the reason is that the client limit has been reached

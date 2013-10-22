@@ -8,13 +8,13 @@ Feature: Listing client information
     Given I have registered an account
 
   Scenario: Listing client information for no clients
-    Given I have registered no clients
+    Given I have registered no clients in total
     When I request client information for all my clients
     Then the response contains a list of 0 client's information
     And it is not cacheable
 
   Scenario: Listing client information for multiple clients
-    Given I have registered 3 clients
+    Given I have registered 3 clients in total
     When I request client information for all my clients
     Then the response contains a list of 3 client's information, excluding the client secret
     And it is not cacheable

@@ -16,7 +16,7 @@ Given(/^another user has registered a client$/) do
   expect(last_response.status).to eq(200)
 end
 
-Given(/^I have registered (#{CAPTURE_INTEGER}) clients$/) do |count|
+Given(/^I have registered (#{CAPTURE_INTEGER}) clients in total$/) do |count|
   count -= @me.clients.count
   count.times do
     @me.register_client(TestClient.new.generate_details)
