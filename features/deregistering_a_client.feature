@@ -57,3 +57,9 @@ Feature: Deregistering a client
     And another user has registered a client
     When I request that the other user's client be deregistered
     Then the request fails because the client was not found
+
+  Scenario: Deregistering a client after reaching the max amount of devices should allow you to register a new client
+    Given I have registered 12 clients in total
+    When I request that my current client be deregistered
+    And I submit a client registration request
+    Then the response contains client information, including a client secret

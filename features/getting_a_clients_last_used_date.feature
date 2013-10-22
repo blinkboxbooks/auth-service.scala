@@ -36,7 +36,7 @@ Feature: Getting a client's last used date
     And its last used date is two days ago
 
   Scenario: Listing clients includes last used dates for each client
-    Given I have registered 3 clients
+    Given I have registered 3 clients in total
     When I request client information for all my clients
     Then the response contains a list of 3 client's information, excluding the client secret
     And each client has a last used date
