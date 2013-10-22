@@ -31,7 +31,7 @@ module Blinkbox::Zuul::Server
     end
 
     post "/clients", provides: :json do
-      if current_user.clients.count >= Client::MAX_CLIENTS_PER_USER
+      if current_user.clients.select { |client| !client.deregistered }.count >= Client::MAX_CLIENTS_PER_USER
         invalid_request "client_limit_reached", "Max clients (#{Client::MAX_CLIENTS_PER_USER}) already registered"
       end
 
