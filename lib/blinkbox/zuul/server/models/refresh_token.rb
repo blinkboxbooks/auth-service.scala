@@ -44,6 +44,10 @@ module Blinkbox::Zuul::Server
       end
     end
 
+    def elevation_none?
+      elevation == Elevation::NONE
+    end
+
     def extend_elevation_time
 
       case self.elevation

@@ -99,3 +99,18 @@ Feature: Access token elevation
     And I request information about the access token
     Then the response contains access token information
     And it is not elevated
+
+  Scenario: Requesting session information without bearer token
+    When I request information about my session, without my access token
+    Then the request fails because I am unauthorised
+    And the response includes authentication scheme information
+
+  Scenario: Requesting session information with an empty bearer token
+    When I request information about my session, with an empty access token
+    Then the request fails because I am unauthorised
+    And the response includes empty access token information
+
+  Scenario: Requesting session information with an expired bearer token
+    When I request information about my session, with an expired access token
+    Then the request fails because I am unauthorised
+    And the response includes expired token information

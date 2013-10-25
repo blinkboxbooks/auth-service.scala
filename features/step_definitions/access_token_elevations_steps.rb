@@ -1,11 +1,12 @@
 Given(/^I obtain an access token using my email address and password$/) do
-  obtain_access_and_token
+  obtain_access_and_token_via_username_and_password
 end
 
-Given(/^I have an? (non-)?elevated access token$/) do |negative|
-  obtain_access_and_token
-  time_unit = negative ? "one day" : "ten minutes"
+Given(/^I have an? (non-)?elevated access token$/) do |non_elevated|
+  obtain_access_and_token_via_username_and_password
+  time_unit = non_elevated ? "one day" : "ten minutes"
   step("I wait for over #{time_unit}")
+  obtain_access_and_token_via_refresh_token
 end
 
 Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) (seconds|minutes|hours|days?)$/) do |over, duration, time_unit|
@@ -15,6 +16,20 @@ Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) (seconds|minutes|hours|days?)$/)
 end
 
 When(/^I request information about the access token$/) do
+  $zuul.get_access_token_info(@me.access_token)
+end
+
+When(/^I request information about my session, without my access token$/) do
+  $zuul.get_access_token_info(nil)
+end
+
+When(/^I request information about my session, with an empty access token$/) do
+  $zuul.get_access_token_info("")
+end
+
+When(/^I request information about my session, with an expired access token$/) do
+  obtain_access_and_token_via_username_and_password
+  step("I wait for 30 minutes")
   $zuul.get_access_token_info(@me.access_token)
 end
 

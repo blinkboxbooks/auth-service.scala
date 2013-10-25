@@ -35,7 +35,7 @@ Given(/^I have reset my password$/) do
   step "I have reset my password using my password reset token"
 end
 
-Given(/^I subsequently authenticate using my email address and password$/, :obtain_access_and_token)
+Given(/^I subsequently authenticate using my email address and password$/, :obtain_access_and_token_via_username_and_password)
 
 When(/^I request my password is reset using my email address$/) do
   $zuul.reset_password(username: @me.username)

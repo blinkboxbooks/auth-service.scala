@@ -28,8 +28,23 @@ end
 # NB. At the moment this only tests the WWW-Authenticate header. In the future we may also
 # need to test the body for error information too.
 Then(/^the response does not include any error information$/) do
-  www_auth = Hash[*last_response['WWW-Authenticate'].scan(/([^\ ]+)="([^\"]+)"/).flatten]
-  expect(www_auth.keys).to_not include('error')
-  expect(www_auth.keys).to_not include('error_reason')
-  expect(www_auth.keys).to_not include('error_description')
+  expect(www_auth_header.keys).to_not include('error')
+  expect(www_auth_header.keys).to_not include('error_reason')
+  expect(www_auth_header.keys).to_not include('error_description')
+end
+
+Then(/^the response includes authentication scheme information$/) do
+  # § 5.3 demands there is nothing after Bearer
+  # https://tools.mobcastdev.com/confluence/display/PT/Authentication+and+Authorisation
+  expect(last_response['WWW-Authenticate']).to eq('Bearer')
+end
+
+Then(/^the response includes empty access token information$/) do
+  expect(www_auth_header['error']).to eq('invalid_token')
+  expect(www_auth_header['error_description']).to eq('A token is required')
+end
+
+Then(/^the response includes expired token information$/) do
+  expect(www_auth_header['error']).to eq('invalid_token')
+  expect(www_auth_header['error_description']).to eq('The access token expired')
 end
