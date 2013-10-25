@@ -16,6 +16,37 @@ Feature: Registration
     And it is not cacheable
     Then I receive a welcome email
 
+  Scenario: Registering a client with the user registration
+    When I provide valid user registration details
+    And I provide the client registration details:
+      | name | Test Device |
+      | brand | Test Brand |
+      | model | Test Model |
+      | OS | Test OS |
+    And I submit the client and user registration request
+    Then the response contains an access token and a refresh token
+    And it contains basic user information matching my details
+    And the response contains client information, including a client secret
+    And the client details match the provided details
+    And I receive a welcome email
+
+  Scenario Outline: Trying to register with missing details
+    When I provide valid client and user registration details, except <combined_registration_detail> which is missing
+    And I submit the client and user registration request
+    Then the request fails because it is invalid
+    And no email is sent
+
+  Examples: Required details
+  These details are required for registration
+    | combined_registration_detail   |
+    | first name                     |
+    | last name                      |
+    | email address                  |
+    | password                       |
+    | accepted terms and conditions  |
+    | allow marketing communications |
+
+
   Scenario: Registering with a name containing international characters
     When I provide valid registration details
     And my first name is "Iñtërnâtiônàlizætiøn"

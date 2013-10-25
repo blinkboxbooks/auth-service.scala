@@ -16,7 +16,7 @@ When(/^I try to register an account$/) do
   @me.register
 end
 
-When(/^I provide valid registration details$/) do
+When(/^I provide valid (?:user )?registration details$/) do
   @me = TestUser.new.generate_details
 end
 
