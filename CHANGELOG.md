@@ -1,4 +1,10 @@
 # Zuul Server Change Log
+## 0.5.2 (2013-10-23 13:52)
+
+### Bug Fixes
+
+- [CP-722](https://tools.mobcastdev.com/jira/browse/CP-722) - Do not allow deregisterd clients to log in with their old credentials
+
 
 ## 0.5.1 (2013-10-23 13:52)
 
