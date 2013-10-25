@@ -64,7 +64,7 @@ Feature: Deregistering a client
     And I submit a client registration request
     Then the response contains client information, including a client secret
 
-  Scenario: Deleting clients and logging should not allow them to log in
+  Scenario: Dissallow deregistered clients to log on with their old password and credentials
     Given I have deregistered my current client
     When I provide my email address, password and client credentials
     And I submit the authentication request
