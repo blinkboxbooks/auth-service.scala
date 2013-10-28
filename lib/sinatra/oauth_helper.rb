@@ -22,7 +22,7 @@ module Sinatra
     end
 
     def method_missing(method_sym, *args)
-      if method_sym =~ /invalid_[a-z]+/
+      if method_sym =~ /^invalid_[a-z]+$/
         oauth_error(method_sym.to_s, *args)
       else
         super

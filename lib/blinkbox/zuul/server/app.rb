@@ -7,6 +7,7 @@ require "scrypt"
 require "rack/blinkbox/zuul/tokens"
 require "sinatra/json_helper"
 require "sinatra/oauth_helper"
+require "sinatra/www_authenticate_helper"
 require "sinatra/blinkbox/zuul/authorization"
 require "blinkbox/zuul/server/environment"
 require "blinkbox/zuul/server/email"
@@ -16,11 +17,13 @@ module Blinkbox::Zuul::Server
     use Rack::Blinkbox::Zuul::TokenDecoder
     helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
+    helpers Sinatra::WWWAuthenticateHelper
     register Sinatra::Blinkbox::Zuul::Authorization
 
     require_user_authorization_for %r{^/clients(?:/.*)?}
     require_user_authorization_for %r{^/users(?:/.*)?}
     require_user_authorization_for %r{^/password/change}
+    require_user_authorization_for %r{^/session}
 
     after do
       # none of the responses from the auth server should be cached
@@ -301,18 +304,14 @@ module Blinkbox::Zuul::Server
 
     def validate_refresh_token
       refresh_token = RefreshToken.find(env["zuul.claims"]["zl/rti"]) rescue nil
-      if refresh_token.nil?
-        headers['WWW-Authenticate'] = 'Bearer error="invalid_token", error_reason="unverified_identity" error_description="Access token is invalid"'
-        halt 401
-      end
+
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "Access token is invalid") if refresh_token.nil?
 
       #invalid_grant "The refresh token is invalid" if refresh_token.nil?
-      reason = "It has been too long since you last verified your credentials."
+      description = "It has been too long since you last verified your credentials."
       invalid_token = (refresh_token.status == RefreshToken::Status::INVALID) || refresh_token.expires_at.past?
-      if invalid_token
-        headers['WWW-Authenticate'] = "Bearer error=\"invalid_token\", error_reason=\"unverified_identity\", error_description=\"#{reason}\""
-        halt 401
-      end
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: description) if invalid_token
+
       refresh_token
     end
 
@@ -349,6 +348,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_extend_token_info_request(refresh_token)
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") if refresh_token.elevation_none?
       refresh_token.extend_elevation_time
       handle_token_info_request(refresh_token)
     end
