@@ -14,6 +14,8 @@ class TestClient
   def generate_details
     @name = "My Test Client"
     @model = "Test Device"
+    @os = "Test OS"
+    @brand = "Test brand"
     self
   end
 

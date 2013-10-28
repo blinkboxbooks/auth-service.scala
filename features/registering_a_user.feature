@@ -46,10 +46,6 @@ Feature: Registration
     | password                       |
     | accepted terms and conditions  |
     | allow marketing communications |
-    | client name                    |
-    | client brand                   |
-    | client model                   |
-    | client os                      |
 
   Scenario Outline: Trying to register client and user simultaneously with missing client details
     When I provide valid registration details

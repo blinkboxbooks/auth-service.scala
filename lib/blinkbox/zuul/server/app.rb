@@ -34,24 +34,7 @@ module Blinkbox::Zuul::Server
     end
 
     post "/clients", provides: :json do
-      if current_user.registered_clients.count >= Client::MAX_CLIENTS_PER_USER
-        invalid_request "client_limit_reached", "Max clients (#{Client::MAX_CLIENTS_PER_USER}) already registered"
-      end
-
-      client = Client.new do |c|
-        c.name = params["client_name"]
-        c.brand = params["client_brand"]
-        c.model = params["client_model"]
-        c.os = params["client_os"]
-        c.user = current_user
-        c.client_secret = generate_opaque_token
-      end
-
-      begin
-        client.save!
-      rescue => e
-        invalid_request e.message
-      end
+      client = register_client()
 
       json build_client_info(client, include_client_secret: true)
     end
@@ -194,6 +177,35 @@ module Blinkbox::Zuul::Server
 
     private
 
+    def register_client
+      if current_user.registered_clients.count >= Client::MAX_CLIENTS_PER_USER
+        invalid_request "client_limit_reached", "Max clients (#{Client::MAX_CLIENTS_PER_USER}) already registered"
+      end
+
+      create_client(current_user)
+    end
+
+    def create_client(user)
+      missing_info = %w{client_name client_brand client_model client_os}.select { |key| params[key].nil? }
+      invalid_request "invalid_client_info", "#{missing_info.first} must be supplied" if missing_info.any?
+
+      client = Client.new do |c|
+        c.name = params["client_name"]
+        c.brand = params["client_brand"]
+        c.model = params["client_model"]
+        c.os = params["client_os"]
+        c.user = user
+        c.client_secret = generate_opaque_token
+      end
+
+      begin
+        client.save!
+      rescue => e
+        invalid_request e.message
+      end
+      client
+    end
+
     def handle_token_request(params)
       case params["grant_type"]
       when "password"
@@ -210,6 +222,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_registration_flow(params)
+
       client_ip = IPAddress.parse(request.ip)
       unless client_ip.loopback? || client_ip.private?
         detected_country = @@geoip.country(request.ip)
@@ -235,11 +248,19 @@ module Blinkbox::Zuul::Server
           invalid_request "username_already_taken", e.message
         else
           invalid_request e.message
+          client.destroy
         end
       end
 
+      begin
+        client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
+      rescue => e
+        user.destroy
+        invalid_request e.message
+      end
+
       Blinkbox::Zuul::Server::Email.welcome(user)
-      issue_refresh_token(user)
+      issue_refresh_token(user, client)
     end
 
     def handle_password_flow(params)
