@@ -59,7 +59,7 @@ class ZuulClient
     http_delete "/clients/#{client_id}", {}, access_token
   end
 
-  def register_user(user)
+  def register_user(user, client_options = {})
     params = {
       grant_type: "urn:blinkbox:oauth:grant-type:registration",
       username: user.username,
@@ -69,7 +69,18 @@ class ZuulClient
       accepted_terms_and_conditions: user.accepted_terms_and_conditions,
       allow_marketing_communications: user.allow_marketing_communications
     }
+    params.merge!(client_options)
     http_post "/oauth2/token", params
+  end
+
+  def register_user_with_client(user, client)
+    client_params = {
+      client_name: client.name,
+      client_brand: client.brand,
+      client_model: client.model,
+      client_os: client.os
+    }
+    register_user(user, client_params)
   end
 
   def revoke(refresh_token, access_token = nil)
