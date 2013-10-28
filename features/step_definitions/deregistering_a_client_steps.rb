@@ -32,4 +32,3 @@ Then(/^I have (?:got )?(#{CAPTURE_INTEGER}) registered clients?$/) do |num|
 end
 
 
-
