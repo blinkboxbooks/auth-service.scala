@@ -33,18 +33,18 @@ Then(/^the response does not include any error information$/) do
   expect(www_auth_header.keys).to_not include('error_description')
 end
 
-Then(/^the response includes authentication scheme information$/) do
+Then(/^the response includes only authentication scheme information$/) do
   # § 5.3 demands there is nothing after Bearer
   # https://tools.mobcastdev.com/confluence/display/PT/Authentication+and+Authorisation
   expect(last_response['WWW-Authenticate']).to eq('Bearer')
 end
 
-Then(/^the response includes empty access token information$/) do
+Then(/^the response includes only empty access token information$/) do
   expect(www_auth_header['error']).to eq('invalid_token')
   expect(www_auth_header['error_description']).to eq('A token is required')
 end
 
-Then(/^the response includes expired token information$/) do
+Then(/^the response includes only expired token information$/) do
   expect(www_auth_header['error']).to eq('invalid_token')
   expect(www_auth_header['error_description']).to eq('The access token expired')
 end

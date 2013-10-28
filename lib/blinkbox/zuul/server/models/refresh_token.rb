@@ -44,6 +44,11 @@ module Blinkbox::Zuul::Server
       end
     end
 
+    # Returns a boolean representing whether the refresh token is not
+    # elevated (true) or elevated/critically elevated (false)
+    #
+    # @return [Boolean] True if the refresh token has no elevation, i.e.,
+    #                   has neither critically elevated nor elevated status.
     def elevation_none?
       elevation == Elevation::NONE
     end
