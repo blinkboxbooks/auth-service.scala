@@ -222,7 +222,6 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_registration_flow(params)
-
       client_ip = IPAddress.parse(request.ip)
       unless client_ip.loopback? || client_ip.private?
         detected_country = @@geoip.country(request.ip)

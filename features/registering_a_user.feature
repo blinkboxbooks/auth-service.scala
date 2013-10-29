@@ -19,10 +19,10 @@ Feature: Registration
   Scenario: Registering a client with the user registration
     When I provide valid user registration details
     And I provide the client registration details:
-      | name | Test Device |
-      | brand | Test Brand |
-      | model | Test Model |
-      | OS | Test OS |
+      | name  | Test Device |
+      | brand | Test Brand  |
+      | model | Test Model  |
+      | OS    | Test OS     |
     And I submit the user and client registration request
     Then the response contains client information, including a client secret
     And it contains basic user information matching my details
