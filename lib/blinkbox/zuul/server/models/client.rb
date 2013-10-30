@@ -1,3 +1,5 @@
+require_relative "../validators/user_client_validator"
+
 module Blinkbox::Zuul::Server
   class Client < ActiveRecord::Base
 
@@ -15,12 +17,13 @@ module Blinkbox::Zuul::Server
     belongs_to :user
     has_one :refresh_token
 
-    validates :name, length: { within: 1..50 }, allow_nil: true
-    validates :brand, length: { within: 1..50 }, allow_nil: true
-    validates :model, length: { within: 1..50 }, allow_nil: true
-    validates :os, length: { within: 1..50 }, allow_nil: true
+    validates :name, length: { within: 1..50 }, allow_nil: true, presence: true
+    validates :brand, length: { within: 1..50 }, allow_nil: true, presence: true
+    validates :model, length: { within: 1..50 }, allow_nil: true, presence: true
+    validates :os, length: { within: 1..50 }, allow_nil: true, presence: true
     validates :user, presence: true
     validates :client_secret, presence: true
+    validates_with UserClientsValidator
 
     returns_value_or_default :name, "Unnamed Client"
     returns_value_or_default :brand, "Unknown Brand"
@@ -36,6 +39,15 @@ module Blinkbox::Zuul::Server
       else
         nil
       end
+    end
+
+    def deregister
+      self.deregistered = true
+      if self.refresh_token
+        self.refresh_token.revoked = true
+        self.refresh_token.save!
+      end
+      self.save!
     end
 
   end

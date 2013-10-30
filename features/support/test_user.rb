@@ -51,15 +51,7 @@ class TestUser
       @refresh_token = token_info["refresh_token"]
       @id = token_info["user_id"]
       @local_id = @id[/\d+$/]
-      client = TestClient.new
-      client.name = token_info["client_name"]
-      client.brand = token_info["client_brand"]
-      client.model = token_info["client_model"]
-      client.os = token_info["client_os"]
-      client.id = token_info["client_id"]
-      client.local_id = client_id[/\d+$/]
-      client.secret = token_info["client_secret"]
-      @clients << client
+      @clients << response
     end
   end
 

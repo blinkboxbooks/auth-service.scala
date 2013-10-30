@@ -36,6 +36,7 @@ module Blinkbox
           @@geoip = GeoIP.new(settings.properties[:geoip_data_file])
 
           Dir.glob(File.join(File.dirname(__FILE__), "models", "*.rb")).each { |file| require file }
+          Dir.glob(File.join(File.dirname(__FILE__), "validators", "*.rb")).each { |file| require file }
         end
 
       end

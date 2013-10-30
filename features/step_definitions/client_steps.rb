@@ -33,6 +33,10 @@ When(/^I provide a client (.+?)(?: of "(.*)")?$/) do |name, value|
   @my_client.send("#{oauth_param_name(name)}=", value) if value
 end
 
+When(/^I provide a valid client$/) do
+  @my_client ||= TestClient.new.generate_details
+end
+
 When(/^I do not provide a client (.+?)$/) do |name|
   @my_client ||= TestClient.new.generate_details
   @my_client.send("#{oauth_param_name(name)}=", nil)

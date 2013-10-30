@@ -32,14 +32,14 @@ Feature: Registration
 
   Scenario Outline: Trying to register client and user simultaneously with missing user details
     When I provide valid registration details, except <user_registration_detail> which is missing
-    And I provide a client model
+    And I provide a valid client
     And I submit the user and client registration request
     Then the request fails because it is invalid
     And no email is sent
 
   Examples: Required details
   These details are required for registration
-    | user_registration_detail   |
+    | user_registration_detail       |
     | first name                     |
     | last name                      |
     | email address                  |

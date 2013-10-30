@@ -73,12 +73,7 @@ module Blinkbox::Zuul::Server
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
-      client.deregistered = true
-      if client.refresh_token
-        client.refresh_token.revoked = true
-        client.refresh_token.save!
-      end
-      client.save!
+      client.deregister
     end
 
     get "/oauth2/token", provides: :json do
@@ -178,10 +173,6 @@ module Blinkbox::Zuul::Server
     private
 
     def register_client
-      if current_user.registered_clients.count >= Client::MAX_CLIENTS_PER_USER
-        invalid_request "client_limit_reached", "Max clients (#{Client::MAX_CLIENTS_PER_USER}) already registered"
-      end
-
       create_client(current_user)
     end
 
@@ -201,7 +192,11 @@ module Blinkbox::Zuul::Server
       begin
         client.save!
       rescue => e
-        invalid_request e.message
+        if e.message == "Validation failed: #{UserClientsValidator.message}"
+          invalid_request "client_limit_reached", e.message
+        else
+          invalid_request e.message
+        end
       end
       client
     end
@@ -241,21 +236,24 @@ module Blinkbox::Zuul::Server
       end
 
       begin
+        client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
+      rescue => e
+        if e.message == "Validation failed: #{UserClientsValidator.message}"
+          invalid_request "client_limit_reached", e.message
+        else
+          invalid_request e.message
+        end
+      end
+
+      begin
         user.save!
       rescue ActiveRecord::RecordInvalid => e
         if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
           invalid_request "username_already_taken", e.message
         else
           invalid_request e.message
-          client.destroy
+          client.deregister if client
         end
-      end
-
-      begin
-        client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
-      rescue => e
-        user.destroy
-        invalid_request e.message
       end
 
       Blinkbox::Zuul::Server::Email.welcome(user)
