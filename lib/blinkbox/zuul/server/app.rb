@@ -235,26 +235,36 @@ module Blinkbox::Zuul::Server
         u.allow_marketing_communications = params["allow_marketing_communications"]
       end
 
-      begin
-        client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
-      rescue => e
-        if e.message == "Validation failed: #{UserClientsValidator.max_clients_error_message}"
-          invalid_request "client_limit_reached", e.message
-        else
-          invalid_request e.message
+      client = nil
+      error = nil
+
+      User.transaction do
+        Client.transaction do
+
+          begin
+            client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
+            user.save!
+          rescue ActiveRecord::RecordInvalid => e
+            p user.id
+            p client.id if client
+            error = {}
+            if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
+              error[:reason] = "username_already_taken"
+              error[:description] = e.message
+            elsif e.message == "Validation failed: #{UserClientsValidator.max_clients_error_message}"
+              error[:reason] = "client_limit_reached"
+              error[:description] = e.message
+            else
+              error[:reason] = "client_validation_error"
+              error[:description] =  e.message
+            end
+            raise ActiveRecord::Rollback
+          end
         end
+        raise ActiveRecord::Rollback if error
       end
 
-      begin
-        user.save!
-      rescue ActiveRecord::RecordInvalid => e
-        if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
-          invalid_request "username_already_taken", e.message
-        else
-          invalid_request e.message
-          client.deregister if client
-        end
-      end
+      invalid_request error[:reason], error[:description] if error
 
       Blinkbox::Zuul::Server::Email.welcome(user)
       issue_refresh_token(user, client)
