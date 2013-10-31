@@ -42,12 +42,17 @@ module Blinkbox::Zuul::Server
     end
 
     def deregister
-      self.deregistered = true
-      if self.refresh_token
-        self.refresh_token.revoked = true
-        self.refresh_token.save!
+      Client.transaction do
+        RefreshToken.transaction do
+          self.deregistered = true
+          if self.refresh_token
+            self.refresh_token.revoked = true
+            self.refresh_token.save!
+          end
+          self.save!
+        end
       end
-      self.save!
+
     end
 
   end
