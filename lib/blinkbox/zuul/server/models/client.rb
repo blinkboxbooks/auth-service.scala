@@ -12,7 +12,7 @@ module Blinkbox::Zuul::Server
       end
     end
 
-
+    MAX_CLIENTS_PER_USER = 12
 
     belongs_to :user
     has_one :refresh_token
@@ -23,7 +23,7 @@ module Blinkbox::Zuul::Server
     validates :os, length: { within: 1..50 }, allow_nil: true, presence: true
     validates :user, presence: true
     validates :client_secret, presence: true
-    validates_with UserClientsValidator
+    validates_with UserClientsValidator, maximum: MAX_CLIENTS_PER_USER
 
     returns_value_or_default :name, "Unnamed Client"
     returns_value_or_default :brand, "Unknown Brand"
