@@ -245,8 +245,6 @@ module Blinkbox::Zuul::Server
             client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
             user.save!
           rescue ActiveRecord::RecordInvalid => e
-            p user.id
-            p client.id if client
             error = {}
             if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
               error[:reason] = "username_already_taken"
