@@ -192,7 +192,7 @@ module Blinkbox::Zuul::Server
       begin
         client.save!
       rescue => e
-        if e.message == "Validation failed: #{UserClientsValidator.message}"
+        if e.message == "Validation failed: #{UserClientsValidator::MAX_CLIENTS_ERROR_MESSAGE}"
           invalid_request "client_limit_reached", e.message
         else
           invalid_request e.message
@@ -238,7 +238,7 @@ module Blinkbox::Zuul::Server
       begin
         client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
       rescue => e
-        if e.message == "Validation failed: #{UserClientsValidator.message}"
+        if e.message == "Validation failed: #{UserClientsValidator::MAX_CLIENTS_ERROR_MESSAGE}"
           invalid_request "client_limit_reached", e.message
         else
           invalid_request e.message
