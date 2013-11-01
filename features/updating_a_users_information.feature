@@ -14,6 +14,7 @@ Feature: Updating a user's information
     Then the response contains complete user information matching my new details
     And it is not cacheable
 
+  @extremely_slow
   Scenario Outline: Updating email address, outside critical elevation period
     Given I have <elevation_level> access token
     When I change my email address
@@ -34,6 +35,7 @@ Feature: Updating a user's information
     Then the response contains complete user information matching my new details
     And it is not cacheable
 
+  @extremely_slow
   Scenario Outline: Updating first name and last name, outside critical elevation period
     Given I have <elevation_level> access token
     When I change my first name to "Bob"
@@ -54,6 +56,7 @@ Feature: Updating a user's information
     Then the response contains complete user information matching my new details
     And it is not cacheable
 
+  @extremely_slow
   Scenario Outline: Updating marketing preferences, outside critical elevation period
     Given I have <elevation_level> access token
     When I change whether I allow marketing communications

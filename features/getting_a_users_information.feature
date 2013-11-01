@@ -36,6 +36,7 @@ Feature: Getting a user's information
     When I request user information for the other user
     Then the request fails because the user was not found
 
+  @extremely_slow
   Scenario Outline: Access personal information outside critical elevation period
     Given I have <elevation_level> access token
     When I request user information for myself

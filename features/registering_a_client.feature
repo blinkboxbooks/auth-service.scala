@@ -19,6 +19,7 @@ Feature: Registering a client
     And the client details match the provided details
     And it is not cacheable
 
+  @extremely_slow
   Scenario Outline: Registering a client with all details, outside critical elevation period
     Given I have <elevation_level> access token
     When I provide the client registration details:
