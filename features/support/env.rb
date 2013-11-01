@@ -12,12 +12,15 @@ require "blinkbox/zuul/server/email"
 TEST_CONFIG = {}
 TEST_CONFIG[:server] = URI.parse(ENV["AUTH_SERVER"] || "http://127.0.0.1:9393/")
 TEST_CONFIG[:proxy] = ENV["PROXY_SERVER"] ? URI.parse(ENV["PROXY_SERVER"]) : nil
-TEST_CONFIG[:in_proc] = if ENV["IN_PROC"] =~ /^(false|no)$/i
+TEST_CONFIG[:in_proc] = if /^(false|no)$/i === ENV["IN_PROC"]
                           false
                         else
                           host = TEST_CONFIG[:server].host
                           IPAddress.valid?(host) && IPAddress.parse(host).loopback?
                         end
+TEST_CONFIG[:debug] = /^(true|yes)$/i === ENV["DEBUG"]
+
+p TEST_CONFIG if TEST_CONFIG[:debug]
 
 if TEST_CONFIG[:in_proc]
   require_relative "../../lib/blinkbox/zuul/server" 
