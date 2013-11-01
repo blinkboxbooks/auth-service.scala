@@ -7,7 +7,8 @@ Feature: Registering a client
   Background:
     Given I have registered an account
 
-  Scenario: Registering a client with all details
+  Scenario: Registering a client with all details, within critical elevation period
+    Given I have a critically elevated access token
     When I provide the client registration details:
       | name  | Test Device |
       | brand | Test Brand  |
@@ -17,6 +18,22 @@ Feature: Registering a client
     Then the response contains client information, including a client secret
     And the client details match the provided details
     And it is not cacheable
+
+  Scenario Outline: Registering a client with all details, outside critical elevation period
+    Given I have <elevation_level> access token
+    When I provide the client registration details:
+      | name  | Test Device |
+      | brand | Test Brand  |
+      | model | Test Model  |
+      | OS    | Test OS     |
+    And I submit the client registration request
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | an elevated     |
+      | a non-elevated  |
 
   Scenario: Registering a client with details containing international characters
     When I provide the client registration details:

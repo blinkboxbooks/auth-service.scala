@@ -2,11 +2,18 @@ Given(/^I obtain an access token using my email address and password$/) do
   obtain_access_and_token_via_username_and_password
 end
 
-Given(/^I have an? (non-)?elevated access token$/) do |non_elevated|
+Given(/^I have an? (critically |non-)?elevated access token$/) do |elevation_level|
   obtain_access_and_token_via_username_and_password
-  time_unit = non_elevated ? "one day" : "ten minutes"
-  step("I wait for over #{time_unit}")
-  obtain_access_and_token_via_refresh_token
+  case elevation_level
+  when "critically "
+    # Don't sleep
+  when "non-"
+    sleep(1.day)
+    obtain_access_and_token_via_refresh_token
+  else
+    sleep(10.minutes)
+    obtain_access_and_token_via_refresh_token
+  end
 end
 
 Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) (seconds|minutes|hours|days?)$/) do |over, duration, time_unit|
@@ -57,12 +64,12 @@ end
 When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now(?: minus (#{CAPTURE_INTEGER}) (minutes|days?))?$/) do |num, time_unit, negate, negate_unit|
   time_delta = 5
   delta_measurement = case time_unit
-                      when /days?/
-                        "minutes"
-                      when /minutes/
-                        "seconds"
-                      else
-                        raise "undefined unit of time for #{time_unit}"
+                        when /days?/
+                          "minutes"
+                        when /minutes/
+                          "seconds"
+                        else
+                          raise "undefined unit of time for #{time_unit}"
                       end
   time_period = num.send(time_unit)
   time_period = time_period - negate.send(negate_unit) if negate
