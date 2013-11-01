@@ -17,10 +17,10 @@ module Blinkbox::Zuul::Server
     belongs_to :user
     has_one :refresh_token
 
-    validates :name, length: { within: 1..50 }, allow_nil: true, presence: true
-    validates :brand, length: { within: 1..50 }, allow_nil: true, presence: true
-    validates :model, length: { within: 1..50 }, allow_nil: true, presence: true
-    validates :os, length: { within: 1..50 }, allow_nil: true, presence: true
+    validates :name, length: { within: 1..50 }, presence: true
+    validates :brand, length: { within: 1..50 }, presence: true
+    validates :model, length: { within: 1..50 }, presence: true
+    validates :os, length: { within: 1..50 }, presence: true
     validates :user, presence: true
     validates :client_secret, presence: true
     validates_with UserClientsValidator, maximum: MAX_CLIENTS_PER_USER

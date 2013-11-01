@@ -238,31 +238,26 @@ module Blinkbox::Zuul::Server
       client = nil
       error = nil
 
-      User.transaction do
-        Client.transaction do
-
-          begin
-            client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
-            user.save!
-          rescue ActiveRecord::RecordInvalid => e
-            error = {}
-            if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
-              error[:reason] = "username_already_taken"
-              error[:description] = e.message
-            elsif e.message == "Validation failed: #{UserClientsValidator.max_clients_error_message}"
-              error[:reason] = "client_limit_reached"
-              error[:description] = e.message
-            else
-              error[:reason] = "client_validation_error"
-              error[:description] =  e.message
-            end
-            raise ActiveRecord::Rollback
+      ActiveRecord::Base.transaction do
+        begin
+          client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
+          user.save!
+        rescue ActiveRecord::RecordInvalid => e
+          error = {}
+          if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
+            error[:reason] = "username_already_taken"
+            error[:description] = e.message
+          elsif e.message == "Validation failed: #{UserClientsValidator.max_clients_error_message}"
+            error[:reason] = "client_limit_reached"
+            error[:description] = e.message
+          else
+            error[:description] =  e.message
           end
         end
         raise ActiveRecord::Rollback if error
       end
 
-      invalid_request error[:reason], error[:description] if error
+      error[:reason].nil? ? invalid_request(error[:description]) : invalid_request(error[:reason], error[:description]) if error
 
       Blinkbox::Zuul::Server::Email.welcome(user)
       issue_refresh_token(user, client)

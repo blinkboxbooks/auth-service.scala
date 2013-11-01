@@ -1,7 +1,6 @@
 require "active_model/validator"
 require_relative "../../../../blinkbox/zuul/server/models/client"
 
-
 class UserClientsValidator < ActiveModel::Validator
 
   def validate(record)
