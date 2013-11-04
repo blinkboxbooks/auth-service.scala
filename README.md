@@ -162,13 +162,19 @@ To run against a different auth server you can specify the `AUTH_SERVER` environ
 $ cucumber -t ~@slow -t ~@extremely_slow AUTH_SERVER=https://myserver:123/
 ```
 
-If you want to inspect what's going over the wire, then use an HTTP debugging proxy such as [Charles](http://www.charlesproxy.com/) and specify the `PROXY_SERVER` environment variable, e.g.
+If you want to inspect what's going over the wire, then you can either use an HTTP debugging proxy such as [Charles](http://www.charlesproxy.com/) and specify the `PROXY_SERVER` environment variable, e.g.
 
 ```
 $ cucumber -t ~@slow -t ~@extremely_slow PROXY_SERVER=http://localhost:8888/
 ```
 
-Note that the `AUTH_SERVER` and `PROXY_SERVER` variables can be used together.
+The proxy server approach doesn't work with GeoIP tests as it needs to use an external proxy, so as an alternative you can specify the `DEBUG` environment variable, e.g.
+
+```
+$ cucumber -t ~@slow -t ~@extremely_slow DEBUG=true
+```
+
+Note that the `AUTH_SERVER`, `PROXY_SERVER` and `DEBUG` variables can be used together.
 
 All of the tests should pass. If they don't, fix it or raise a bug.
 
