@@ -7,24 +7,67 @@ Feature: Updating a user's information
   Background:
     Given I have registered an account
 
-  Scenario: Updating email address
+  Scenario: Updating email address, within critical elevation period
+    Given I have a critically elevated access token
     When I change my email address
     And I request my user information be updated
     Then the response contains complete user information matching my new details
     And it is not cacheable
 
-  Scenario: Updating first name and last name
+  @extremely_slow
+  Scenario Outline: Updating email address, outside critical elevation period
+    Given I have <elevation_level> access token
+    When I change my email address
+    And I request my user information be updated
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | an elevated     |
+      | a non-elevated  |
+
+  Scenario: Updating first name and last name, within critical elevation period
+    Given I have a critically elevated access token
     When I change my first name to "Bob"
     And I change my last name to "Smith"
     And I request my user information be updated
     Then the response contains complete user information matching my new details
     And it is not cacheable
 
-  Scenario: Updating marketing preferences
+  @extremely_slow
+  Scenario Outline: Updating first name and last name, outside critical elevation period
+    Given I have <elevation_level> access token
+    When I change my first name to "Bob"
+    And I change my last name to "Smith"
+    And I request my user information be updated
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | an elevated     |
+      | a non-elevated  |
+
+  Scenario: Updating marketing preferences, within critical elevation period
+    Given I have a critically elevated access token
     When I change whether I allow marketing communications
     And I request my user information be updated
     Then the response contains complete user information matching my new details
     And it is not cacheable
+
+  @extremely_slow
+  Scenario Outline: Updating marketing preferences, outside critical elevation period
+    Given I have <elevation_level> access token
+    When I change whether I allow marketing communications
+    And I request my user information be updated
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | an elevated     |
+      | a non-elevated  |
 
   Scenario: Trying to change acceptance of terms and conditions
     When I change whether I accepted terms and conditions

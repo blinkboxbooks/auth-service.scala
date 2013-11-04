@@ -8,6 +8,7 @@ Feature: Getting a user's information
     Given I have registered an account
 
   Scenario: Getting user information
+    Given I have a critically elevated access token
     When I request user information for myself
     Then the response contains complete user information matching my details
     And it is not cacheable
@@ -34,3 +35,15 @@ Feature: Getting a user's information
     Given another user has registered an account
     When I request user information for the other user
     Then the request fails because the user was not found
+
+  @extremely_slow
+  Scenario Outline: Access personal information outside critical elevation period
+    Given I have <elevation_level> access token
+    When I request user information for myself
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | a non-elevated  |
+      | an elevated     |
