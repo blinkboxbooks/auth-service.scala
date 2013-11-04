@@ -43,6 +43,18 @@ class TestUser
     response
   end
 
+  def register_with_client(client)
+    response = $zuul.register_user_with_client(self, client)
+    if response.status == 200
+      token_info = MultiJson.load(response.body)
+      @access_token = token_info["access_token"]
+      @refresh_token = token_info["refresh_token"]
+      @id = token_info["user_id"]
+      @local_id = @id[/\d+$/]
+      @clients << response
+    end
+  end
+
   def authenticate(credentials)
     response = $zuul.authenticate(credentials)
     if response.status == 200

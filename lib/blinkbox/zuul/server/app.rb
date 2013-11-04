@@ -37,24 +37,7 @@ module Blinkbox::Zuul::Server
       refresh_token = validate_refresh_token
       www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
 
-      if current_user.registered_clients.count >= Client::MAX_CLIENTS_PER_USER
-        invalid_request "client_limit_reached", "Max clients (#{Client::MAX_CLIENTS_PER_USER}) already registered"
-      end
-
-      client = Client.new do |c|
-        c.name = params["client_name"]
-        c.brand = params["client_brand"]
-        c.model = params["client_model"]
-        c.os = params["client_os"]
-        c.user = current_user
-        c.client_secret = generate_opaque_token
-      end
-
-      begin
-        client.save!
-      rescue => e
-        invalid_request e.message
-      end
+      client = register_client()
 
       json build_client_info(client, include_client_secret: true)
     end
@@ -99,12 +82,7 @@ module Blinkbox::Zuul::Server
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
-      client.deregistered = true
-      if client.refresh_token
-        client.refresh_token.revoked = true
-        client.refresh_token.save!
-      end
-      client.save!
+      client.deregister
     end
 
     get "/oauth2/token", provides: :json do
@@ -209,6 +187,35 @@ module Blinkbox::Zuul::Server
 
     private
 
+    def register_client
+      create_client(current_user)
+    end
+
+    def create_client(user)
+      missing_info = %w{client_name client_brand client_model client_os}.select { |key| params[key].nil? }
+      invalid_request "invalid_client_info", "#{missing_info.first} must be supplied" if missing_info.any?
+
+      client = Client.new do |c|
+        c.name = params["client_name"]
+        c.brand = params["client_brand"]
+        c.model = params["client_model"]
+        c.os = params["client_os"]
+        c.user = user
+        c.client_secret = generate_opaque_token
+      end
+
+      begin
+        client.save!
+      rescue => e
+        if e.message == "Validation failed: #{UserClientsValidator.max_clients_error_message}"
+          invalid_request "client_limit_reached", e.message
+        else
+          invalid_request e.message
+        end
+      end
+      client
+    end
+
     def handle_token_request(params)
       case params["grant_type"]
       when "password"
@@ -243,18 +250,32 @@ module Blinkbox::Zuul::Server
         u.allow_marketing_communications = params["allow_marketing_communications"]
       end
 
-      begin
-        user.save!
-      rescue ActiveRecord::RecordInvalid => e
-        if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
-          invalid_request "username_already_taken", e.message
-        else
-          invalid_request e.message
+      client = nil
+      error = nil
+
+      ActiveRecord::Base.transaction do
+        begin
+          client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
+          user.save!
+        rescue ActiveRecord::RecordInvalid => e
+          error = {}
+          if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
+            error[:reason] = "username_already_taken"
+            error[:description] = e.message
+          elsif e.message == "Validation failed: #{UserClientsValidator.max_clients_error_message}"
+            error[:reason] = "client_limit_reached"
+            error[:description] = e.message
+          else
+            error[:description] =  e.message
+          end
         end
+        raise ActiveRecord::Rollback if error
       end
 
+      error[:reason].nil? ? invalid_request(error[:description]) : invalid_request(error[:reason], error[:description]) if error
+
       Blinkbox::Zuul::Server::Email.welcome(user)
-      issue_refresh_token(user)
+      issue_refresh_token(user, client)
     end
 
     def handle_password_flow(params)

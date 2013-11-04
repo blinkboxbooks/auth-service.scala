@@ -16,6 +16,52 @@ Feature: Registration
     And it is not cacheable
     Then I receive a welcome email
 
+  Scenario: Registering a client with the user registration
+    When I provide valid user registration details
+    And I provide the client registration details:
+      | name  | Test Device |
+      | brand | Test Brand  |
+      | model | Test Model  |
+      | OS    | Test OS     |
+    And I submit the user and client registration request
+    Then the response contains client information, including a client secret
+    And it contains basic user information matching my details
+    And the client details match the provided details
+    And I receive a welcome email
+    And the response contains an access token and a refresh token
+
+  Scenario Outline: Trying to register client and user simultaneously with missing user details
+    When I provide valid registration details, except <user_registration_detail> which is missing
+    And I provide a valid client
+    And I submit the user and client registration request
+    Then the request fails because it is invalid
+    And no email is sent
+
+  Examples: Required details
+  These details are required for registration
+    | user_registration_detail       |
+    | first name                     |
+    | last name                      |
+    | email address                  |
+    | password                       |
+    | accepted terms and conditions  |
+    | allow marketing communications |
+
+  Scenario Outline: Trying to register client and user simultaneously with missing client details
+    When I provide valid registration details
+    And I do not provide a client <detail>
+    And I submit the user and client registration request
+    Then the request fails because it is invalid
+    And no email is sent
+
+  Examples:
+    | detail |
+    | name   |
+    | brand  |
+    | model  |
+    | OS     |
+
+
   Scenario: Registering with a name containing international characters
     When I provide valid registration details
     And my first name is "Iñtërnâtiônàlizætiøn"
