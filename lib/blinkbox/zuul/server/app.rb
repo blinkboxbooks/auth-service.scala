@@ -34,6 +34,9 @@ module Blinkbox::Zuul::Server
     end
 
     post "/clients", provides: :json do
+      refresh_token = validate_refresh_token
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
+
       if current_user.registered_clients.count >= Client::MAX_CLIENTS_PER_USER
         invalid_request "client_limit_reached", "Max clients (#{Client::MAX_CLIENTS_PER_USER}) already registered"
       end
@@ -68,6 +71,9 @@ module Blinkbox::Zuul::Server
     end
 
     patch "/clients/:client_id", provides: :json do |client_id|
+      refresh_token = validate_refresh_token
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
+
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
@@ -87,6 +93,9 @@ module Blinkbox::Zuul::Server
     end
 
     delete "/clients/:client_id", provides: :json do |client_id|
+      refresh_token = validate_refresh_token
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
+
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
@@ -119,11 +128,17 @@ module Blinkbox::Zuul::Server
     end
 
     get "/users/:user_id", provides: :json do |user_id|
+      refresh_token = validate_refresh_token
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
+
       halt 404 unless user_id == current_user.id.to_s
       json build_user_info(current_user)
     end
 
     patch "/users/:user_id", provides: :json do |user_id|
+      refresh_token = validate_refresh_token
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
+
       halt 404 unless user_id == current_user.id.to_s
       invalid_request "Cannot change acceptance of terms and conditions" if params["accepted_terms_and_conditions"]
 
@@ -348,7 +363,7 @@ module Blinkbox::Zuul::Server
     end
 
     def handle_extend_token_info_request(refresh_token)
-      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") if refresh_token.elevation_none?
+      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.elevated?
       refresh_token.extend_elevation_time
       handle_token_info_request(refresh_token)
     end

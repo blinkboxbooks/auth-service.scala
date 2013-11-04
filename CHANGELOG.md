@@ -1,17 +1,26 @@
 # Zuul Server Change Log
+
+## 0.5.3 (2013-11-01 14:54)
+
+### Bug Fixes
+
+- [CP-581](https://tools.mobcastdev.com/jira/browse/CP-581) - Personal information can only be retrieved when user is critically elevated
+- [CP-720](https://tools.mobcastdev.com/jira/browse/CP-720) - Corrected auth server WWW-Authenticate headers
+- Fixed a bug where PATCH request on /users/{user_id} wouldn't check for critical elevation level
+- Fixed a bug where POST request on /clients wouldn't check for critical elevation level
+- Fixed a bug where PATCH or DELETE requests on /clients/{client_id} wouldn't check for critical elevation level
+
 ## 0.5.2 (2013-10-23 13:52)
 
 ### Bug Fixes
 
 - [CP-722](https://tools.mobcastdev.com/jira/browse/CP-722) - Do not allow deregisterd clients to log in with their old credentials
 
-
 ## 0.5.1 (2013-10-23 13:52)
 
 ### Bug Fixes
 
 - [CP-692](https://tools.mobcastdev.com/jira/browse/CP-692) - We can now deregister from maximum amount of clients, i.e. we add a new client after a deregistration of an old client.
-
 
 ## 0.5.0 (2013-10-15 13:45)
 

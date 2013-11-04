@@ -2,11 +2,18 @@ Given(/^I obtain an access token using my email address and password$/) do
   obtain_access_and_token_via_username_and_password
 end
 
-Given(/^I have an? (non-)?elevated access token$/) do |non_elevated|
+Given(/^I have an? (critically |non-)?elevated access token$/) do |elevation_level|
   obtain_access_and_token_via_username_and_password
-  time_unit = non_elevated ? "one day" : "ten minutes"
-  step("I wait for over #{time_unit}")
-  obtain_access_and_token_via_refresh_token
+  case elevation_level
+  when "critically "
+    # Don't sleep
+  when "non-"
+    sleep(1.day)
+    obtain_access_and_token_via_refresh_token
+  else
+    sleep(10.minutes)
+    obtain_access_and_token_via_refresh_token
+  end
 end
 
 Given(/^I wait for (over )?(#{CAPTURE_INTEGER}) (seconds|minutes|hours|days?)$/) do |over, duration, time_unit|

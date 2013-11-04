@@ -9,7 +9,24 @@ Feature: Deregistering a client
     And I have registered a client
     And I have bound my tokens to my client
 
-  Scenario: Deregistering my current client
+  Scenario: Deregistering my current client, within critical elevation period
+    Given I have a critically elevated access token
+    When I request that my current client be deregistered
+    Then the request succeeds
+
+  @extremely_slow
+  Scenario Outline: Deregistering my current client, outside critical elevation period
+    Given I have <elevation_level> access token
+    When I request that my current client be deregistered
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | an elevated     |
+      | a non-elevated  |
+
+  Scenario: Deregistering my current client, within critical elevation period
     Deregistering a client also revokes the tokens that are bound to that client, so if you deregister
     your current client then your tokens will no longer be valid.
 
@@ -18,16 +35,49 @@ Feature: Deregistering a client
     And my refresh token and access token are invalid because they have been revoked
     And I have no registered clients
 
-  Scenario: Deregistering one of my other clients
+  @extremely_slow
+  Scenario Outline: Deregistering my current client, outside critical elevation period
+    Deregistering a client also revokes the tokens that are bound to that client, so if you deregister
+    your current client then your tokens will no longer be valid.
+
+    Given I have <elevation_level> access token
+    When I request that my current client be deregistered
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | an elevated     |
+      | a non-elevated  |
+
+  Scenario: Deregistering one of my other clients, within critical elevation period
     If you deregister another client though, it has no effect on your tokens. This is because the
     other client is a separate concern, and you might be deregistering it because it was lost or
     stolen from another legitimate client that you don't want to be signed out of.
 
     Given I have registered another client
+    And I have a critically elevated access token
     When I request that my other client be deregistered
     Then the request succeeds
     And my refresh token and access token are valid
     And I have got one registered client
+
+  @extremely_slow
+  Scenario Outline: Deregistering one of my other clients, outside critical elevation period
+    If you deregister another client though, it has no effect on your tokens. This is because the
+    other client is a separate concern, and you might be deregistering it because it was lost or
+    stolen from another legitimate client that you don't want to be signed out of.
+
+    Given I have registered another client
+    And I have <elevation_level> access token
+    When I request that my other client be deregistered
+    Then the request fails because I am unauthorised
+    And the response includes low elevation level information
+
+    Examples:
+      | elevation_level |
+      | an elevated     |
+      | a non-elevated  |
 
   Scenario: Trying to deregister a client without authorisation
     # RFC 6750 § 3.1:
@@ -41,11 +91,13 @@ Feature: Deregistering a client
     And the response does not include any error information
 
   Scenario: Trying to deregister a nonexistent client
+    Given I have a critically elevated access token
     When I request that a nonexistent client be deregistered
     Then the request fails because the client was not found
 
   Scenario: Trying to deregister an already deregistered client
-    Given I have deregistered my current client
+    Given I have a critically elevated access token
+    And I have deregistered my current client
     When I request that my current client be deregistered
     Then the request fails because the client was not found
 
@@ -59,7 +111,8 @@ Feature: Deregistering a client
     Then the request fails because the client was not found
 
   Scenario: Deregistering a client after reaching the max amount of devices should allow you to register a new client
-    Given I have registered 12 clients in total
+    Given I have a critically elevated access token
+    And I have registered 12 clients in total
     When I request that my current client be deregistered
     And I submit a client registration request
     Then the response contains client information, including a client secret
