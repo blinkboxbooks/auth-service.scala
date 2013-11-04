@@ -4,6 +4,7 @@ require "cucumber/rest/steps/caching"
 require "cucumber/rest/status"
 require "ipaddress"
 require "ipaddress/ipv4_loopback"
+require "java_properties"
 require "rack/test"
 require "timecop"
 require "thin"
@@ -16,9 +17,15 @@ TEST_CONFIG[:in_proc] = if /^(false|no)$/i === ENV["IN_PROC"]
                           false
                         else
                           host = TEST_CONFIG[:server].host
-                          IPAddress.valid?(host) && IPAddress.parse(host).loopback?
+                          if IPAddress.valid?(host)
+                            host == "0.0.0.0" || IPAddress.parse(host).loopback?
+                          else
+                            /^localhost$/i === host
+                          end
                         end
+TEST_CONFIG[:local_network] = !(/\.com$/i === TEST_CONFIG[:server].host)
 TEST_CONFIG[:debug] = /^(true|yes)$/i === ENV["DEBUG"]
+TEST_CONFIG[:properties] = JavaProperties::Properties.new("./zuul.properties")
 
 p TEST_CONFIG if TEST_CONFIG[:debug]
 
