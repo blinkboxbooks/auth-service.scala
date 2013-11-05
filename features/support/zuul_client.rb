@@ -4,9 +4,15 @@ class ZuulClient
   attr_accessor :headers
 
   def initialize(server_uri, proxy_uri = nil)
-    self.class.base_uri server_uri.to_s
-    self.class.http_proxy proxy_uri.host, proxy_uri.port if proxy_uri
+    self.class.base_uri(server_uri.to_s)
+    self.class.http_proxy(proxy_uri.host, proxy_uri.port, proxy_uri.user, proxy_uri.password) if proxy_uri
+    self.class.debug_output($stderr) if TEST_CONFIG[:debug]
     @headers = {}
+  end
+
+  def use_proxy(proxy_uri)
+    proxy_uri = URI.parse(proxy_uri) if proxy_uri.is_a?(String)
+    self.class.http_proxy(proxy_uri.host, proxy_uri.port, proxy_uri.user, proxy_uri.password)
   end
 
   def authenticate(params)
