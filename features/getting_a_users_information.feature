@@ -12,6 +12,7 @@ Feature: Getting a user's information
     When I request user information for myself
     Then the response contains complete user information matching my details
     And it is not cacheable
+    And the critical elevation got extended
 
   Scenario: Trying to get user information without authorisation
     # RFC 6750 § 3.1:

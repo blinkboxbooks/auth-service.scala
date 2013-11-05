@@ -13,6 +13,7 @@ Feature: Updating a user's information
     And I request my user information be updated
     Then the response contains complete user information matching my new details
     And it is not cacheable
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Updating email address, outside critical elevation period
@@ -34,6 +35,7 @@ Feature: Updating a user's information
     And I request my user information be updated
     Then the response contains complete user information matching my new details
     And it is not cacheable
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Updating first name and last name, outside critical elevation period
@@ -55,6 +57,7 @@ Feature: Updating a user's information
     And I request my user information be updated
     Then the response contains complete user information matching my new details
     And it is not cacheable
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Updating marketing preferences, outside critical elevation period

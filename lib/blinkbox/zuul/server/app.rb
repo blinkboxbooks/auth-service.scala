@@ -9,6 +9,7 @@ require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/www_authenticate_helper"
 require "sinatra/blinkbox/zuul/authorization"
+require "sinatra/blinkbox/zuul/elevation"
 require "blinkbox/zuul/server/environment"
 require "blinkbox/zuul/server/email"
 
@@ -19,11 +20,18 @@ module Blinkbox::Zuul::Server
     helpers Sinatra::OAuthHelper
     helpers Sinatra::WWWAuthenticateHelper
     register Sinatra::Blinkbox::Zuul::Authorization
+    register Sinatra::Blinkbox::Zuul::Elevation
 
     require_user_authorization_for %r{^/clients(?:/.*)?}
     require_user_authorization_for %r{^/users(?:/.*)?}
     require_user_authorization_for %r{^/password/change}
     require_user_authorization_for %r{^/session}
+
+    require_elevation_for %r{^/users(?:/.*)?}
+    require_elevation_for %r{^/clients}, methods: :post
+    require_elevation_for %r{^/clients/.*}, methods: :patch
+    require_elevation_for %r{^/clients/.*}, methods: :delete
+    require_elevation_for %r{^/session}, level: :elevated, methods: :post
 
     after do
       # none of the responses from the auth server should be cached
@@ -34,11 +42,7 @@ module Blinkbox::Zuul::Server
     end
 
     post "/clients", provides: :json do
-      refresh_token = validate_refresh_token
-      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
-
       client = register_client()
-
       json build_client_info(client, include_client_secret: true)
     end
 
@@ -54,9 +58,6 @@ module Blinkbox::Zuul::Server
     end
 
     patch "/clients/:client_id", provides: :json do |client_id|
-      refresh_token = validate_refresh_token
-      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
-
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
@@ -76,9 +77,6 @@ module Blinkbox::Zuul::Server
     end
 
     delete "/clients/:client_id", provides: :json do |client_id|
-      refresh_token = validate_refresh_token
-      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
-
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
@@ -106,17 +104,11 @@ module Blinkbox::Zuul::Server
     end
 
     get "/users/:user_id", provides: :json do |user_id|
-      refresh_token = validate_refresh_token
-      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
-
       halt 404 unless user_id == current_user.id.to_s
       json build_user_info(current_user)
     end
 
     patch "/users/:user_id", provides: :json do |user_id|
-      refresh_token = validate_refresh_token
-      www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless refresh_token.critically_elevated?
-
       halt 404 unless user_id == current_user.id.to_s
       invalid_request "Cannot change acceptance of terms and conditions" if params["accepted_terms_and_conditions"]
 
