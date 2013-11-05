@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.5.4 (2013-11-05 09:54)
+
+### Feature request
+
+[CP-714](https://tools.mobcastdev.com/jira/browse/CP-714) - Adding simultaneous user and client registrations. The implication of which are as follows:
+
+- From now on, client registration will require all fields, which are os, model, name and brand.
+- The old user registration works as before, however, if client info is added to the request, it will trigger both a user registration and client registration.
+- User registration is now done as an SQL transaction, meaning that if user registration or client registration fails, neither will be created in our database.
+
 ## 0.5.3 (2013-11-01 14:54)
 
 ### Bug Fixes
