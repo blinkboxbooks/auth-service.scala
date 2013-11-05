@@ -1,6 +1,6 @@
 # Zuul Server Change Log
 
-## 0.5.4 (2013-11-05 09:54)
+## 0.6.0(2013-11-05 09:54)
 
 ### Feature request
 
