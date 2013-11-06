@@ -14,13 +14,14 @@ module Sinatra
         end
 
         def require_elevation_for(url_pattern, level: :critical, methods: :all)
+          # @refresh_token is thread-safe cause App is created per request
           before url_pattern, methods: methods do
             @refresh_token = validate_refresh_token
             required_elevation = level == :elevated ? @refresh_token.elevated? : @refresh_token.critically_elevated?
             www_authenticate_error("invalid_token", reason: "unverified_identity", description: "User identity must be reverified") unless required_elevation
           end
           after url_pattern, methods: methods do
-            @refresh_token.extend_elevation_time unless @refresh_token.nil?
+            @refresh_token.extend_elevation_time if !@refresh_token.nil? && response.successful?
           end
         end
 

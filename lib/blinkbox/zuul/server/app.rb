@@ -22,14 +22,13 @@ module Blinkbox::Zuul::Server
     register Sinatra::Blinkbox::Zuul::Authorization
     register Sinatra::Blinkbox::Zuul::Elevation
 
-    require_user_authorization_for %r{^/clients(?:/.*)?}
-    require_user_authorization_for %r{^/users(?:/.*)?}
+    require_user_authorization_for %r{^/clients}
+    require_user_authorization_for %r{^/users}
     require_user_authorization_for %r{^/password/change}
     require_user_authorization_for %r{^/session}
 
-    require_elevation_for %r{^/users(?:/.*)?}
-    require_elevation_for %r{^/clients}, methods: :post
-    require_elevation_for %r{^/clients/.*}, methods: %i(patch delete)
+    require_elevation_for %r{^/users}
+    require_elevation_for %r{^/clients}, methods: %i(post patch delete)
     require_elevation_for %r{^/session}, level: :elevated, methods: :post
 
     after do
