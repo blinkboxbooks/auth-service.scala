@@ -265,7 +265,7 @@ module Blinkbox::Zuul::Server
       error[:reason].nil? ? invalid_request(error[:description]) : invalid_request(error[:reason], error[:description]) if error
 
       Blinkbox::Zuul::Server::Email.welcome(user)
-      issue_refresh_token(user, client)
+      issue_refresh_token(user, client, true)
     end
 
     def handle_password_flow(params)
@@ -393,7 +393,7 @@ module Blinkbox::Zuul::Server
       client
     end
 
-    def issue_refresh_token(user, client = nil)
+    def issue_refresh_token(user, client = nil, include_client_secret=false)
       refresh_token = RefreshToken.new do |rt|
         rt.user = user
         rt.client = client
@@ -401,10 +401,10 @@ module Blinkbox::Zuul::Server
       end
       refresh_token.save!
 
-      issue_access_token(refresh_token, include_refresh_token: false)
+      issue_access_token(refresh_token, true, include_client_secret)
     end
 
-    def issue_access_token(refresh_token, include_refresh_token = false)
+    def issue_access_token(refresh_token, include_refresh_token = false, include_client_secret = false)
       expires_in = settings.properties[:access_token_duration].to_i
       token_info = {
         "access_token" => build_access_token(refresh_token, expires_in),
@@ -413,7 +413,7 @@ module Blinkbox::Zuul::Server
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       token_info.merge!(build_user_info(refresh_token.user, format: :basic))
-      token_info.merge!(build_client_info(refresh_token.client)) unless refresh_token.client.nil?
+      token_info.merge!(build_client_info(refresh_token.client, include_client_secret)) unless refresh_token.client.nil?
       json token_info
     end
 

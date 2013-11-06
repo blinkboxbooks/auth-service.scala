@@ -93,7 +93,7 @@ end
 
 Then(/^(?:the response|it) contains client information, (including a|excluding the) client secret$/) do |including|
   client_secret_expectation = including == "including a" ? :required : :prohibited
-  validate_client_information_response(client_secret: client_secret_expectation)
+  validate_client_information_response(client_secret_expectation)
 end
 
 Then(/^(?:the response|it) contains a list of (#{CAPTURE_INTEGER}) client's information(?:, excluding the client secret)?$/) do |count|

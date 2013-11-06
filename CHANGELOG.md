@@ -1,6 +1,14 @@
 # Zuul Server Change Log
 
+## 0.6.2 (2013-11-06 15:51)
+
+### Bug Fixes
+
+[CP-765](https://tools.mobcastdev.com/jira/browse/CP-765) - Fixed a false positive test so now the server should return a client secret when using combined user and client registration.
+
 ## 0.6.1 (2013-11-05 19:28)
+
+### Bug Fixes
 
 [CP-581](https://tools.mobcastdev.com/jira/browse/CP-581) - Fixed a bug where we wouldn't extend the elevation period right after an action that required elevation.
 
@@ -9,7 +17,7 @@
 
 ## 0.6.0 (2013-11-05 09:54)
 
-### Feature request
+### New Features
 
 [CP-714](https://tools.mobcastdev.com/jira/browse/CP-714) - Adding simultaneous user and client registrations. The implication of which are as follows:
 
