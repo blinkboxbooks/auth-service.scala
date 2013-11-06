@@ -6,12 +6,12 @@ Given(/^I have an? (critically |non-)?elevated access token$/) do |elevation_lev
   obtain_access_and_token_via_username_and_password
   case elevation_level
   when "critically "
-    sleep(2.seconds)
+    sleep(10.seconds)
   when "non-"
-    sleep(1.day + 2.seconds)
+    sleep(ELEVATION_CONFIG[:elevated_timespan] + 10.seconds)
     obtain_access_and_token_via_refresh_token
   else
-    sleep(10.minutes + 2.seconds)
+    sleep(ELEVATION_CONFIG[:critical_timespan] + 10.seconds)
     obtain_access_and_token_via_refresh_token
   end
 end
@@ -62,25 +62,17 @@ Then(/^the reason is that my identity is unverified$/) do
 end
 
 When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now(?: minus (#{CAPTURE_INTEGER}) (minutes|days?))?$/) do |num, time_unit, negate, negate_unit|
-  time_delta = 5
-  delta_measurement = case time_unit
-                      when /days?/
-                        "minutes"
-                      when /minutes/
-                        "seconds"
-                      else
-                        raise "undefined unit of time for #{time_unit}"
-                      end
   time_period = num.send(time_unit)
   time_period = time_period - negate.send(negate_unit) if negate
-  expect(last_response_json["token_elevation_expires_in"]).to be_within(time_delta.send(delta_measurement)).of(time_period)
+
+  ensure_elevation_expires_in(time_period)
 end
 
 When(/^the (critical )?elevation got extended$/) do |elevation|
   elev = elevation.include?('critical') ? 'CRITICAL' : 'ELEVATED'
-  exp = elev == 'CRITICAL' ? ELEVATION_CONFIG[:critical_timespan] : ELEVATION_CONFIG[:elevated_timespan]
+  time_period = elev == 'CRITICAL' ? ELEVATION_CONFIG[:critical_timespan] : ELEVATION_CONFIG[:elevated_timespan]
 
   $zuul.get_access_token_info(@me.access_token)
-  expect(last_response_json['token_elevation']).to eql(elev)
-  expect(last_response_json['token_elevation_expires_in']).to eql(exp)
+  expect(last_response_json["token_elevation"]).to eql(elev)
+  ensure_elevation_expires_in(time_period)
 end

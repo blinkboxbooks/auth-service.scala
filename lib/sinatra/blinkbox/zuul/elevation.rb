@@ -5,10 +5,10 @@ module Sinatra
     module Zuul
       module Elevation
         def self.registered(app)
-          app.set(:methods) do |methods|
+          app.set(:methods) do |*methods|
             condition do
-              break(true) if methods == :all
-              [*methods].include? request.request_method.downcase.to_sym
+              break(true) if methods.include? :all
+              methods.include? request.request_method.downcase.to_sym
             end
           end
         end

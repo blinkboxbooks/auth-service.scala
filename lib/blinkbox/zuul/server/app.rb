@@ -29,8 +29,7 @@ module Blinkbox::Zuul::Server
 
     require_elevation_for %r{^/users(?:/.*)?}
     require_elevation_for %r{^/clients}, methods: :post
-    require_elevation_for %r{^/clients/.*}, methods: :patch
-    require_elevation_for %r{^/clients/.*}, methods: :delete
+    require_elevation_for %r{^/clients/.*}, methods: %i(patch delete)
     require_elevation_for %r{^/session}, level: :elevated, methods: :post
 
     after do
