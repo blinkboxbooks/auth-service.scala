@@ -13,6 +13,7 @@ Feature: Deregistering a client
     Given I have a critically elevated access token
     When I request that my current client be deregistered
     Then the request succeeds
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Deregistering my current client, outside critical elevation period
@@ -61,6 +62,7 @@ Feature: Deregistering a client
     Then the request succeeds
     And my refresh token and access token are valid
     And I have got one registered client
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Deregistering one of my other clients, outside critical elevation period
@@ -116,6 +118,7 @@ Feature: Deregistering a client
     When I request that my current client be deregistered
     And I submit a client registration request
     Then the response contains client information, including a client secret
+    And the critical elevation got extended
 
   Scenario: Dissallow deregistered clients to log on with their old password and credentials
     Given I have deregistered my current client

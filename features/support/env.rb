@@ -36,6 +36,12 @@ if TEST_CONFIG[:in_proc]
   loop until $server.running?
 end
 
+# TODO: parametrise these
+ELEVATION_CONFIG = {
+  critical_timespan: (Blinkbox::Zuul::Server::RefreshToken::LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS.to_i rescue 600),
+  elevated_timespan: (Blinkbox::Zuul::Server::RefreshToken::LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS.to_i rescue 86400)
+}
+
 Before do
   $zuul = ZuulClient.new(TEST_CONFIG[:server], TEST_CONFIG[:proxy])
 end

@@ -9,3 +9,8 @@ def obtain_access_and_token_via_refresh_token
   @me.authenticate(@credentials)
   expect(last_response.status).to eq(200)
 end
+
+def ensure_elevation_expires_in(seconds)
+  time_delta = 3
+  expect(last_response_json["token_elevation_expires_in"]).to be_within(time_delta.seconds).of(seconds)
+end

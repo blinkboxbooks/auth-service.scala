@@ -20,6 +20,7 @@ Feature: Updating a client's information
     Then the response contains client information, excluding the client secret
     And the client details match the provided details
     And it is not cacheable
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Updating my current client's name and model, outside critical elevation period
@@ -54,6 +55,7 @@ Feature: Updating a client's information
     Then the response contains client information, excluding the client secret
     And the other client details match the provided details
     And it is not cacheable
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Updating one of my other client's name and model, outside critical elevation period

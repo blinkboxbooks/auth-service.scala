@@ -18,6 +18,7 @@ Feature: Registering a client
     Then the response contains client information, including a client secret
     And the client details match the provided details
     And it is not cacheable
+    And the critical elevation got extended
 
   @extremely_slow
   Scenario Outline: Registering a client with all details, outside critical elevation period

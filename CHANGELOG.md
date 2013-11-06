@@ -1,6 +1,13 @@
 # Zuul Server Change Log
 
-## 0.6.0(2013-11-05 09:54)
+## 0.6.1 (2013-11-05 19:28)
+
+[CP-581](https://tools.mobcastdev.com/jira/browse/CP-581) - Fixed a bug where we wouldn't extend the elevation period right after an action that required elevation.
+
+- Refactored the elevation checks along with the extension in a sinatra filter (before and after).
+- Added constants for elevation expiry timespans.
+
+## 0.6.0 (2013-11-05 09:54)
 
 ### Feature request
 
