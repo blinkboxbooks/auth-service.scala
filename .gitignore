@@ -6,6 +6,7 @@ pkg/
 *.properties
 *.db
 *.dat
+*.log
 last_response.html
 migration.sql
 .idea/
