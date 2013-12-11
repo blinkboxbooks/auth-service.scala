@@ -5,6 +5,7 @@ require "sandal"
 require "scrypt"
 
 require "rack/blinkbox/zuul/tokens"
+require "rack/timekeeper"
 require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/www_authenticate_helper"
@@ -15,6 +16,13 @@ require "blinkbox/zuul/server/email"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
+    use Rack::Timekeeper, logdev: settings.properties["logging.perf.file"], level: ::Logger.const_get(settings.properties["logging.perf.level"]) do |duration|
+      if duration < settings.properties["logging.perf.threshold.info"].to_i then :DEBUG
+      elsif duration < settings.properties["logging.perf.threshold.warn"].to_i then :INFO
+      elsif duration < settings.properties["logging.perf.threshold.error"].to_i then :WARN
+      else :ERROR
+      end
+    end
     use Rack::Blinkbox::Zuul::TokenDecoder
     helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper

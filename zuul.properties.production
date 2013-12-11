@@ -24,3 +24,10 @@ password_reset_url = https://www.blinkboxbooks.com/reset-password/%{token}
 # amqp://username:password@hostname:port[/vhost]
 # IMPORTANT: DO NOT include a trailing slash unless you specify a vhost name
 amqp_server_url = amqp://guest:guest@127.0.0.1:5672
+
+# performance log settings
+logging.perf.file = ./perf.log
+logging.perf.level = WARN
+logging.perf.threshold.error = 1000
+logging.perf.threshold.warn = 250
+logging.perf.threshold.info = 100

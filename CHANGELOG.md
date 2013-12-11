@@ -1,29 +1,42 @@
 # Zuul Server Change Log
 
+## 0.7.0 (2013-12-11 17:15)
+
+### New Features
+
+- [CP-872](https://tools.mobcastdev.com/jira/browse/CP-872) - Performance information for requests is now logged.
+
+### Deployment Notes
+
+- New properties are required in the properties file:
+    - `logging.perf.file` - The performance log file.
+    - `logging.perf.level` - The performance log level.
+    - `logging.perf.threshold.error` - The threshold (in ms) for performance error logs.
+    - `logging.perf.threshold.warn` - The threshold (in ms) for performance warning logs.
+    - `logging.perf.threshold.info` - The threshold (in ms) for performance info logs.
+
 ## 0.6.2 (2013-11-06 15:51)
 
 ### Bug Fixes
 
-[CP-765](https://tools.mobcastdev.com/jira/browse/CP-765) - Fixed a false positive test so now the server should return a client secret when using combined user and client registration.
+- [CP-765](https://tools.mobcastdev.com/jira/browse/CP-765) - Fixed a false positive test so now the server should return a client secret when using combined user and client registration.
 
 ## 0.6.1 (2013-11-05 19:28)
 
 ### Bug Fixes
 
-[CP-581](https://tools.mobcastdev.com/jira/browse/CP-581) - Fixed a bug where we wouldn't extend the elevation period right after an action that required elevation.
-
-- Refactored the elevation checks along with the extension in a sinatra filter (before and after).
-- Added constants for elevation expiry timespans.
+- [CP-581](https://tools.mobcastdev.com/jira/browse/CP-581) - Fixed a bug where we wouldn't extend the elevation period right after an action that required elevation.
+    - Refactored the elevation checks along with the extension in a sinatra filter (before and after).
+    - Added constants for elevation expiry timespans.
 
 ## 0.6.0 (2013-11-05 09:54)
 
 ### New Features
 
-[CP-714](https://tools.mobcastdev.com/jira/browse/CP-714) - Adding simultaneous user and client registrations. The implication of which are as follows:
-
-- From now on, client registration will require all fields, which are os, model, name and brand.
-- The old user registration works as before, however, if client info is added to the request, it will trigger both a user registration and client registration.
-- User registration is now done as an SQL transaction, meaning that if user registration or client registration fails, neither will be created in our database.
+- [CP-714](https://tools.mobcastdev.com/jira/browse/CP-714) - Adding simultaneous user and client registrations. The implication of which are as follows:
+    - From now on, client registration will require all fields, which are os, model, name and brand.
+    - The old user registration works as before, however, if client info is added to the request, it will trigger both a user registration and client registration.
+    - User registration is now done as an SQL transaction, meaning that if user registration or client registration fails, neither will be created in our database.
 
 ## 0.5.3 (2013-11-01 14:54)
 
