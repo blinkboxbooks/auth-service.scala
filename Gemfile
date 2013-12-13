@@ -34,5 +34,5 @@ group :development, :test do
 end
 
 group :mysql do
-  gem "mysql2", "~> 0.3", ">= 0.3.13", "!= 0.3.14" # 0.3.14 causes issues on our linux systems
+  gem "mysql2", "~> 0.3", ">= 0.3.13"
 end
