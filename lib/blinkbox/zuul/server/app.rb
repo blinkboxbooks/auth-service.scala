@@ -280,7 +280,17 @@ module Blinkbox::Zuul::Server
       username, password = params["username"], params["password"]
       invalid_request "The username and password are required for this grant type" if username.nil? || password.nil?
 
-      user = User.authenticate(username, password)
+      recent_attempts = LoginAttempt.where(username: username).limit(5).order(id: :desc)
+      failed_attempts = recent_attempts.take_while { |attempt| !attempt.successful? }
+      if failed_attempts.count == 5
+        period = Time.now - recent_attempts.last.created_at
+        if period < 15
+          response["Retry-After"] = (15 - period).to_i.to_s
+          invalid_request "too_many_attempts", "Too many incorrect password attempts; try again later"
+        end
+      end
+
+      user = User.authenticate(username, password)      
       invalid_grant "The username and/or password is incorrect." if user.nil?
 
       client = authenticate_client(params, user)
