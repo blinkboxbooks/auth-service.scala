@@ -6,6 +6,7 @@ module Blinkbox::Zuul::Server
     has_many :refresh_tokens
     has_many :clients
     has_many :password_reset_tokens
+    has_many :login_attempts
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
@@ -35,11 +36,9 @@ module Blinkbox::Zuul::Server
     def self.authenticate(username, password)
       return nil if username.nil? || password.nil?
       user = User.find_by_username(username)
-      if user && SCrypt::Password.new(user.password_hash) == password then
-        user
-      else
-        nil
-      end
+      password_ok = user && SCrypt::Password.new(user.password_hash) == password
+      LoginAttempt.new { |attempt| attempt.username = username; attempt.successful = password_ok }.save!
+      password_ok ? user : nil
     end
 
     private
