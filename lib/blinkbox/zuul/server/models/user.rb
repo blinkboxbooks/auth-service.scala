@@ -1,5 +1,8 @@
 module Blinkbox::Zuul::Server
   class User < ActiveRecord::Base
+    class TooManyAttempts < StandardError
+      attr_accessor :retry_after
+    end
 
     MIN_PASSWORD_LENGTH = 6
 
@@ -33,12 +36,13 @@ module Blinkbox::Zuul::Server
       clients.select { |client| !client.deregistered }
     end
 
-    def self.authenticate(username, password)
+    def self.authenticate(username, password, client_ip)
       return nil if username.nil? || password.nil?
+      throttle_login_attempts(username)
       user = User.find_by_username(username)
-      password_ok = user && SCrypt::Password.new(user.password_hash) == password
-      LoginAttempt.new { |attempt| attempt.username = username; attempt.successful = password_ok }.save!
-      password_ok ? user : nil
+      successful = user != nil && SCrypt::Password.new(user.password_hash) == password
+      LoginAttempt.new(username: username, successful: successful, client_ip: client_ip).save!
+      successful ? user : nil
     end
 
     private
@@ -49,6 +53,19 @@ module Blinkbox::Zuul::Server
       # then the password hasn't been changed and we don't need to do the validation.
       if @password_length && @password_length < MIN_PASSWORD_LENGTH
         errors.add(:password, "is too short (minimum is #{MIN_PASSWORD_LENGTH} characters)")
+      end
+    end
+
+    def self.throttle_login_attempts(username)
+      recent_attempts = LoginAttempt.where(username: username).limit(5).order(id: :desc)
+      failed_attempts = recent_attempts.take_while { |attempt| !attempt.successful? }
+      if failed_attempts.count == 5
+        period = Time.now - recent_attempts.last.created_at
+        if period < 15
+          error = TooManyAttempts.new("Too many incorrect password attempts; try again later")
+          error.retry_after = (15 - period).to_i.to_s
+          raise error
+        end
       end
     end
 
