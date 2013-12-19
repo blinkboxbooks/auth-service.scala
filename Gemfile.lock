@@ -84,7 +84,7 @@ GEM
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
-    rack-timekeeper (0.2.0)
+    rack-timekeeper (0.2.1)
       multi_json (~> 1.8)
       rack (~> 1.5)
     rake (10.1.0)

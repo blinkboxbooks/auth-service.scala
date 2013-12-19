@@ -144,7 +144,14 @@ module Blinkbox::Zuul::Server
       new_password = @params[:new_password]
       old_password = @params[:old_password]
       invalid_request "new_password_missing", "The new password is not provided." if new_password.nil? || new_password.empty?
-      invalid_request "old_password_invalid", "Current password provided is incorrect." unless User.authenticate(current_user.username, old_password)
+
+      begin
+        user = User.authenticate(current_user.username, old_password, request.ip)
+        invalid_request "old_password_invalid", "Current password provided is incorrect." if user.nil?
+      rescue User::TooManyAttempts => e
+        response["Retry-After"] = e.retry_after
+        invalid_request "too_many_attempts", e.message
+      end  
 
       current_user.password = new_password
       current_user.save! rescue invalid_request("new_password_too_short", "The new password is too short.")
@@ -280,18 +287,13 @@ module Blinkbox::Zuul::Server
       username, password = params["username"], params["password"]
       invalid_request "The username and password are required for this grant type" if username.nil? || password.nil?
 
-      recent_attempts = LoginAttempt.where(username: username).limit(5).order(id: :desc)
-      failed_attempts = recent_attempts.take_while { |attempt| !attempt.successful? }
-      if failed_attempts.count == 5
-        period = Time.now - recent_attempts.last.created_at
-        if period < 15
-          response["Retry-After"] = (15 - period).to_i.to_s
-          invalid_request "too_many_attempts", "Too many incorrect password attempts; try again later"
-        end
-      end
-
-      user = User.authenticate(username, password)      
-      invalid_grant "The username and/or password is incorrect." if user.nil?
+      begin
+        user = User.authenticate(username, password, request.ip) 
+        invalid_grant "The username and/or password is incorrect." if user.nil?
+      rescue User::TooManyAttempts => e
+        response["Retry-After"] = e.retry_after
+        invalid_request "too_many_attempts", e.message
+      end  
 
       client = authenticate_client(params, user)
       issue_refresh_token(user, client)
