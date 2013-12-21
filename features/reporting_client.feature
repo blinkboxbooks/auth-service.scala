@@ -2,34 +2,40 @@
 Feature: Report user's client details
   As a member of the marketing team
   I want to able to report user registrations
-  So that I can tell how we well we're doing at acquiring and retaining customers
+  So that I can tell how active customers are with our service
 
   Background:
-    Given I have registered an account
+    Given a user has registered an account
 
-  Scenario: Registering a client with all details
-    When I provide the client registration details:
-      | name  | Test Device |
-      | brand | Test Brand  |
-      | model | Test Model  |
-      | OS    | Test OS     |
-    And I submit the client registration request
+  Scenario: A user registers a client
+    When they submit the client registration request
     Then a client registration message is sent
-    And it contains the client's registration details
+    And it contains the client's details:
+      | user id                       |
+      | client registration timestamp |
+      | device: id                    |
+      | device: name                  |
+      | device: brand                 |
+      | device: model                 |
+      | device: os                    |
 
-  Scenario: Updating all client information
-    Given I have registered a client
-    When I change my client's details to:
-      | name  | Updated Device |
-      | brand | Updated Brand  |
-      | model | Updated Model  |
-      | OS    | Updated OS     |
-    And I request my client's information be updated
+  Scenario Outline: A user update their client's information
+    Given a user has registered a client
+    When they change their client's <changeable_detail> to <new_value>
+    And they request their client's information be updated
     Then a client update message is sent
-    And it contains the client's update details
+    And it contains the client's old details
+    And it contains the client's new details
 
-  Scenario: Deregistering a client
-    Given I have registered a client
-    When I request that my current client be deregistered
+    Examples: Details which can be changed for a client
+      | changeable_detail | new_value      |
+      | name              | Updated Device |
+      | brand             | Updated Brand  |
+      | model             | Updated Model  |
+      | os                | Updated OS     |
+
+  Scenario: A user deregisters their client
+    Given a user has registered a client
+    When they request that their current client be deregistered
     Then a client deregistration message is sent
     And it contains the client's deregistration details

@@ -1,63 +1,67 @@
-Then(/^a user (registration|update) message is sent$/) do |message_type|
-  expect(Blinkbox::Zuul::Server::Reporting.sent_messages.size).to be > 0
-
-  case message_type
-  when "registration"
-    #
-  when "update"
-    #
+When(/^they change their( client's)? (.+) to (.+)$/) do |client, detail, value|
+  method_name = "#{oauth_param_name(detail)}="
+  value = random_email if detail.include? "username"
+  value = (value.downcase == "yes") if detail.include? "marketing"
+  if client.nil?
+    @me.send(method_name, value)
+  else
+    @my_client.send(method_name, value)
   end
 end
 
-Then(/^it contains the user's (registration|update) details$/) do |message_type|
+Then(/^a (user (?:registration|update)|client (?:registration|update|deregistration)) message is sent$/) do |message_type|
+  expect(Blinkbox::Zuul::Server::Reporting.sent_messages.size).to eq(1)
+
   @message = Nokogiri::XML(Blinkbox::Zuul::Server::Reporting.sent_messages.pop)
-
-  case message_type
+  event = message_type.include? "user" ? "users" : "devices"
+  tag = event.chop
+  case message_type.split.last
   when "registration"
-    reporting_message_value("/e:userCreated/e:timestamp") do |text|
-      expect(text).to eq("013-12-30T19:15:23")
-    end
-    reporting_message_value("/e:userCreated/e:user/e:username") do |text|
-      expect(text).to eq(@me.username)
-    end
-    reporting_message_value("/e:userCreated/e:user/e:firstName") do |text|
-      expect(text).to eq(@me.first_name)
-    end
-    reporting_message_value("/e:userCreated/e:user/e:lastName") do |text|
-      expect(text).to eq(@me.last_name)
-    end
-    reporting_message_value("/e:userCreated/e:user/e:allowMarketingCommunications") do |text|
-      expect(text).to eq(@me.allow_marketing_communications)
-    end
+    tag << "Created"
   when "update"
-    reporting_message_value("/e:userUpdated/e:timestamp") do |text|
-      expect(text).to eq("013-12-30T19:15:23")
-    end
-    reporting_message_value("/e:userUpdated/e:newUser/e:username") do |text|
-      expect(text).to eq(@me.username)
-    end
-    reporting_message_value("/e:userUpdated/e:newUser/e:firstName") do |text|
-      expect(text).to eq(@me.first_name)
-    end
-    reporting_message_value("/e:userUpdated/e:newUser/e:lastName") do |text|
-      expect(text).to eq(@me.last_name)
-    end
-    reporting_message_value("/e:userUpdated/e:newUser/e:allowMarketingCommunications") do |text|
-      expect(text).to eq(@me.allow_marketing_communications)
+    tag << "Updated"
+  when "deregistration"
+    tag << "Deleted"
+  end
+  puts "event: #{event} tag: #{tag}"
+  reporting_message_value(event, "/e:#{tag}")
+end
+
+Then(/^it contains the (user|client)'s details:$/) do |owner, details|
+  #p details.rows
+end
+
+Then(/^it contains the user's (old|new) details$/) do |details_type|
+  fields = %w(username firstName lastName allowMarketingCommunications)
+  validate_message_details("users", "User", details_type, @me, @old_me, fields)
+end
+
+Then(/^it contains the client's (old|new|deregistration) details$/) do |details_type|
+  case details_type
+  when "new", "old"
+    fields = %w(name brand model os)
+    validate_message_type_details("devices", "Device", details_type, @my_client, @my_old_client, fields)
+  when "deregistration"
+    fields = %w(id name brand model os)
+    validate_message_details("devices", "device", @my_old_client, fields)
+  end
+end
+
+def validate_message_type_details(event, tag, type, new_owner, old_owner, fields)
+  owner = type == "new" ? new_owner : old_owner
+  validate_message_details(event, "#{type}#{tag}", owner, fields)
+end
+
+def validate_message_details(event, tag, owner, fields)
+  fields.each do |field|
+    reporting_message_value(event, "//e:#{tag}/e:#{field}") do |text|
+      expect(text).to eq(owner.send(field.underscore))
     end
   end
 end
 
-Then(/^a client (registration|update|deregistration) message is sent$/) do |message_type|
-  pending
-end
-
-Then(/^it contains the client's (registration|update|deregistration) details$/) do |message_type|
-  pending
-end
-
-def reporting_message_value(xpath)
-  elem = @message.at_xpath(xpath, e: "http://schemas.blinkboxbooks.com/events/zuul/v1")
+def reporting_message_value(event, xpath)
+  elem = @message.at_xpath(xpath, e: "http://schemas.blinkboxbooks.com/events/#{event}/v1")
   expect(elem).to_not be_nil
   if block_given?
     yield elem.text

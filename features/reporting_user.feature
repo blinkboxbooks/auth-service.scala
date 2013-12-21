@@ -2,20 +2,30 @@
 Feature: Report user details
   As a member of the marketing team
   I want to able to report user registrations
-  So that I can tell how we well we're doing at acquiring and retaining customers
+  So that I can tell how well we're doing at acquiring customers
 
-  Scenario: Registering a user
-    When I provide valid registration details
-    And I submit the registration request
+  Scenario: A user registers
+    When a user provides valid registration details
+    And they submit the registration request
     Then a user registration message is sent
-    And it contains the user's registration details
+    And it contains the user's details:
+      | timestamp                                 |
+      | user: id                                  |
+      | user: first name                          |
+      | user: last name                           |
+      | user: marketing communications preference |
 
-  Scenario: Updating all user information
-    Given I have registered an account
-    When I change my first name to "Bob"
-    And I change my last name to "Smith"
-    And I change my email address
-    And I change whether I allow marketing communications
-    And I request my user information be updated
+  Scenario Outline: A user updates their details
+    Given a user has registered an account
+    When they change their <changeable_detail> to <new_value>
+    And they request their user information be updated
     Then a user update message is sent
-    And it contains the user's update details
+    And it contains the user's old details
+    And it contains the user's new details
+
+    Examples: Fields which can be changed
+      | changeable_detail                   | new_value |
+      | first name                          | Bob       |
+      | last name                           | Smith     |
+      | username                            | any email |
+      | marketing communications preference | yes       |

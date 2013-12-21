@@ -1,4 +1,4 @@
-Given(/^I have registered a client$/) do
+Given(/^(?:I have|a user has) registered a client$/) do
   @my_client = TestClient.new.generate_details
   @me.register_client(@my_client)
   expect(last_response.status).to eq(200)
@@ -42,7 +42,7 @@ When(/^I do not provide a client (.+?)$/) do |name|
   @my_client.send("#{oauth_param_name(name)}=", nil)
 end
 
-When(/^I submit (?:a|the) client registration request(, without my access token)?$/) do |no_token|
+When(/^(?:I|they) submit (?:a|the) client registration request(, without my access token)?$/) do |no_token|
   @my_client ||= TestClient.new.generate_details
   user = no_token ? TestUser::ANONYMOUS : @me
   user.register_client(@my_client)
@@ -81,7 +81,7 @@ end
 
 When(/^I do not change my client's details$/, :noop)
 
-When(/^I request my( other)? client's information be updated(, without my access token)?$/) do |other_client, no_token|
+When(/^(?:I request my|they request their)( other)? client's information be updated(, without my access token)?$/) do |other_client, no_token|
   client = other_client ? @my_other_client : @my_client
   access_token = @me.access_token unless no_token
   $zuul.update_client(client, access_token)

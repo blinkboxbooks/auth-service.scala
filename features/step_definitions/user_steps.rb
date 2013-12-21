@@ -31,7 +31,7 @@ When(/^I change whether I (.+)$/) do |name|
   @me.send(set_method_name, new_value)
 end
 
-When(/^I request my user information be updated(, without my access token)?$/) do |no_token|
+When(/^(?:I request my|they request their) user information be updated(, without my access token)?$/) do |no_token|
   access_token = @me.access_token unless no_token
   $zuul.update_user(@me, access_token)
 end
