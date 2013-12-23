@@ -14,7 +14,7 @@ end
 def oauth_param_name(readable_name)
   param_name = readable_name.downcase
   param_name = "username" if ["email", "email address"].include?(readable_name)
-  param_name = "allow_marketing_communications" if readable_name.include? "marketing"
+  param_name = "allow_marketing_communications" if readable_name == "marketing communications preference"
   param_name.tr(" ", "_")
 end
 

@@ -1,7 +1,7 @@
 @reporting
 Feature: Report user's client details
   As a member of the marketing team
-  I want to able to report user registrations
+  I want to able to report client registrations
   So that I can tell how active customers are with our service
 
   Background:
@@ -17,9 +17,9 @@ Feature: Report user's client details
       | device: brand |
       | device: model |
       | device: os    |
-    And it contains a valid ISO-8601 client event timestamp
+    And it contains a client event timestamp
 
-  Scenario Outline: A user update their client's information
+  Scenario Outline: A user updates their client's information
     Given a user has registered a client
     When they change their client's <changeable_detail> to <new_value>
     And they request their client's information be updated
@@ -36,7 +36,7 @@ Feature: Report user's client details
       | device: brand |
       | device: model |
       | device: os    |
-    And it contains a valid ISO-8601 client event timestamp
+    And it contains a client event timestamp
 
     Examples: Details which can be changed for a client
       | changeable_detail | new_value      |
@@ -56,4 +56,4 @@ Feature: Report user's client details
       | device: brand |
       | device: model |
       | device: os    |
-    And it contains a valid ISO-8601 client event timestamp
+    And it contains a client event timestamp

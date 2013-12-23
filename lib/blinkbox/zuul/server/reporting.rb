@@ -16,106 +16,106 @@ module Blinkbox
                             "v:version" => "1.0") {
               xml.timestamp Time.now.getutc.iso8601
               xml.user {
-                xml.id user.id
-                xml.username user.username
-                xml.firstName user.first_name
-                xml.lastName user.last_name
-                xml.allowMarketingCommunications user.allow_marketing_communications
+                xml.id user["id"]
+                xml.username user["username"]
+                xml.firstName user["first_name"]
+                xml.lastName user["last_name"]
+                xml.allowMarketingCommunications user["allow_marketing_communications"]
               }
             }
           end
           enqueue(builder.to_xml)
         end
 
-        def self.user_updated(old_user, new_user)
+        def self.user_updated(user_id, old_user, new_user)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
             xml.userUpdated("xmlns" => event_schema("users", "v1"),
                             "xmlns:r" => routing_schema("v1"),
                             "xmlns:v" => versioning_schema,
                             "r:originator" => "zuul",
                             "v:version" => "1.0") {
-              xml.userId new_user.id
+              xml.userId user_id
               xml.timestamp Time.now.getutc.iso8601
               xml.oldUser {
-                xml.username old_user.username
-                xml.firstName old_user.first_name
-                xml.lastName old_user.last_name
-                xml.allowMarketingCommunications old_user.allow_marketing_communications
+                xml.username old_user["username"]
+                xml.firstName old_user["first_name"]
+                xml.lastName old_user["last_name"]
+                xml.allowMarketingCommunications old_user["allow_marketing_communications"]
               }
               xml.newUser {
-                xml.username new_user.username
-                xml.firstName new_user.first_name
-                xml.lastName new_user.last_name
-                xml.allowMarketingCommunications new_user.allow_marketing_communications
+                xml.username new_user["username"]
+                xml.firstName new_user["first_name"]
+                xml.lastName new_user["last_name"]
+                xml.allowMarketingCommunications new_user["allow_marketing_communications"]
               }
             }
           end
           enqueue(builder.to_xml)
         end
 
-        def self.client_registered(client)
+        def self.client_registered(user_id, client)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
             xml.deviceCreated("xmlns" => event_schema("devices", "v1"),
                               "xmlns:r" => routing_schema("v1"),
                               "xmlns:v" => versioning_schema,
                               "r:originator" => "zuul",
                               "v:version" => "1.0") {
-              xml.userId client.user_id
+              xml.userId user_id
               xml.timestamp Time.now.getutc.iso8601
               xml.device {
-                xml.id client.id
-                xml.name client.name
-                xml.brand client.brand
-                xml.model client.model
-                xml.os client.os
+                xml.id client["id"]
+                xml.name client["name"]
+                xml.brand client["brand"]
+                xml.model client["model"]
+                xml.os client["os"]
               }
             }
           end
           enqueue(builder.to_xml)
         end
 
-        def self.client_updated(old_device, new_device)
+        def self.client_updated(user_id, client_id, old_client, new_client)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
             xml.deviceUpdated("xmlns" => event_schema("devices", "v1"),
                               "xmlns:r" => routing_schema("v1"),
                               "xmlns:v" => versioning_schema,
                               "r:originator" => "zuul",
                               "v:version" => "1.0") {
-              xml.userId new_device.user_id
-              xml.deviceId new_device.id
+              xml.userId user_id
+              xml.deviceId client_id
               xml.timestamp Time.now.getutc.iso8601
               xml.oldDevice {
-                xml.name old_device.name
-                xml.brand old_device.brand
-                xml.model old_device.model
-                xml.os old_device.os
+                xml.name old_client["name"]
+                xml.brand old_client["brand"]
+                xml.model old_client["model"]
+                xml.os old_client["os"]
               }
               xml.newDevice {
-                xml.name new_device.name
-                xml.brand new_device.brand
-                xml.model new_device.model
-                xml.os new_device.os
+                xml.name new_client["name"]
+                xml.brand new_client["brand"]
+                xml.model new_client["model"]
+                xml.os new_client["os"]
               }
             }
           end
           enqueue(builder.to_xml)
         end
 
-        def self.client_deregistered(device)
+        def self.client_deregistered(user_id, client)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
             xml.deviceDeleted("xmlns" => event_schema("devices", "v1"),
                               "xmlns:r" => routing_schema("v1"),
                               "xmlns:v" => versioning_schema,
                               "r:originator" => "zuul",
                               "v:version" => "1.0") {
-              xml.userId device.user_id
+              xml.userId user_id
               xml.timestamp Time.now.getutc.iso8601
               xml.device {
-                xml.id device.id
-                xml.name device.name
-                xml.brand device.brand
-                xml.model device.model
-                xml.os device.os
+                xml.id client["id"]
+                xml.name client["name"]
+                xml.brand client["brand"]
+                xml.model client["model"]
+                xml.os client["os"]
               }
             }
           end

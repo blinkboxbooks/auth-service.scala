@@ -1,7 +1,7 @@
 When(/^they change their( client's)? (.+) to (.+)$/) do |client, detail, value|
   method_name = "#{oauth_param_name(detail)}="
-  value = random_email if detail.include? "username"
-  value = (value.downcase == "yes") if detail.include? "marketing"
+  value = random_email if detail == "username"
+  value = (value.downcase == "allow") if detail == "marketing communications preference"
   if client.nil?
     @old_me = @me.dup
     @me.send(method_name, value)
@@ -11,14 +11,15 @@ When(/^they change their( client's)? (.+) to (.+)$/) do |client, detail, value|
   end
 end
 
-Then(/^a (user (?:registration|update)|client (?:registration|update|deregistration)) message is sent$/) do |message_type|
-  expect(Blinkbox::Zuul::Server::Reporting.sent_messages.size).to be > 0
+Then(/^a (user|client) (registration|update|deregistration) message is sent$/) do |message_type, event_type|
+  raise "Test Error: Users cannot be deregistered!" if message_type == "user" && event_type == "deregistration"
+  expect(Blinkbox::Zuul::Server::Reporting.sent_messages).to have_at_least(1).message
   @message = Nokogiri::XML(Blinkbox::Zuul::Server::Reporting.sent_messages.pop)
-  event = message_type.include?("user") ? "users" : "devices"
+  event = EVENT_TYPES[message_type]
   tag = event.chop
-  case message_type.split.last
+  case event_type
   when "registration"
-    tag = "#{event.chop}Created"
+    tag << "Created"
   when "update"
     tag << "Updated"
   when "deregistration"
@@ -42,12 +43,11 @@ Then(/^it contains the (user|client)'s id$/) do |message_type|
 end
 
 Then(/^it contains the (user|client)'s details:$/) do |message_type, details|
+  event = EVENT_TYPES[message_type]
   case message_type
   when "user"
-    event = "users"
     owner = @me
   when "client"
-    event = "devices"
     owner = @my_client
   end
   details.rows.each do |r|
@@ -56,12 +56,11 @@ Then(/^it contains the (user|client)'s details:$/) do |message_type, details|
 end
 
 Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, details_type, details|
+  event = EVENT_TYPES[message_type]
   case message_type
   when "user"
-    event = "users"
     owner = details_type == "new" ? @me : @old_me
   when "client"
-    event = "devices"
     owner = details_type == "new" ? @my_client : @my_old_client
   end
   details.rows.each do |r|
@@ -69,12 +68,17 @@ Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, d
   end
 end
 
-Then(/^it contains a valid ISO-8601 (user|client) event timestamp$/) do |message_type|
-  event = message_type == "user" ? "users" : "devices"
+Then(/^it contains a (user|client) event timestamp$/) do |message_type|
+  event = EVENT_TYPES[message_type]
   reporting_message_value(event, "//e:timestamp") do |text|
     expect(text).to eq(Time.parse(text).utc.iso8601)
   end
 end
+
+EVENT_TYPES = {
+  "user" => "users",
+  "client" => "devices"
+}
 
 def validate_message_detail(event, readable_detail, owner)
   path = readable_detail.split(":").map { |p| oauth_param_name(p.strip).camelize(:lower) }

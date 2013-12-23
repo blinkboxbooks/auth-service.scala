@@ -14,7 +14,7 @@ Feature: Report user details
       | user: first name                          |
       | user: last name                           |
       | user: marketing communications preference |
-    And it contains a valid ISO-8601 user event timestamp
+    And it contains a user event timestamp
 
   Scenario Outline: A user updates their details
     Given a user has registered an account
@@ -32,11 +32,11 @@ Feature: Report user details
       | user: first name                          |
       | user: last name                           |
       | user: marketing communications preference |
-    And it contains a valid ISO-8601 user event timestamp
+    And it contains a user event timestamp
 
     Examples: Fields which can be changed
       | changeable_detail                   | new_value |
       | first name                          | Bob       |
       | last name                           | Smith     |
       | username                            | any email |
-      | marketing communications preference | none      |
+      | marketing communications preference | disallow  |
