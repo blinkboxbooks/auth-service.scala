@@ -75,7 +75,9 @@ module Blinkbox::Zuul::Server
       invalid_request "No updateable attributes specified" if updates.empty?
 
       begin
+        old_client = client.dup
         client.update_attributes!(updates)
+        Blinkbox::Zuul::Server::Reporting.client_updated(old_client, client)
       rescue => e
         invalid_request e.message
       end
@@ -88,6 +90,7 @@ module Blinkbox::Zuul::Server
       halt 404 if client.nil? || client.user != current_user || client.deregistered
 
       client.deregister
+      Blinkbox::Zuul::Server::Reporting.client_deregistered(client)
     end
 
     get "/oauth2/token", provides: :json do
@@ -123,7 +126,9 @@ module Blinkbox::Zuul::Server
       updates = params.select { |k, v| updateable.include?(k) }
       invalid_request "No updateable attributes specified" if updates.empty?
       begin
+        old_user = current_user.dup
         current_user.update_attributes!(updates)
+        Blinkbox::Zuul::Server::Reporting.user_updated(old_user, current_user)
       rescue => e
         invalid_request e.message
       end
@@ -212,6 +217,9 @@ module Blinkbox::Zuul::Server
           invalid_request e.message
         end
       end
+
+      Blinkbox::Zuul::Server::Reporting.client_registered(client)
+
       client
     end
 
@@ -274,6 +282,8 @@ module Blinkbox::Zuul::Server
       error[:reason].nil? ? invalid_request(error[:description]) : invalid_request(error[:reason], error[:description]) if error
 
       Blinkbox::Zuul::Server::Email.welcome(user)
+      Blinkbox::Zuul::Server::Reporting.user_registered(user)
+
       issue_refresh_token(user, client, true)
     end
 

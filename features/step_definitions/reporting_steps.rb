@@ -3,61 +3,89 @@ When(/^they change their( client's)? (.+) to (.+)$/) do |client, detail, value|
   value = random_email if detail.include? "username"
   value = (value.downcase == "yes") if detail.include? "marketing"
   if client.nil?
+    @old_me = @me.dup
     @me.send(method_name, value)
   else
+    @my_old_client = @my_client.dup
     @my_client.send(method_name, value)
   end
 end
 
 Then(/^a (user (?:registration|update)|client (?:registration|update|deregistration)) message is sent$/) do |message_type|
-  expect(Blinkbox::Zuul::Server::Reporting.sent_messages.size).to eq(1)
-
+  expect(Blinkbox::Zuul::Server::Reporting.sent_messages.size).to be > 0
   @message = Nokogiri::XML(Blinkbox::Zuul::Server::Reporting.sent_messages.pop)
-  event = message_type.include? "user" ? "users" : "devices"
+  event = message_type.include?("user") ? "users" : "devices"
   tag = event.chop
   case message_type.split.last
   when "registration"
-    tag << "Created"
+    tag = "#{event.chop}Created"
   when "update"
     tag << "Updated"
   when "deregistration"
     tag << "Deleted"
   end
-  puts "event: #{event} tag: #{tag}"
   reporting_message_value(event, "/e:#{tag}")
 end
 
-Then(/^it contains the (user|client)'s details:$/) do |owner, details|
-  #p details.rows
+Then(/^it contains the (user|client)'s id$/) do |message_type|
+  case message_type
+  when "user"
+    tag = "userId"
+    owner = @me
+  when "client"
+    tag = "deviceId"
+    owner = @my_client
+  end
+  elem = @message.at_xpath("//xmlns:#{tag}")
+  expect(elem).to_not be_nil
+  expect(elem.text).to eq(owner.local_id)
 end
 
-Then(/^it contains the user's (old|new) details$/) do |details_type|
-  fields = %w(username firstName lastName allowMarketingCommunications)
-  validate_message_details("users", "User", details_type, @me, @old_me, fields)
-end
-
-Then(/^it contains the client's (old|new|deregistration) details$/) do |details_type|
-  case details_type
-  when "new", "old"
-    fields = %w(name brand model os)
-    validate_message_type_details("devices", "Device", details_type, @my_client, @my_old_client, fields)
-  when "deregistration"
-    fields = %w(id name brand model os)
-    validate_message_details("devices", "device", @my_old_client, fields)
+Then(/^it contains the (user|client)'s details:$/) do |message_type, details|
+  case message_type
+  when "user"
+    event = "users"
+    owner = @me
+  when "client"
+    event = "devices"
+    owner = @my_client
+  end
+  details.rows.each do |r|
+    validate_message_detail(event, r.first, owner)
   end
 end
 
-def validate_message_type_details(event, tag, type, new_owner, old_owner, fields)
-  owner = type == "new" ? new_owner : old_owner
-  validate_message_details(event, "#{type}#{tag}", owner, fields)
+Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, details_type, details|
+  case message_type
+  when "user"
+    event = "users"
+    owner = details_type == "new" ? @me : @old_me
+  when "client"
+    event = "devices"
+    owner = details_type == "new" ? @my_client : @my_old_client
+  end
+  details.rows.each do |r|
+    validate_message_detail(event, "#{details_type} #{r.first}", owner)
+  end
 end
 
-def validate_message_details(event, tag, owner, fields)
-  fields.each do |field|
-    reporting_message_value(event, "//e:#{tag}/e:#{field}") do |text|
-      expect(text).to eq(owner.send(field.underscore))
-    end
+Then(/^it contains a valid ISO-8601 (user|client) event timestamp$/) do |message_type|
+  event = message_type == "user" ? "users" : "devices"
+  reporting_message_value(event, "//e:timestamp") do |text|
+    expect(text).to eq(Time.parse(text).utc.iso8601)
   end
+end
+
+def validate_message_detail(event, readable_detail, owner)
+  path = readable_detail.split(":").map { |p| oauth_param_name(p.strip).camelize(:lower) }
+  reporting_message_value(event, "//e:#{path.join("/e:")}") do |text|
+    expect(text).to eq(owner.send(normalize_field(path.last)).to_s)
+  end
+end
+
+def normalize_field(field)
+  return "local_id" if field == "id"
+  field.underscore
 end
 
 def reporting_message_value(event, xpath)
