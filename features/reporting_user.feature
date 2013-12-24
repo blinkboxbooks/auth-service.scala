@@ -9,11 +9,11 @@ Feature: Report user details
     And they submit the registration request
     Then a user registration message is sent
     And it contains the user's details:
-      | user: id                                  |
-      | user: username                            |
-      | user: first name                          |
-      | user: last name                           |
-      | user: marketing communications preference |
+      | id                                  |
+      | username                            |
+      | first name                          |
+      | last name                           |
+      | marketing communications preference |
     And it contains a user event timestamp
 
   Scenario Outline: A user updates their details
@@ -23,15 +23,15 @@ Feature: Report user details
     Then a user update message is sent
     And it contains the user's id
     And it contains the user's old details:
-      | user: username                            |
-      | user: first name                          |
-      | user: last name                           |
-      | user: marketing communications preference |
+      | username                            |
+      | first name                          |
+      | last name                           |
+      | marketing communications preference |
     And it contains the user's new details:
-      | user: username                            |
-      | user: first name                          |
-      | user: last name                           |
-      | user: marketing communications preference |
+      | username                            |
+      | first name                          |
+      | last name                           |
+      | marketing communications preference |
     And it contains a user event timestamp
 
     Examples: Fields which can be changed

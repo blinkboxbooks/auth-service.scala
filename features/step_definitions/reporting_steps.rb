@@ -51,7 +51,7 @@ Then(/^it contains the (user|client)'s details:$/) do |message_type, details|
     owner = @my_client
   end
   details.rows.each do |r|
-    validate_message_detail(event, r.first, owner)
+    validate_message_detail(event, "#{event.chop}: #{r.first}", owner)
   end
 end
 
@@ -64,7 +64,7 @@ Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, d
     owner = details_type == "new" ? @my_client : @my_old_client
   end
   details.rows.each do |r|
-    validate_message_detail(event, "#{details_type} #{r.first}", owner)
+    validate_message_detail(event, "#{details_type} #{event.chop}: #{r.first}", owner)
   end
 end
 

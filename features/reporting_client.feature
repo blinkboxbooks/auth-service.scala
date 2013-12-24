@@ -10,13 +10,13 @@ Feature: Report user's client details
   Scenario: A user registers a client
     When they submit the client registration request
     Then a client registration message is sent
+    And it contains the user's id
     And it contains the client's details:
-      | user id       |
-      | device: id    |
-      | device: name  |
-      | device: brand |
-      | device: model |
-      | device: os    |
+      | id    |
+      | name  |
+      | brand |
+      | model |
+      | os    |
     And it contains a client event timestamp
 
   Scenario Outline: A user updates their client's information
@@ -27,15 +27,15 @@ Feature: Report user's client details
     And it contains the user's id
     And it contains the client's id
     And it contains the client's old details:
-      | device: name  |
-      | device: brand |
-      | device: model |
-      | device: os    |
+      | name  |
+      | brand |
+      | model |
+      | os    |
     And it contains the client's new details:
-      | device: name  |
-      | device: brand |
-      | device: model |
-      | device: os    |
+      | name  |
+      | brand |
+      | model |
+      | os    |
     And it contains a client event timestamp
 
     Examples: Details which can be changed for a client
@@ -49,11 +49,11 @@ Feature: Report user's client details
     Given a user has registered a client
     When they request that their current client be deregistered
     Then a client deregistration message is sent
+    And it contains the user's id
     And it contains the client's details:
-      | user id       |
-      | device: id    |
-      | device: name  |
-      | device: brand |
-      | device: model |
-      | device: os    |
+      | id    |
+      | name  |
+      | brand |
+      | model |
+      | os    |
     And it contains a client event timestamp
