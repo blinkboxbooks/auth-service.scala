@@ -15,7 +15,7 @@ module Blinkbox::Zuul::Server
     validate :validate_password
 
     after_create :report_user_created
-    around_update :report_user_updated
+    before_update :report_user_updated
 
     def name
       "#{first_name} #{last_name}"

@@ -31,7 +31,7 @@ module Blinkbox::Zuul::Server
     returns_value_or_default :os, "Unknown OS"
 
     after_create :report_client_created
-    around_update :report_client_updated
+    before_update :report_client_updated
 
     def self.authenticate(id, secret)
       return nil if id.nil? || secret.nil?
