@@ -55,14 +55,14 @@ module Blinkbox
 
         def self.client_registered(user_id, client)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
-            xml.deviceCreated("xmlns" => event_schema("devices", "v1"),
+            xml.clientCreated("xmlns" => event_schema("clients", "v1"),
                               "xmlns:r" => routing_schema("v1"),
                               "xmlns:v" => versioning_schema,
                               "r:originator" => "zuul",
                               "v:version" => "1.0") {
               xml.userId user_id
               xml.timestamp Time.now.getutc.iso8601
-              xml.device {
+              xml.client {
                 xml.id client["id"]
                 xml.name client["name"]
                 xml.brand client["brand"]
@@ -76,21 +76,21 @@ module Blinkbox
 
         def self.client_updated(user_id, client_id, old_client, new_client)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
-            xml.deviceUpdated("xmlns" => event_schema("devices", "v1"),
+            xml.clientUpdated("xmlns" => event_schema("clients", "v1"),
                               "xmlns:r" => routing_schema("v1"),
                               "xmlns:v" => versioning_schema,
                               "r:originator" => "zuul",
                               "v:version" => "1.0") {
               xml.userId user_id
-              xml.deviceId client_id
+              xml.clientId client_id
               xml.timestamp Time.now.getutc.iso8601
-              xml.oldDevice {
+              xml.oldClient {
                 xml.name old_client["name"]
                 xml.brand old_client["brand"]
                 xml.model old_client["model"]
                 xml.os old_client["os"]
               }
-              xml.newDevice {
+              xml.newClient {
                 xml.name new_client["name"]
                 xml.brand new_client["brand"]
                 xml.model new_client["model"]
@@ -103,14 +103,14 @@ module Blinkbox
 
         def self.client_deregistered(user_id, client)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
-            xml.deviceDeleted("xmlns" => event_schema("devices", "v1"),
+            xml.clientDeleted("xmlns" => event_schema("clients", "v1"),
                               "xmlns:r" => routing_schema("v1"),
                               "xmlns:v" => versioning_schema,
                               "r:originator" => "zuul",
                               "v:version" => "1.0") {
               xml.userId user_id
               xml.timestamp Time.now.getutc.iso8601
-              xml.device {
+              xml.client {
                 xml.id client["id"]
                 xml.name client["name"]
                 xml.brand client["brand"]

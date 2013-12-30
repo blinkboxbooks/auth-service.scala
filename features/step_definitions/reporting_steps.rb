@@ -15,35 +15,30 @@ Then(/^a (user|client) (registration|update|deregistration) message is sent$/) d
   raise "Test Error: Users cannot be deregistered!" if message_type == "user" && event_type == "deregistration"
   expect(Blinkbox::Zuul::Server::Reporting.sent_messages).to have_at_least(1).message
   @message = Nokogiri::XML(Blinkbox::Zuul::Server::Reporting.sent_messages.pop)
-  event = EVENT_TYPES[message_type]
-  tag = event.chop
   case event_type
   when "registration"
-    tag << "Created"
+    tag = "#{message_type}Created"
   when "update"
-    tag << "Updated"
+    tag = "#{message_type}Updated"
   when "deregistration"
-    tag << "Deleted"
+    tag = "#{message_type}Deleted"
   end
-  reporting_message_value(event, "/e:#{tag}")
+  reporting_message_value("#{message_type}s", "/e:#{tag}")
 end
 
 Then(/^it contains the (user|client)'s id$/) do |message_type|
   case message_type
   when "user"
-    tag = "userId"
     owner = @me
   when "client"
-    tag = "deviceId"
     owner = @my_client
   end
-  elem = @message.at_xpath("//xmlns:#{tag}")
+  elem = @message.at_xpath("//xmlns:#{message_type}Id")
   expect(elem).to_not be_nil
   expect(elem.text).to eq(owner.local_id)
 end
 
 Then(/^it contains the (user|client)'s details:$/) do |message_type, details|
-  event = EVENT_TYPES[message_type]
   case message_type
   when "user"
     owner = @me
@@ -51,12 +46,11 @@ Then(/^it contains the (user|client)'s details:$/) do |message_type, details|
     owner = @my_client
   end
   details.rows.each do |r|
-    validate_message_detail(event, "#{event.chop}: #{r.first}", owner)
+    validate_message_detail("#{message_type}s", "#{message_type}: #{r.first}", owner)
   end
 end
 
 Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, details_type, details|
-  event = EVENT_TYPES[message_type]
   case message_type
   when "user"
     owner = details_type == "new" ? @me : @old_me
@@ -64,21 +58,15 @@ Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, d
     owner = details_type == "new" ? @my_client : @my_old_client
   end
   details.rows.each do |r|
-    validate_message_detail(event, "#{details_type} #{event.chop}: #{r.first}", owner)
+    validate_message_detail("#{message_type}s", "#{details_type} #{message_type}: #{r.first}", owner)
   end
 end
 
 Then(/^it contains a (user|client) event timestamp$/) do |message_type|
-  event = EVENT_TYPES[message_type]
-  reporting_message_value(event, "//e:timestamp") do |text|
+  reporting_message_value("#{message_type}s", "//e:timestamp") do |text|
     expect(text).to eq(Time.parse(text).utc.iso8601)
   end
 end
-
-EVENT_TYPES = {
-  "user" => "users",
-  "client" => "devices"
-}
 
 def validate_message_detail(event, readable_detail, owner)
   path = readable_detail.split(":").map { |p| oauth_param_name(p.strip).camelize(:lower) }
