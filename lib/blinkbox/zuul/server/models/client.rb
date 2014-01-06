@@ -62,9 +62,8 @@ module Blinkbox::Zuul::Server
 
     def report_client_created
       fields = %w{id name brand model os}
-      client = {}
-      fields.each do |field|
-        client[field] = self[field]
+      client = fields.each_with_object({}) do |field, hash|
+        hash[field] = self[field]
       end
       Blinkbox::Zuul::Server::Reporting.client_registered(self["user_id"], client)
     end
@@ -87,9 +86,8 @@ module Blinkbox::Zuul::Server
 
     def report_client_deregistered
       fields = %w{id name brand model os}
-      client = {}
-      fields.each do |field|
-        client[field] = self[field]
+      client = fields.each_with_object({}) do |field, hash|
+        hash[field] = self[field]
       end
       Blinkbox::Zuul::Server::Reporting.client_deregistered(self["user_id"], client)
     end

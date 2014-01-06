@@ -9,11 +9,11 @@ Feature: Report user details
     And they submit the registration request
     Then a user registration message is sent
     And it contains the user's details:
-      | id                                  |
-      | username                            |
-      | first name                          |
-      | last name                           |
-      | marketing communications preference |
+      | id                             |
+      | username                       |
+      | first name                     |
+      | last name                      |
+      | allow marketing communications |
     And it contains a user event timestamp
 
   Scenario Outline: A user updates their details
@@ -23,20 +23,20 @@ Feature: Report user details
     Then a user update message is sent
     And it contains the user's id
     And it contains the user's old details:
-      | username                            |
-      | first name                          |
-      | last name                           |
-      | marketing communications preference |
+      | username                       |
+      | first name                     |
+      | last name                      |
+      | allow marketing communications |
     And it contains the user's new details:
-      | username                            |
-      | first name                          |
-      | last name                           |
-      | marketing communications preference |
+      | username                       |
+      | first name                     |
+      | last name                      |
+      | allow marketing communications |
     And it contains a user event timestamp
 
     Examples: Fields which can be changed
-      | changeable_detail                   | new_value |
-      | first name                          | Bob       |
-      | last name                           | Smith     |
-      | username                            | any email |
-      | marketing communications preference | disallow  |
+      | changeable_detail              | new_value |
+      | first name                     | Bob       |
+      | last name                      | Smith     |
+      | username                       | any email |
+      | allow marketing communications | false     |

@@ -58,9 +58,8 @@ module Blinkbox::Zuul::Server
 
     def report_user_created
       fields = %w{id username first_name last_name allow_marketing_communications}
-      user = {}
-      fields.each do |field|
-        user[field] = self[field]
+      user = fields.each_with_object({}) do |field, hash|
+        hash[field] = self[field]
       end
       Blinkbox::Zuul::Server::Reporting.user_registered(user)
     end

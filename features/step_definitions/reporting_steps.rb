@@ -1,7 +1,6 @@
 When(/^they change their( client's)? (.+) to (.+)$/) do |client, detail, value|
   method_name = "#{oauth_param_name(detail)}="
   value = random_email if detail == "username"
-  value = (value.downcase == "allow") if detail == "marketing communications preference"
   if client.nil?
     @old_me = @me.dup
     @me.send(method_name, value)
