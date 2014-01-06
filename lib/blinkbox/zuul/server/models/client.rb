@@ -31,7 +31,7 @@ module Blinkbox::Zuul::Server
     returns_value_or_default :os, "Unknown OS"
 
     after_create :report_client_created
-    before_update :report_client_updated
+    around_update :report_client_updated
 
     def self.authenticate(id, secret)
       return nil if id.nil? || secret.nil?
@@ -78,7 +78,10 @@ module Blinkbox::Zuul::Server
           old_client[field] = self.changes[field][0] rescue self[field]
           new_client[field] = self.changes[field][1] rescue self[field]
         end
+        yield # saves
         Blinkbox::Zuul::Server::Reporting.client_updated(self["user_id"], self["id"], old_client, new_client)
+      else
+        yield
       end
     end
 

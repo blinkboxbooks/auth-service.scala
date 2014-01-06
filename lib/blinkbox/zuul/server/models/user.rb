@@ -15,7 +15,7 @@ module Blinkbox::Zuul::Server
     validate :validate_password
 
     after_create :report_user_created
-    before_update :report_user_updated
+    around_update :report_user_updated
 
     def name
       "#{first_name} #{last_name}"
@@ -74,7 +74,10 @@ module Blinkbox::Zuul::Server
           old_user[field] = self.changes[field][0] rescue self[field]
           new_user[field] = self.changes[field][1] rescue self[field]
         end
+        yield # saves
         Blinkbox::Zuul::Server::Reporting.user_updated(self["id"], old_user, new_user)
+      else
+        yield
       end
     end
 
