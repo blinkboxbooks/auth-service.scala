@@ -1,11 +1,17 @@
 # Zuul Server Change Log
 
+## 0.7.2 (2013-12-23 11:00)
+
+### New Features
+
+- [CP-920](https://tools.mobcastdev.com/jira/browse/CP-920) - Reporting support for user and client events.
+
 ## 0.7.1 (2013-12-18 14:06)
 
 ### New Features
 
 - [CP-907](https://tools.mobcastdev.com/jira/browse/CP-907) - Performance logger now logs array of client IPs including `X-Forwarded-For` header information.
- 
+
 ## 0.7.0 (2013-12-11 17:15)
 
 ### New Features

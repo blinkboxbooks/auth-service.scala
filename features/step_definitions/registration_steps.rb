@@ -1,4 +1,4 @@
-Given(/^I have registered an account$/) do
+Given(/^(?:I have|a user has) registered an account$/) do
   @me = TestUser.new.generate_details
   @me.register
   expect(last_response.status).to eq(200)
@@ -20,7 +20,7 @@ When(/^I try to register an account$/) do
   @me.register
 end
 
-When(/^I provide valid (?:user )?registration details$/) do
+When(/^(?:I provide|a user provides) valid (?:user )?registration details$/) do
   @me = TestUser.new.generate_details
 end
 
@@ -51,7 +51,7 @@ end
 
 When(/^I provide the same registration details I previously registered with$/, :noop)
 
-When(/^I submit the registration request$/) do
+When(/^(?:I|they) submit the registration request$/) do
   @me.register
 end
 

@@ -30,7 +30,7 @@ TEST_CONFIG[:properties] = JavaProperties::Properties.new("./zuul.properties")
 p TEST_CONFIG if TEST_CONFIG[:debug]
 
 if TEST_CONFIG[:in_proc]
-  require_relative "../../lib/blinkbox/zuul/server" 
+  require_relative "../../lib/blinkbox/zuul/server"
   $server = Thin::Server.new(TEST_CONFIG[:server].host, TEST_CONFIG[:server].port, Blinkbox::Zuul::Server::App)
   Thread.new { $server.start }
   loop until $server.running?
@@ -62,7 +62,7 @@ module SleepsByTimeTravel
 end
 
 module SendsMessagesToFakeQueues
-  module FakeEmail
+  module FakeQueue
     def self.included(base)
       base.instance_eval do
         @sent_messages = []
@@ -74,9 +74,10 @@ module SendsMessagesToFakeQueues
         end
       end
     end
-  end  
+  end
   def self.extended(base)
-    Blinkbox::Zuul::Server::Email.send(:include, FakeEmail)
+    Blinkbox::Zuul::Server::Email.send(:include, FakeQueue)
+    Blinkbox::Zuul::Server::Reporting.send(:include, FakeQueue)
   end
 end
 
