@@ -30,6 +30,9 @@ module Blinkbox::Zuul::Server
     returns_value_or_default :model, "Unknown Model"
     returns_value_or_default :os, "Unknown OS"
 
+    after_create :report_client_created
+    around_update :report_client_updated
+
     def self.authenticate(id, secret)
       return nil if id.nil? || secret.nil?
       /\Aurn:blinkbox:zuul:client:(?<numeric_id>\d+)\Z/ =~ id
@@ -50,9 +53,43 @@ module Blinkbox::Zuul::Server
             self.refresh_token.save!
           end
           self.save!
+          report_client_deregistered
         end
       end
+    end
 
+    private
+
+    def report_client_created
+      fields = %w{id name brand model os}
+      client = fields.each_with_object({}) do |field, hash|
+        hash[field] = self[field]
+      end
+      Blinkbox::Zuul::Server::Reporting.client_registered(self["user_id"], client)
+    end
+
+    def report_client_updated
+      fields = %w{name brand model os}
+      affected_fields = self.changes.keys & fields
+      if affected_fields.any?
+        old_client, new_client = {}, {}
+        fields.each do |field|
+          old_client[field] = self.changes[field][0] rescue self[field]
+          new_client[field] = self.changes[field][1] rescue self[field]
+        end
+        yield # saves
+        Blinkbox::Zuul::Server::Reporting.client_updated(self["user_id"], self["id"], old_client, new_client)
+      else
+        yield
+      end
+    end
+
+    def report_client_deregistered
+      fields = %w{id name brand model os}
+      client = fields.each_with_object({}) do |field, hash|
+        hash[field] = self[field]
+      end
+      Blinkbox::Zuul::Server::Reporting.client_deregistered(self["user_id"], client)
     end
 
   end

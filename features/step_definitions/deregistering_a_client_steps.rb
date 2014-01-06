@@ -2,7 +2,7 @@ Given(/^I have deregistered my current client$/) do
   $zuul.deregister_client(@my_client.local_id.to_i, @me.access_token)
 end
 
-When(/^I request that my (current|other) client be deregistered(, without my access token)?$/) do |client, without_token|
+When(/^(?:I request that my|they request that their) (current|other) client be deregistered(, without my access token)?$/) do |client, without_token|
   requested_client = client == "current" ? @my_client : @my_other_client
   access_token = without_token.nil? ? @me.access_token : nil
   $zuul.deregister_client(requested_client.local_id.to_i, access_token)
@@ -30,5 +30,3 @@ Then(/^I have (?:got )?(#{CAPTURE_INTEGER}) registered clients?$/) do |num|
   step("I request client information for all my clients")
   expect(last_response_json["clients"].size).to eq num
 end
-
-

@@ -13,6 +13,7 @@ require "sinatra/blinkbox/zuul/authorization"
 require "sinatra/blinkbox/zuul/elevation"
 require "blinkbox/zuul/server/environment"
 require "blinkbox/zuul/server/email"
+require "blinkbox/zuul/server/reporting"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
@@ -121,6 +122,7 @@ module Blinkbox::Zuul::Server
       updateable = ["username", "first_name", "last_name", "allow_marketing_communications"]
       updates = params.select { |k, v| updateable.include?(k) }
       invalid_request "No updateable attributes specified" if updates.empty?
+
       begin
         current_user.update_attributes!(updates)
       rescue => e
@@ -182,7 +184,7 @@ module Blinkbox::Zuul::Server
     post "/password/reset/validate-token" do
       token_value = params["password_reset_token"]
       invalid_request "A password reset token is required" if token_value.nil? || token_value.empty?
-      
+
       password_reset_token = PasswordResetToken.find_by_token(token_value)
       invalid_request "The password reset token is invalid" if password_reset_token.nil?
       invalid_request "The password reset token has expired" if password_reset_token.expired?
@@ -218,6 +220,7 @@ module Blinkbox::Zuul::Server
           invalid_request e.message
         end
       end
+
       client
     end
 
@@ -280,6 +283,7 @@ module Blinkbox::Zuul::Server
       error[:reason].nil? ? invalid_request(error[:description]) : invalid_request(error[:reason], error[:description]) if error
 
       Blinkbox::Zuul::Server::Email.welcome(user)
+
       issue_refresh_token(user, client, true)
     end
 
@@ -325,7 +329,7 @@ module Blinkbox::Zuul::Server
       token_value, new_password = params["password_reset_token"], params["password"]
       invalid_request "A password reset token is required for this grant type" if token_value.nil? || token_value.empty?
       invalid_request "A new password is required for this grant type" if new_password.nil? || new_password.empty?
-      
+
       password_reset_token = PasswordResetToken.find_by_token(token_value)
       invalid_grant "The password reset token is invalid" if password_reset_token.nil?
       invalid_grant "The password reset token has expired" if password_reset_token.expired?
@@ -338,7 +342,7 @@ module Blinkbox::Zuul::Server
       user.password_reset_tokens.each { |token| token.revoked = true }
       ActiveRecord::Base.transaction do
         begin
-          user.save! 
+          user.save!
         rescue ActiveRecord::RecordInvalid => e
           invalid_request e.message
         end
@@ -408,7 +412,7 @@ module Blinkbox::Zuul::Server
         invalid_client "The client id and/or client secret is incorrect." if client.nil?
         invalid_client "You are not authorised to use this client." unless client.user == user
       end
-      
+
       client.touch unless client.nil?
       client
     end
