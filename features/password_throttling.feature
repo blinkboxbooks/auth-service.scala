@@ -30,6 +30,7 @@ Feature: Password throttling
     When I provide my email address and password
     And I submit the authentication request
     Then the request fails because it has been throttled
+    And the response tells me I have to wait for between 1 and 20 seconds to retry
 
   Scenario: Attempts to authenticate with an unregistered email address are throttled
     If we didn't do this you could check whether an email address was registered by checking whether
