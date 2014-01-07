@@ -1,5 +1,19 @@
 # Zuul Server Change Log
 
+## 0.8.0 (2014-01-07 10:29)
+
+### New Features
+
+- [CP-313](https://tools.mobcastdev.com/jira/browse/CP-313) - Failed attempts to authenticate or change password are now throttled to 5 consecutive failures within a 20 second period.
+
+### Bug Fixes
+
+- Fixed an (unreported) timing bug in user authentication where no password hashing was done for unregistered email addresses, meaning that it would be possible to check whether an address was registered by inspecting the response time.
+
+### Deployment Notes
+
+- A database migration to schema version 8 is required.
+
 ## 0.7.2 (2013-12-23 11:00)
 
 ### New Features

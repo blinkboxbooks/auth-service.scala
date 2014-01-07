@@ -151,8 +151,7 @@ module Blinkbox::Zuul::Server
         user = User.authenticate(current_user.username, old_password, request.ip)
         invalid_request "old_password_invalid", "Current password provided is incorrect." if user.nil?
       rescue User::TooManyAttempts => e
-        response["Retry-After"] = e.retry_after
-        invalid_request "too_many_attempts", e.message
+        halt 429, { "Retry-After" => e.retry_after.ceil.to_s }, nil
       end  
 
       current_user.password = new_password
@@ -294,9 +293,8 @@ module Blinkbox::Zuul::Server
       begin
         user = User.authenticate(username, password, request.ip) 
         invalid_grant "The username and/or password is incorrect." if user.nil?
-      rescue User::TooManyAttempts => e
-        response["Retry-After"] = e.retry_after
-        invalid_request "too_many_attempts", e.message
+      rescue User::TooManyAttempts => e        
+        halt 429, { "Retry-After" => e.retry_after.ceil.to_s }, nil
       end  
 
       client = authenticate_client(params, user)
