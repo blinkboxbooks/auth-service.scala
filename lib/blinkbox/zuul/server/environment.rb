@@ -12,6 +12,8 @@ module Blinkbox
         PROPERTIES_FILE = "./zuul.properties"
 
         configure do
+          I18n.config.enforce_available_locales = true
+
           raise "No properties file found." unless File.exist?(PROPERTIES_FILE)
           set :properties, JavaProperties::Properties.new(PROPERTIES_FILE)
 
