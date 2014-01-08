@@ -1,5 +1,11 @@
 module Blinkbox::Zuul::Server
   class User < ActiveRecord::Base
+
+    class Role < ActiveRecord::Base
+      has_one :user
+      alias_attribute :name, :role
+    end
+
     class TooManyAttempts < StandardError
       attr_accessor :retry_after
     end
@@ -9,6 +15,7 @@ module Blinkbox::Zuul::Server
     has_many :refresh_tokens
     has_many :clients
     has_many :password_reset_tokens
+    has_many :roles
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
