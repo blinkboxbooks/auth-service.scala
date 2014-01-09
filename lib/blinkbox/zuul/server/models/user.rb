@@ -97,11 +97,9 @@ module Blinkbox::Zuul::Server
       failed_attempts = recent_attempts.take_while { |attempt| !attempt.successful? }
       if failed_attempts.count == max_attempts
         failed_period = Time.now - failed_attempts.last.created_at
-        if failed_period < period
-          error = TooManyRequests.new("Too many incorrect password attempts for '#{username}'")
-          error.retry_after = period - failed_period
-          raise error
-        end
+        error = TooManyRequests.new("Too many incorrect password attempts for '#{username}'")
+        error.retry_after = period - failed_period
+        raise error
       end
     end
 
