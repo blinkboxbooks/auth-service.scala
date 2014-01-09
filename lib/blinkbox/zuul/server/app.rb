@@ -12,6 +12,7 @@ require "sinatra/www_authenticate_helper"
 require "sinatra/blinkbox/zuul/authorization"
 require "sinatra/blinkbox/zuul/elevation"
 require "blinkbox/zuul/server/environment"
+require "blinkbox/zuul/server/errors"
 require "blinkbox/zuul/server/email"
 require "blinkbox/zuul/server/reporting"
 
@@ -46,6 +47,10 @@ module Blinkbox::Zuul::Server
       response["Date"] = response["Expires"] = Time.now.rfc822.to_s
       response["Pragma"] = "no-cache"
       response['X-Application-Version'] = VERSION
+    end
+
+    error TooManyRequests do
+      halt 429, { "Retry-After" => env["sinatra.error"].retry_after.ceil.to_s }, nil
     end
 
     post "/clients", provides: :json do
@@ -146,7 +151,9 @@ module Blinkbox::Zuul::Server
       new_password = @params[:new_password]
       old_password = @params[:old_password]
       invalid_request "new_password_missing", "The new password is not provided." if new_password.nil? || new_password.empty?
-      invalid_request "old_password_invalid", "Current password provided is incorrect." unless User.authenticate(current_user.username, old_password)
+
+      user = User.authenticate(current_user.username, old_password, request.ip)
+      invalid_request "old_password_invalid", "Current password provided is incorrect." if user.nil?
 
       current_user.password = new_password
       current_user.save! rescue invalid_request("new_password_too_short", "The new password is too short.")
@@ -284,7 +291,7 @@ module Blinkbox::Zuul::Server
       username, password = params["username"], params["password"]
       invalid_request "The username and password are required for this grant type" if username.nil? || password.nil?
 
-      user = User.authenticate(username, password)
+      user = User.authenticate(username, password, request.ip) 
       invalid_grant "The username and/or password is incorrect." if user.nil?
 
       client = authenticate_client(params, user)

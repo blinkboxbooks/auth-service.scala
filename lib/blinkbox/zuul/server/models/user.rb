@@ -1,6 +1,7 @@
+require "blinkbox/zuul/server/errors"
+
 module Blinkbox::Zuul::Server
   class User < ActiveRecord::Base
-
     MIN_PASSWORD_LENGTH = 6
 
     has_many :refresh_tokens
@@ -35,14 +36,22 @@ module Blinkbox::Zuul::Server
       clients.select { |client| !client.deregistered }
     end
 
-    def self.authenticate(username, password)
+    def self.authenticate(username, password, client_ip)
       return nil if username.nil? || password.nil?
+      throttle_login_attempts(username)
+
       user = User.find_by_username(username)
-      if user && SCrypt::Password.new(user.password_hash) == password then
-        user
+      if user
+        successful = SCrypt::Password.new(user.password_hash) == password
       else
-        nil
+        # even if the user isn't found we still need to perform an scrypt hash of something to help
+        # prevent timing attacks as this hashing process is the bulk of the request time
+        SCrypt::Password.create("random string")
+        successful = false
       end
+      
+      LoginAttempt.new(username: username, successful: successful, client_ip: client_ip).save!
+      successful ? user : nil
     end
 
     private
@@ -55,7 +64,7 @@ module Blinkbox::Zuul::Server
         errors.add(:password, "is too short (minimum is #{MIN_PASSWORD_LENGTH} characters)")
       end
     end
-
+    
     def report_user_created
       fields = %w{id username first_name last_name allow_marketing_communications}
       user = fields.each_with_object({}) do |field, hash|
@@ -77,6 +86,20 @@ module Blinkbox::Zuul::Server
         Blinkbox::Zuul::Server::Reporting.user_updated(self["id"], old_user, new_user)
       else
         yield
+      end
+    end
+
+    def self.throttle_login_attempts(username, max_attempts: 5, period: 20)
+      recent_attempts = LoginAttempt.where(username: username)
+                                    .where("created_at >= ?", Time.now.utc - period)
+                                    .order(created_at: :desc)
+                                    .limit(max_attempts)
+      failed_attempts = recent_attempts.take_while { |attempt| !attempt.successful? }
+      if failed_attempts.count == max_attempts
+        failed_period = Time.now - failed_attempts.last.created_at
+        error = TooManyRequests.new("Too many incorrect password attempts for '#{username}'")
+        error.retry_after = period - failed_period
+        raise error
       end
     end
 
