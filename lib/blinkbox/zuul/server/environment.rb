@@ -17,15 +17,14 @@ module Blinkbox
           raise "No properties file found." unless File.exist?(PROPERTIES_FILE)
           set :properties, JavaProperties::Properties.new(PROPERTIES_FILE)
 
+          disable :show_exceptions, :dump_errors
+
           db = URI.parse(settings.properties[:database_url])
           ActiveRecord::Base.establish_connection(
             adapter: case db.scheme
-                     when "mysql" then
-                       "mysql2"
-                     when "postgres" then
-                       "postgresql"
-                     else
-                       db.scheme
+                     when "mysql" then "mysql2"
+                     when "postgres" then "postgresql"
+                     else db.scheme
                      end,
             host: db.host,
             username: db.user,

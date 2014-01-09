@@ -15,3 +15,7 @@ Given(/^I have tried to authenticate with an unregistered email address (#{CAPTU
   @credentials["password"] = random_password
   attempts.times { @me.authenticate(@credentials) }
 end
+
+When(/^I provide that email address and any password$/) do
+  use_username_and_password_credentials
+end
