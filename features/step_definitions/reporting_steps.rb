@@ -16,11 +16,11 @@ Then(/^a (user|client) (registration|update|deregistration) message is sent$/) d
   @message = Nokogiri::XML(Blinkbox::Zuul::Server::Reporting.sent_messages.pop)
   case event_type
   when "registration"
-    tag = "#{message_type}Created"
+    tag = "registered"
   when "update"
-    tag = "#{message_type}Updated"
+    tag = "updated"
   when "deregistration"
-    tag = "#{message_type}Deleted"
+    tag = "deregistered"
   end
   reporting_message_value("#{message_type}s", "/e:#{tag}")
 end
@@ -57,7 +57,7 @@ Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, d
     owner = details_type == "new" ? @my_client : @my_old_client
   end
   details.rows.each do |r|
-    validate_message_detail("#{message_type}s", "#{details_type} #{message_type}: #{r.first}", owner)
+    validate_message_detail("#{message_type}s", "#{details_type}: #{r.first}", owner)
   end
 end
 
