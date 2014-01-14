@@ -132,7 +132,7 @@ module Blinkbox
           unless defined?(@amqp)
             @amqp = { connection: Bunny.new(App.properties[:amqp_server_url]).start }
             @amqp[:channel] = @amqp[:connection].create_channel
-            @amqp[:exchange] = @amqp[:channel].topic("Events", durable: true)
+            @amqp[:exchange] = @amqp[:channel].topic("Events")
           end
           @amqp[:exchange]
         end
