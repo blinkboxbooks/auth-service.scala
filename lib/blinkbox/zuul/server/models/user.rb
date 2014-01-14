@@ -1,13 +1,11 @@
+require "blinkbox/zuul/server/errors"
+
 module Blinkbox::Zuul::Server
   class User < ActiveRecord::Base
 
     class Role < ActiveRecord::Base
       has_one :user
       alias_attribute :name, :role
-    end
-
-    class TooManyAttempts < StandardError
-      attr_accessor :retry_after
     end
 
     MIN_PASSWORD_LENGTH = 6
@@ -99,15 +97,16 @@ module Blinkbox::Zuul::Server
     end
 
     def self.throttle_login_attempts(username, max_attempts: 5, period: 20)
-      recent_attempts = LoginAttempt.where(username: username).limit(max_attempts).order(id: :desc)
+      recent_attempts = LoginAttempt.where(username: username)
+                                    .where("created_at >= ?", Time.now.utc - period)
+                                    .order(created_at: :desc)
+                                    .limit(max_attempts)
       failed_attempts = recent_attempts.take_while { |attempt| !attempt.successful? }
       if failed_attempts.count == max_attempts
-        failed_period = Time.now - recent_attempts.last.created_at
-        if failed_period < period
-          error = TooManyAttempts.new("Too many incorrect password attempts; try again later")
-          error.retry_after = period - failed_period
-          raise error
-        end
+        failed_period = Time.now - failed_attempts.last.created_at
+        error = TooManyRequests.new("Too many incorrect password attempts for '#{username}'")
+        error.retry_after = period - failed_period
+        raise error
       end
     end
 

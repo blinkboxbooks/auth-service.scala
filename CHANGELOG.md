@@ -1,5 +1,17 @@
 # Zuul Server Change Log
 
+## 0.8.1 (2014-01-13 18:25)
+
+### New Features
+
+- [CP-968](https://tools.mobcastdev.com/jira/browse/CP-968) - Auth server now logs errors and warnings to file in JSON format.
+
+### Deployment Notes
+
+- Two new properties are required in the properties file:
+    - `logging.error.file` - The error log file.
+    - `logging.error.level` - The error log level.
+
 ## 0.8.0 (2014-01-07 10:29)
 
 ### New Features
