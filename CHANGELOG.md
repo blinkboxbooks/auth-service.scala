@@ -4,8 +4,9 @@
 
 ### Improvements
 
-- Using simpler XML schema for reporting
-- Switched from fanout to topic exchange with routing key
+- [CP-990](https://tools.mobcastdev.com/jira/browse/CP-990):
+    - Using simpler XML schema for reporting
+    - Switched from fanout to topic exchange with routing key
 
 ## 0.8.1 (2014-01-13 18:25)
 
