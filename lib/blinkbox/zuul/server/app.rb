@@ -5,6 +5,7 @@ require "sandal"
 require "scrypt"
 
 require "rack/blinkbox/zuul/tokens"
+require "rack/jsonlogger"
 require "rack/timekeeper"
 require "sinatra/json_helper"
 require "sinatra/oauth_helper"
@@ -18,6 +19,8 @@ require "blinkbox/zuul/server/reporting"
 
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
+    LOGGER_NAME = "zuul.errors"
+
     use Rack::Timekeeper, logdev: settings.properties["logging.perf.file"], level: ::Logger.const_get(settings.properties["logging.perf.level"]) do |duration|
       if duration < settings.properties["logging.perf.threshold.info"].to_i then :DEBUG
       elsif duration < settings.properties["logging.perf.threshold.warn"].to_i then :INFO
@@ -25,6 +28,7 @@ module Blinkbox::Zuul::Server
       else :ERROR
       end
     end
+    use Rack::JsonLogger, LOGGER_NAME, logdev: settings.properties["logging.error.file"], level: ::Logger.const_get(settings.properties["logging.error.level"])
     use Rack::Blinkbox::Zuul::TokenDecoder
     helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
@@ -50,7 +54,13 @@ module Blinkbox::Zuul::Server
     end
 
     error TooManyRequests do
+      env[LOGGER_NAME].warn("Requests are being throttled: #{env["sinatra.error"].message}")
       halt 429, { "Retry-After" => env["sinatra.error"].retry_after.ceil.to_s }, nil
+    end
+
+    error do
+      env[LOGGER_NAME].error(env["sinatra.error"])
+      halt 500, nil
     end
 
     post "/clients", provides: :json do
