@@ -1,5 +1,12 @@
 # Zuul Server Change Log
 
+## 0.8.1 (2014-01-14 12:28)
+
+### Improvements
+
+- Using simpler XML schema for reporting
+- Switched from fanout to topic exchange with routing key
+
 ## 0.8.0 (2014-01-07 10:29)
 
 ### New Features
