@@ -22,7 +22,7 @@ class CreateUserRoles < ActiveRecord::Migration
     end
     add_index :user_roles, :name
 
-    create_table :user_privileges, id: false, options: default_create_table_options do |t|
+    create_table :user_privileges, options: default_create_table_options do |t|
       t.datetime :created_at
       t.belongs_to :user
       t.belongs_to :user_role
