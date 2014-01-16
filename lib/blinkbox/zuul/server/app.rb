@@ -396,11 +396,9 @@ module Blinkbox::Zuul::Server
           }
         end
       end
-
-      if refresh_token.user.roles.any?
-        token_info["user_roles"] = refresh_token.user.roles.map { |role| role.name }
-      end
-
+      
+      token_info["user_roles"] = refresh_token.user.roles.map { |role| role.name } if refresh_token.user.roles.any?
+      
       json token_info
     end
 
@@ -483,7 +481,7 @@ module Blinkbox::Zuul::Server
         "exp" => expires_at.to_i
       }
       claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
-      claims["bb/rol"] = refresh_token.user.roles.map { |role| role.name }.join(" ") if refresh_token.user.roles.any?
+      claims["bb/rol"] = refresh_token.user.roles.map { |role| role.name } if refresh_token.user.roles.any?
       claims["zl/rti"] = refresh_token.id # for checking whether the issuing token has been revoked
 
       sig_key_id = settings.properties[:signing_key_id]
