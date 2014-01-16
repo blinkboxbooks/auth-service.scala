@@ -6,6 +6,10 @@
 
 - [CP-557](https://tools.mobcastdev.com/jira/browse/CP-557) - Users can now be associated with roles, which are returned in the token and in session info.
 
+### Deployment Notes
+
+- A database migration to schema version 9 is required.
+
 ## 0.8.2 (2014-01-14 12:28)
 
 ### Improvements
