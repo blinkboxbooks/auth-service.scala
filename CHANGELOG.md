@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.9.0 (2014-01-16 14:57)
+
+### New Features
+
+- [CP-557](https://tools.mobcastdev.com/jira/browse/CP-557) - Users can now be associated with roles, which are returned in the token and in session info.
+
 ## 0.8.2 (2014-01-14 12:28)
 
 ### Improvements

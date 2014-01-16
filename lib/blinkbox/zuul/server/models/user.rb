@@ -2,11 +2,24 @@ require "blinkbox/zuul/server/errors"
 
 module Blinkbox::Zuul::Server
   class User < ActiveRecord::Base
+
+    class Role < ActiveRecord::Base
+      has_many :privileges
+      has_many :users, through: :privileges
+    end
+
+    class Privilege < ActiveRecord::Base
+      belongs_to :user
+      belongs_to :role, foreign_key: :user_role_id
+    end
+
     MIN_PASSWORD_LENGTH = 6
 
     has_many :refresh_tokens
     has_many :clients
     has_many :password_reset_tokens
+    has_many :privileges
+    has_many :roles, through: :privileges
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }

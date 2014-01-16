@@ -374,7 +374,6 @@ module Blinkbox::Zuul::Server
       token_info = {}
 
       if refresh_token.elevation_expires_at.future?
-
         expiry_time = case refresh_token.elevation
                       when RefreshToken::Elevation::CRITICAL
                         refresh_token.critical_elevation_expires_at
@@ -387,7 +386,6 @@ module Blinkbox::Zuul::Server
           "token_elevation" => refresh_token.elevation,
           "token_elevation_expires_in" => expiry_time.to_i - DateTime.now.to_i
         }
-
       else
         if refresh_token.status == RefreshToken::Status::INVALID
           token_info = { "token_status" => RefreshToken::Status::INVALID }
@@ -398,7 +396,9 @@ module Blinkbox::Zuul::Server
           }
         end
       end
-
+      
+      token_info["user_roles"] = refresh_token.user.roles.map { |role| role.name } if refresh_token.user.roles.any?
+      
       json token_info
     end
 
@@ -481,6 +481,7 @@ module Blinkbox::Zuul::Server
         "exp" => expires_at.to_i
       }
       claims["bb/cid"] = "urn:blinkbox:zuul:client:#{refresh_token.client.id}" if refresh_token.client
+      claims["bb/rol"] = refresh_token.user.roles.map { |role| role.name } if refresh_token.user.roles.any?
       claims["zl/rti"] = refresh_token.id # for checking whether the issuing token has been revoked
 
       sig_key_id = settings.properties[:signing_key_id]
