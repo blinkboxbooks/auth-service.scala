@@ -9,6 +9,7 @@ require "rack/test"
 require "timecop"
 require "thin"
 require "blinkbox/zuul/server/email"
+require "blinkbox/zuul/server/reporting"
 
 TEST_CONFIG = {}
 TEST_CONFIG[:server] = URI.parse(ENV["AUTH_SERVER"] || "http://127.0.0.1:9393/")
@@ -69,7 +70,7 @@ module SendsMessagesToFakeQueues
         def sent_messages
           @sent_messages
         end
-        def enqueue(message)
+        def enqueue(message, routing_key = nil)
           @sent_messages.push(message)
         end
       end
