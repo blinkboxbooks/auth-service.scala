@@ -17,6 +17,8 @@ gem "scrypt", "~> 1.2"
 gem "sinatra", "~> 1.2"
 gem "sinatra-activerecord", "~> 1.2"
 
+gem "cucumber-helpers", path: "../../Test/cucumber-helpers/"
+
 group :development, :test do
   gem "bundler"
   gem "coveralls"
