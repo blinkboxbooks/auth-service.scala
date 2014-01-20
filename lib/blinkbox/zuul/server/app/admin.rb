@@ -4,7 +4,9 @@ module Blinkbox::Zuul::Server
 
       get "/users", provides: :json do
         users = if params["username"]
-                  User.where(username: params["username"])
+                  current = User.where(username: params["username"])
+                  historic = User::PreviousUsername.includes(:user).where(username: params["username"]).references(:users)
+                  current.concat(historic.map { |previous_username| previous_username.user })
                 elsif params["first_name"] && params["last_name"]
                   User.where(first_name: params["first_name"], last_name: params["last_name"])
                 elsif params["user_id"]

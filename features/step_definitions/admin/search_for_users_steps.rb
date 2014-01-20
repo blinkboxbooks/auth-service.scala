@@ -22,6 +22,12 @@ When(/^I search for users with (\w+)'s email address$/) do |user_handle|
   $zuul.admin_find_user({ username: user.username }, @me.access_token)
 end
 
+When(/^I search for users with (\w+)'s old email address$/) do |user_handle|
+  user = @known_users[user_handle]
+  raise "Unknown user '#{user_handle}'" unless user
+  $zuul.admin_find_user({ username: user.previous_usernames.last }, @me.access_token)
+end
+
 When(/^I search for users with (\w+)'s first name and last name$/) do |user_handle|
   user = @known_users[user_handle]
   raise "Unknown user '#{user_handle}'" unless user

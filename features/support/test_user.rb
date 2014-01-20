@@ -15,10 +15,16 @@ class TestUser
                 :refresh_token,
                 :id,
                 :local_id,
-                :clients
+                :clients,
+                :previous_usernames
 
   def initialize
     @clients = []
+    @previous_usernames = []
+  end
+
+  def after_username_changed(old_value, new_value)
+    @previous_usernames << old_value
   end
 
   def generate_details

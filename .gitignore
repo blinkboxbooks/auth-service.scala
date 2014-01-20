@@ -10,3 +10,4 @@ pkg/
 last_response.html
 migration.sql
 .idea/
+.bundle/
