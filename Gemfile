@@ -16,6 +16,7 @@ gem "sandal", "~> 0.5", ">= 0.5.1"
 gem "scrypt", "~> 1.2"
 gem "sinatra", "~> 1.2"
 gem "sinatra-activerecord", "~> 1.2"
+gem "sinatra-contrib", "~> 1.4"
 
 gem "cucumber-helpers", path: "../../Test/cucumber-helpers/"
 

@@ -7,6 +7,7 @@ require "scrypt"
 require "rack/blinkbox/zuul/tokens"
 require "rack/jsonlogger"
 require "rack/timekeeper"
+require "sinatra/contrib"
 require "sinatra/json_helper"
 require "sinatra/oauth_helper"
 require "sinatra/www_authenticate_helper"
@@ -33,6 +34,7 @@ module Blinkbox::Zuul::Server
     helpers Sinatra::JSONHelper
     helpers Sinatra::OAuthHelper
     helpers Sinatra::WWWAuthenticateHelper
+    register Sinatra::Namespace
     register Sinatra::Blinkbox::Zuul::Authorization
     register Sinatra::Blinkbox::Zuul::Elevation
 
@@ -44,6 +46,15 @@ module Blinkbox::Zuul::Server
     require_elevation_for %r{^/users}
     require_elevation_for %r{^/clients}, methods: %i(post patch delete)
     require_elevation_for %r{^/session}, level: :elevated, methods: :post
+
+    class << self
+      attr_accessor :base_url
+    end
+
+    before do
+      scheme = request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"]
+      App.base_url = "#{scheme}://#{request.env["HTTP_HOST"]}"
+    end
 
     after do
       # none of the responses from the auth server should be cached
@@ -127,7 +138,7 @@ module Blinkbox::Zuul::Server
 
     get "/users/:user_id", provides: :json do |user_id|
       halt 404 unless user_id == current_user.id.to_s
-      json build_user_info(current_user)
+      current_user.to_json
     end
 
     patch "/users/:user_id", provides: :json do |user_id|
@@ -144,7 +155,7 @@ module Blinkbox::Zuul::Server
         invalid_request e.message
       end
 
-      json build_user_info(current_user)
+      current_user.to_json
     end
 
     get "/session" do
@@ -441,7 +452,7 @@ module Blinkbox::Zuul::Server
         "expires_in" => expires_in,
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
-      token_info.merge!(build_user_info(refresh_token.user, format: :basic))
+      token_info.merge!(refresh_token.user.as_json(format: :basic))
       token_info.merge!(build_client_info(refresh_token.client, include_client_secret)) unless refresh_token.client.nil?
       json token_info
     end
@@ -449,7 +460,7 @@ module Blinkbox::Zuul::Server
     def build_client_info(client, include_client_secret = false)
       client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-        "client_uri" => "#{base_url}/clients/#{client.id}",
+        "client_uri" => "#{App.base_url}/clients/#{client.id}",
         "client_name" => client.name,
         "client_brand" => client.brand,
         "client_model" => client.model,
@@ -458,20 +469,6 @@ module Blinkbox::Zuul::Server
       }
       client_info["client_secret"] = client.client_secret if include_client_secret
       client_info
-    end
-
-    def build_user_info(user, format = :complete)
-      user_info = {
-        "user_id" => "urn:blinkbox:zuul:user:#{user.id}",
-        "user_uri" => "#{base_url}/users/#{user.id}",
-        "user_username" => user.username,
-        "user_first_name" => user.first_name,
-        "user_last_name" => user.last_name
-      }
-      if format == :complete
-        user_info["user_allow_marketing_communications"] = user.allow_marketing_communications
-      end
-      user_info
     end
 
     def build_access_token(refresh_token, expires_in)

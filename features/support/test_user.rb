@@ -22,8 +22,8 @@ class TestUser
   end
 
   def generate_details
-    @first_name = "Testy"
-    @last_name = "McTest"
+    @first_name = random_name
+    @last_name = random_name
     @username = random_email
     @password = random_password
     @accepted_terms_and_conditions = true

@@ -9,3 +9,4 @@ module Blinkbox
 end
 
 require "blinkbox/zuul/server/app"
+require "blinkbox/zuul/server/app/admin"
