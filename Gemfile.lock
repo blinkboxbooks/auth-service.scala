@@ -182,7 +182,7 @@ DEPENDENCIES
   simplecov
   sinatra (~> 1.2)
   sinatra-activerecord (~> 1.2)
-  sinatra-contrib
+  sinatra-contrib (~> 1.4)
   sqlite3
   thin
   timecop

@@ -47,10 +47,10 @@ Then(/^the response is a list containing (#{CAPTURE_INTEGER}) users?$/) do |coun
   expect(list["items"]).to have(count).users
 end
 
-Then(/^the (#{CAPTURE_NAMED_INDEX}) user matches (\w+)'s attributes$/) do |index, user_handle|
+Then(/^the first user matches (\w+)'s attributes$/) do |user_handle|
   expected_user = @known_users[user_handle]
   raise "Unknown user '#{user_handle}'" unless expected_user
-  actual_user = last_response_json["items"][index]
+  actual_user = last_response_json["items"][0]
   expect(actual_user["user_username"]).to eq(expected_user.username)
   expect(actual_user["user_first_name"]).to eq(expected_user.first_name)
   expect(actual_user["user_last_name"]).to eq(expected_user.last_name)

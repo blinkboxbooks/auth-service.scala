@@ -4,7 +4,7 @@ Feature: Search for users
   I want to be able to find the users who have problems
   So that I can see information about them
 
-  Background:
+  Background: Ensure that there are at least two users registered
     Given I am authenticated as a user in the "customer services representative" role
     And there is a registered user, call her "Alice"
     And there is a registered user, call him "Bob", who has previously changed his email address

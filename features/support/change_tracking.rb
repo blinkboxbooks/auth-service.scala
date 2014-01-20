@@ -25,12 +25,15 @@ class Object
       define_method "#{name}=" do |new_value|
         if instance_variable_defined?("@#{name}")
           old_value = instance_variable_get("@#{name}")
-          instance_variable_set("@#{name}_changed", new_value != instance_variable_get("@#{name}"))
+          instance_variable_set("@#{name}_changed", new_value != old_value)
+          instance_variable_set("@#{name}", new_value)
           if self.respond_to?("after_#{name}_changed")
             self.send("after_#{name}_changed", old_value, new_value)
           end
-        end
-        instance_variable_set("@#{name}", new_value)
+          new_value
+        else
+          instance_variable_set("@#{name}", new_value)
+        end        
       end
     end
   end
