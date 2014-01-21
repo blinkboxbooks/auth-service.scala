@@ -1,5 +1,8 @@
 module Blinkbox::Zuul::Server
   class App < Sinatra::Base
+
+    require_user_authorization_for %r{^/admin}, roles: %w(csm csr ops)
+    
     namespace "/admin" do
 
       get "/users", provides: :json do

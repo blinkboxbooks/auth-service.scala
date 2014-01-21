@@ -63,6 +63,10 @@ module Blinkbox::Zuul::Server
       clients.select { |client| !client.deregistered }
     end
 
+    def role_names
+      roles.map { |role| role.name }
+    end
+
     def self.authenticate(username, password, client_ip)
       return nil if username.nil? || password.nil?
       throttle_login_attempts(username)
