@@ -39,6 +39,12 @@ module Blinkbox::Zuul::Server
     after_create :report_user_created
     around_update :record_username_change, :report_user_updated
 
+    scope :where_has_had_username, -> username { 
+      current = where(username: username)
+      previous_usernames = PreviousUsername.includes(:user).where(username: username).references(:users)
+      current.concat(previous_usernames.map { |username| username.user })
+    }
+
     def name
       "#{first_name} #{last_name}"
     end

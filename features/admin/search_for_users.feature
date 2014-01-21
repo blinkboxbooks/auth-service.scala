@@ -1,4 +1,3 @@
-@dev
 Feature: Search for users
   As a customer services representative
   I want to be able to find the users who have problems
@@ -18,6 +17,13 @@ Feature: Search for users
     When I search for users with Bob's old email address
     Then the response is a list containing one user
     And the first user matches Bob's attributes
+
+  Scenario: Users can be found by both current and historical email address
+    Given there is a registered user, call him "Charlie", who registered with Bob's old email address
+    When I search for users with Charlie's email address
+    Then the response is a list containing two users
+    And the first user matches Charlie's attributes
+    And the second user matches Bob's attributes
 
   Scenario: Users can be found by first name and last name
     When I search for users with Alice's first name and last name
