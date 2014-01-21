@@ -18,13 +18,13 @@ gem "sinatra", "~> 1.2"
 gem "sinatra-activerecord", "~> 1.2"
 gem "sinatra-contrib", "~> 1.4"
 
-gem "cucumber-helpers", path: "../../Test/cucumber-helpers/"
 
 group :development, :test do
   gem "bundler"
   gem "coveralls"
   gem "cucumber"
-  gem "cucumber-rest", ">= 0.0.5"
+  gem "cucumber-helpers"
+  gem "cucumber-rest"
   gem "httparty"
   gem "rake"
   gem "rspec"

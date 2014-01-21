@@ -1,5 +1,16 @@
 # Zuul Server Change Log
 
+## 0.10.0 (2014-01-21 09:58)
+
+### New Features
+
+- [CP-910](https://tools.mobcastdev.com/jira/browse/CP-910) - Administrative search for users is now supported by username, first and last name, or user id.
+- Username change history is now recorded, to support user search by previous username (i.e. the search returns any user who has ever had that username).
+
+### Deployment Notes
+
+- A database migration to schema version 10 is required.
+
 ## 0.9.0 (2014-01-16 14:57)
 
 ### New Features
