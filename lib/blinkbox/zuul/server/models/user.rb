@@ -88,7 +88,7 @@ module Blinkbox::Zuul::Server
     def as_json(options = {})
       json = {
         "user_id" => "urn:blinkbox:zuul:user:#{id}",
-        "user_uri" => "#{App.base_url}/users/#{id}",
+        "user_uri" => "/users/#{id}",
         "user_username" => username,
         "user_first_name" => first_name,
         "user_last_name" => last_name

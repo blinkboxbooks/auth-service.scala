@@ -47,15 +47,6 @@ module Blinkbox::Zuul::Server
     require_elevation_for %r{^/clients}, methods: %i(post patch delete)
     require_elevation_for %r{^/session}, level: :elevated, methods: :post
 
-    class << self
-      attr_accessor :base_url
-    end
-
-    before do
-      scheme = request.env['HTTP_X_FORWARDED_PROTO'] || request.env["rack.url_scheme"]
-      App.base_url = "#{scheme}://#{request.env["HTTP_HOST"]}"
-    end
-
     after do
       # none of the responses from the auth server should be cached
       cache_control :no_store
@@ -460,7 +451,7 @@ module Blinkbox::Zuul::Server
     def build_client_info(client, include_client_secret = false)
       client_info = {
         "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-        "client_uri" => "#{App.base_url}/clients/#{client.id}",
+        "client_uri" => "/clients/#{client.id}",
         "client_name" => client.name,
         "client_brand" => client.brand,
         "client_model" => client.model,

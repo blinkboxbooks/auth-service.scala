@@ -11,3 +11,7 @@ Given(/^I am authenticated as a user with no roles$/) do
   @me.register
   Cucumber::Rest::Status.ensure_status_class(:success)
 end
+
+When(/^I try to search for a user$/) do
+  $zuul.admin_find_user({ username: random_email }, @me.access_token)
+end

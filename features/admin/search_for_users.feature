@@ -20,7 +20,7 @@ Feature: Search for users
 
   Scenario: Users can be found by both current and historical email address
     If a user changes their email address, another user can register with their old email address. When 
-    the common address is searched for both users should be found, with the current holder first.
+    the common address is searched for, both users should be found, with the current holder first.
     
     Given there is a registered user, call him "Charlie", who registered with Bob's old email address
     When I search for users with Charlie's email address
