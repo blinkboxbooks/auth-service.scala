@@ -93,7 +93,7 @@ def register_random_user(handle, username: nil)
 end
 
 def known_user(handle)
-  user = @known_users[user_handle]
+  user = @known_users[handle]
   raise "Test Error: Unknown user '#{user_handle}'" unless user
   user
 end
