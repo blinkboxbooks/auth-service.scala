@@ -146,7 +146,7 @@ module Blinkbox::Zuul::Server
 
     def self.throttle_login_attempts(username, max_attempts: 5, period: 20)
       recent_attempts = LoginAttempt.where(username: username)
-                                    .where("created_at >= ?", Time.now.utc - period)
+                                    .where("created_at > ?", Time.now.utc - period)
                                     .order(created_at: :desc)
                                     .limit(max_attempts)
       failed_attempts = recent_attempts.take_while { |attempt| !attempt.successful? }
