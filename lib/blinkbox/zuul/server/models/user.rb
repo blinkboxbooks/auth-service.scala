@@ -13,6 +13,13 @@ module Blinkbox::Zuul::Server
       belongs_to :role, foreign_key: :user_role_id
     end
 
+    class PreviousUsername < ActiveRecord::Base
+      belongs_to :user
+      def as_json(options = {})
+        { "user_username" => username, "user_username_changed_at" => created_at }
+      end
+    end
+
     MIN_PASSWORD_LENGTH = 6
 
     has_many :refresh_tokens
@@ -20,6 +27,7 @@ module Blinkbox::Zuul::Server
     has_many :password_reset_tokens
     has_many :privileges
     has_many :roles, through: :privileges
+    has_many :previous_usernames
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
@@ -29,7 +37,13 @@ module Blinkbox::Zuul::Server
     validate :validate_password
 
     after_create :report_user_created
-    around_update :report_user_updated
+    around_update :record_username_change, :report_user_updated
+
+    scope :where_has_had_username, -> username { 
+      current = where(username: username)
+      previous_usernames = PreviousUsername.includes(:user).where(username: username).references(:users)
+      current.concat(previous_usernames.map { |username| username.user })
+    }
 
     def name
       "#{first_name} #{last_name}"
@@ -47,6 +61,10 @@ module Blinkbox::Zuul::Server
 
     def registered_clients
       clients.select { |client| !client.deregistered }
+    end
+
+    def role_names
+      roles.map { |role| role.name }
     end
 
     def self.authenticate(username, password, client_ip)
@@ -67,6 +85,23 @@ module Blinkbox::Zuul::Server
       successful ? user : nil
     end
 
+    def as_json(options = {})
+      json = {
+        "user_id" => "urn:blinkbox:zuul:user:#{id}",
+        "user_uri" => "/users/#{id}",
+        "user_username" => username,
+        "user_first_name" => first_name,
+        "user_last_name" => last_name
+      }
+      if options[:format].nil? || options[:format] == :admin
+        json["user_allow_marketing_communications"] = allow_marketing_communications
+      end
+      if options[:format] == :admin
+        json["user_previous_usernames"] = previous_usernames
+      end
+      json
+    end
+
     private
 
     def validate_password
@@ -84,6 +119,13 @@ module Blinkbox::Zuul::Server
         hash[field] = self[field]
       end
       Blinkbox::Zuul::Server::Reporting.user_registered(user)
+    end
+
+    def record_username_change
+      if self.changes.keys.include?("username")
+        PreviousUsername.create!(user: self, username: self.changes["username"][0])
+      end
+      yield # saves
     end
 
     def report_user_updated

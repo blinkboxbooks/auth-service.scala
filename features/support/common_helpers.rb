@@ -2,13 +2,18 @@ def noop;
 end
 
 def random_email
-  chars = [*("A".."Z"), *("a".."z"), *("0".."9")]
-  "#{chars.sample(40).join}@example.org"
+  chars = [*"a".."z", *"0".."9"]
+  "#{chars.sample(40).join}@bbbtest.com"
 end
 
 def random_password
-  char_groups = ["A".."Z", "a".."z", "0".."9", "!@£$%^&*(){}[]:;'|<,>.?/+=".split(//)]
-  char_groups.map { |chars| chars.to_a.sample(5) }.flatten.shuffle.join
+  chars = [*"A".."Z", *"a".."z", *"0".."9", *"!@£$%^&*(){}[]:;'|<,>.?/+=".split(//)]
+  chars.sample(40).join
+end
+
+def random_name
+  chars = [*"a".."z"]
+  "#{[*"A".."Z"].sample(1).first}#{[*"a".."z"].sample(39).join}"
 end
 
 def oauth_param_name(readable_name)

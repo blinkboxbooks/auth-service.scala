@@ -15,15 +15,21 @@ class TestUser
                 :refresh_token,
                 :id,
                 :local_id,
-                :clients
+                :clients,
+                :previous_usernames
 
   def initialize
     @clients = []
+    @previous_usernames = []
+  end
+
+  def after_username_changed(old_value, new_value)
+    @previous_usernames << old_value
   end
 
   def generate_details
-    @first_name = "Testy"
-    @last_name = "McTest"
+    @first_name = random_name
+    @last_name = random_name
     @username = random_email
     @password = random_password
     @accepted_terms_and_conditions = true

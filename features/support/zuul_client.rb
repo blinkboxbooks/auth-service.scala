@@ -113,9 +113,13 @@ class ZuulClient
     http_patch "/users/#{user.local_id}", params, access_token
   end
 
+  def admin_find_user(params = {}, access_token)
+    http_get "/admin/users", params, access_token
+  end
+
   private
 
-  def http_get(uri, params={}, access_token = nil)
+  def http_get(uri, params = {}, access_token = nil)
     http_call(:get, uri, params, access_token)
   end
 
