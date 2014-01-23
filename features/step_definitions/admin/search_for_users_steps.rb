@@ -1,14 +1,18 @@
-Given(/^there is a registered user, call (?:him|her|them) "(.+)"$/) do |user_handle|
+Given(/^there is a registered user, call (?:him|her|them) "(\w+)"$/) do |user_handle|
   register_random_user(user_handle)
 end
 
-Given(/^there is a registered user, call (?:him|her|them) "(.+)", who has previously changed (?:his|her|their) email address$/) do |user_handle|
-  user = register_random_user(user_handle)
-  user.username = random_email
-  $zuul.update_user(user, user.access_token)
+Given(/^there is a registered user, call (?:him|her|them) "(\w+)", who has previously changed (?:his|her|their) email address(?: (#{CAPTURE_INTEGER}) times)?$/) do |user_handle, n|
+  n ||= 1
+  user = register_random_user(user_handle)  
+  n.times do
+    sleep(1)
+    user.username = random_email
+    $zuul.update_user(user, user.access_token)
+  end
 end
 
-Given(/^there is a registered user, call (?:him|her|them) "(.+)", who registered with (.+)'s old email address$/) do |user_handle, other_handle|
+Given(/^there is a registered user, call (?:him|her|them) "(\w+)", who registered with (\w+)'s old email address$/) do |user_handle, other_handle|
   other_user = known_user(other_handle)
   user = register_random_user(user_handle, username: other_user.previous_usernames.last)
 end

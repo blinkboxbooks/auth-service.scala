@@ -117,6 +117,10 @@ class ZuulClient
     http_get "/admin/users", params, access_token
   end
 
+  def admin_get_user_info(user_id, access_token)
+    http_get "/admin/users/#{user_id}", {}, access_token
+  end
+
   private
 
   def http_get(uri, params = {}, access_token = nil)

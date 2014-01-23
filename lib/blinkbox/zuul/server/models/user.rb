@@ -97,7 +97,7 @@ module Blinkbox::Zuul::Server
         json["user_allow_marketing_communications"] = allow_marketing_communications
       end
       if options[:format] == :admin
-        json["user_previous_usernames"] = previous_usernames
+        json["user_previous_usernames"] = previous_usernames.order(created_at: :desc)
       end
       json
     end

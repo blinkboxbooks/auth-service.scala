@@ -24,7 +24,7 @@ class TestUser
   end
 
   def after_username_changed(old_value, new_value)
-    @previous_usernames << old_value
+    @previous_usernames.unshift(old_value) # most recent first
   end
 
   def generate_details

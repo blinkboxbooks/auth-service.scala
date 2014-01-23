@@ -18,6 +18,12 @@ module Blinkbox::Zuul::Server
         { "items" => users }.to_json(format: :admin)
       end
 
+      get "/users/:id", provides: :json do |id|
+        user = User.where(id: id).first
+        halt 404 if user.nil?
+        user.to_json(format: :admin)
+      end
+
     end
   end
 end
