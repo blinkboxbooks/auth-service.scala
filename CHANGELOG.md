@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.10.1 (2014-01-22 17:55)
+
+### Bug Fixes
+
+- [CP-988](https://tools.mobcastdev.com/jira/browse/CP-988) - Timing is now correct for throttled login attempts (was too long by up to 1 second).
+
 ## 0.10.0 (2014-01-21 09:58)
 
 ### New Features
