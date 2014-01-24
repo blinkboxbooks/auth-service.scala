@@ -15,3 +15,7 @@ end
 When(/^I try to search for a user$/) do
   $zuul.admin_find_user({ username: random_email }, @me.access_token)
 end
+
+When(/^I try to get information for a user$/) do
+  $zuul.admin_get_user_info(123, @me.access_token)
+end

@@ -1,3 +1,4 @@
+@admin @users @search
 Feature: Search for users
   As a customer services representative
   I want to be able to find the users who have problems

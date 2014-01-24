@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.10.2 (2014-01-23 14:28)
+
+### New Features
+
+- [CP-911](https://tools.mobcastdev.com/jira/browse/CP-911) - Administrative retrieval of user information by identifier is now supported.
+
 ## 0.10.1 (2014-01-22 17:55)
 
 ### Bug Fixes
