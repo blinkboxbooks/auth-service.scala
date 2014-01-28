@@ -10,6 +10,12 @@ Given(/^I have registered another client$/) do
   expect(last_response.status).to eq(200)
 end
 
+Given(/^(\w+) has registered a client$/) do |user_handle|
+  user = known_user(user_handle)
+  user.register_client(TestClient.new.generate_details)
+  expect(last_response.status).to eq(200)
+end
+
 Given(/^another user has registered a client$/) do
   @your_client = TestClient.new.generate_details
   @you.register_client(@your_client)

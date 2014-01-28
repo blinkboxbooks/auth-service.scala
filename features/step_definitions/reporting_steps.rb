@@ -49,6 +49,20 @@ Then(/^it contains the (user|client)'s details:$/) do |message_type, details|
   end
 end
 
+Then(/^the message contains (\w+)'s details:$/) do |user_handle, details|
+  user = known_user(user_handle)
+  details.rows.each do |r|
+    validate_message_detail("users", "user: #{r.first}", user)
+  end
+end
+
+Then(/^the message contains (\w+)'s client's details:$/) do |user_handle, details|
+  user = known_user(user_handle)
+  details.rows.each do |r|
+    validate_message_detail("clients", "client: #{r.first}", user.clients.last)
+  end
+end
+
 Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, details_type, details|
   case message_type
   when "user"
@@ -61,7 +75,7 @@ Then(/^it contains the (user|client)'s (old|new) details:$/) do |message_type, d
   end
 end
 
-Then(/^it contains a (user|client) event timestamp$/) do |message_type|
+Then(/^(?:it|the message) contains a (user|client) event timestamp$/) do |message_type|
   reporting_message_value("#{message_type}s", "//e:timestamp") do |text|
     expect(text).to eq(Time.parse(text).utc.iso8601)
   end
