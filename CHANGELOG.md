@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.11.0 (2014-01-23 18:12)
+
+### New Features
+
+- [CP-1044](https://tools.mobcastdev.com/jira/browse/CP-1044) - Authenticated events are now sent when a user authenticates to the server.
+
 ## 0.10.2 (2014-01-23 14:28)
 
 ### New Features
