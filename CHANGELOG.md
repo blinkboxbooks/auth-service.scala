@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.10.3 (2014-01-29 15:20)
+
+### Bug Fixes
+
+- Cucumber and RSpec dependencies are now lazily loaded by the Rakefile so that it can deploy successfully without development/test dependencies.
+
 ## 0.10.2 (2014-01-23 14:28)
 
 ### New Features
