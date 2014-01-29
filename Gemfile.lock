@@ -145,7 +145,7 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord (~> 4.0)
-  bundler (~> 1.5)
+  bundler
   bunny (~> 0.0, >= 0.10.8)
   coveralls
   cucumber
