@@ -53,6 +53,36 @@ module Blinkbox
           enqueue(builder.to_xml, "events.users.v1.updated")
         end
 
+        def self.user_authenticated(user, client = nil)
+          builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
+            xml.authenticated("xmlns" => event_schema("users", "v1"),
+                              "xmlns:c" => event_schema("clients", "v1"),
+                              "xmlns:r" => routing_schema("v1"),
+                              "xmlns:v" => versioning_schema,
+                              "r:originator" => "zuul",
+                              "v:version" => "1.0") {
+              xml.timestamp Time.now.getutc.iso8601
+              xml.user {
+                xml.id user["id"]
+                xml.username user["username"]
+                xml.firstName user["first_name"]
+                xml.lastName user["last_name"]
+                xml.allowMarketingCommunications user["allow_marketing_communications"]
+              }
+              if client
+                xml["c"].client {
+                  xml["c"].id client["id"]
+                  xml["c"].name client["name"]
+                  xml["c"].brand client["brand"]
+                  xml["c"].model client["model"]
+                  xml["c"].os client["os"]
+                }
+              end
+            }
+          end
+          enqueue(builder.to_xml, "events.users.v1.authenticated")
+        end
+
         def self.client_registered(user_id, client)
           builder = Nokogiri::XML::Builder.new(encoding: "utf-8") do |xml|
             xml.registered("xmlns" => event_schema("clients", "v1"),

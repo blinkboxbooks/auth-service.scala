@@ -1,5 +1,19 @@
-Given(/^I obtain an access token using my email address and password$/) do
-  obtain_access_and_token_via_username_and_password
+Given(/^(\w+) obtains? an access token using (?:my|his|her|their) email address and password$/) do |user_handle|
+  obtain_access_and_token_via_username_and_password(known_user(user_handle))
+end
+
+Given(/^(\w+) obtains? an access token using (?:my|his|her|their) email address, password and client credentials$/) do |user_handle|
+  user = known_user(user_handle)
+  obtain_access_and_token_via_username_and_password(user, user.clients.last)
+end
+
+Given(/^(\w+) obtains? an access token using (?:my|his|her|their) refresh token$/) do |user_handle|
+  obtain_access_and_token_via_username_and_password(known_user(user_handle))
+end
+
+Given(/^(\w+) obtains? an access token using (?:my|his|her|their) refresh token and client credentials$/) do |user_handle|
+  user = known_user(user_handle)
+  obtain_access_and_token_via_refresh_token(user, user.clients.last)
 end
 
 Given(/^I have an? (critically |non-)?elevated access token$/) do |elevation_level|

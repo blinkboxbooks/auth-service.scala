@@ -48,6 +48,10 @@ Before do
   $zuul = ZuulClient.new(TEST_CONFIG[:server], TEST_CONFIG[:proxy])
 end
 
+After do
+  Timecop.return if TEST_CONFIG[:in_proc]
+end
+
 module KnowsAboutResponses
   def last_response
     HttpCapture::RESPONSES.last

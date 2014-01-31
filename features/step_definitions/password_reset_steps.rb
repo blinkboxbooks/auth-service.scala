@@ -37,6 +37,13 @@ end
 
 Given(/^I subsequently authenticate using my email address and password$/, :obtain_access_and_token_via_username_and_password)
 
+Given(/^(\w+) has got a valid password reset token$/) do |user_handle|
+  user = known_user(user_handle)
+  $zuul.reset_password(username: user.username)
+  @email_message = Nokogiri::XML(Blinkbox::Zuul::Server::Email.sent_messages.pop)
+  @password_reset_token = email_message_value("/e:sendEmail/e:templateVariables/e:templateVariable[e:key='resetToken']/e:value")
+end
+
 When(/^I request my password is reset using my email address$/) do
   $zuul.reset_password(username: @me.username)
 end
@@ -86,6 +93,13 @@ end
 
 When(/^I provide the second password reset token and a new password$/) do
   use_password_reset_token_credentials(@password_reset_token_2)
+end
+
+When(/^(\w+) obtains an access token using (?:his|her|their) password reset token( and client credentials)?$/) do |user_handle, with_client|
+  user = known_user(user_handle)
+  use_password_reset_token_credentials(@password_reset_token)
+  include_client_credentials(user.clients.last) if with_client
+  user.authenticate(@credentials)
 end
 
 Then(/^I receive a (.+) email$/) do |email_type|

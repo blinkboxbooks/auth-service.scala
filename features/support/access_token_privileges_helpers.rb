@@ -1,12 +1,14 @@
-def obtain_access_and_token_via_username_and_password
-  use_username_and_password_credentials
-  @me.authenticate(@credentials)
+def obtain_access_and_token_via_username_and_password(user = @me, client = nil)
+  use_username_and_password_credentials(user)
+  include_client_credentials(client) if client
+  user.authenticate(@credentials)
   expect(last_response.status).to eq(200)
 end
 
-def obtain_access_and_token_via_refresh_token
-  use_refresh_token_credentials
-  @me.authenticate(@credentials)
+def obtain_access_and_token_via_refresh_token(user = @me, client = nil)
+  use_refresh_token_credentials(user)
+  include_client_credentials(client) if client
+  user.authenticate(@credentials)
   expect(last_response.status).to eq(200)
 end
 

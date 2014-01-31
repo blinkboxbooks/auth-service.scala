@@ -305,8 +305,9 @@ module Blinkbox::Zuul::Server
 
       user = User.authenticate(username, password, request.ip) 
       invalid_grant "The username and/or password is incorrect." if user.nil?
-
       client = authenticate_client(params, user)
+
+      Blinkbox::Zuul::Server::Reporting.user_authenticated(user, client)
       issue_refresh_token(user, client)
     end
 
@@ -329,6 +330,7 @@ module Blinkbox::Zuul::Server
       refresh_token.extend_lifetime
       refresh_token.save!
 
+      Blinkbox::Zuul::Server::Reporting.user_authenticated(refresh_token.user, refresh_token.client)
       issue_access_token(refresh_token, true)
     end
 
@@ -356,6 +358,7 @@ module Blinkbox::Zuul::Server
         user.password_reset_tokens.each { |token| token.save! if token.changed? }
       end
 
+      Blinkbox::Zuul::Server::Reporting.user_authenticated(user, client)
       issue_refresh_token(user, client)
     end
 

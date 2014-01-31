@@ -97,7 +97,11 @@ def register_random_user(handle, username: nil)
 end
 
 def known_user(handle)
-  user = @known_users[handle]
+  if handle =~ /^(I|me)$/i
+    user = @me
+  else
+    user = @known_users[handle]
+  end
   raise "Test Error: Unknown user '#{user_handle}'" unless user
   user
 end
