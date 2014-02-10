@@ -22,7 +22,7 @@ class TestClient
   def register(access_token)
     response = $zuul.register_client(self, access_token)
     if response.status == 200
-      token_info = MultiJson.load(response.body)
+      token_info = ::JSON.parse(response.body)
       @name = token_info["client_name"] unless @name
       @brand = token_info["client_brand"] unless @brand
       @model = token_info["client_model"] unless @model

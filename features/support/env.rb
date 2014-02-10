@@ -57,7 +57,7 @@ module KnowsAboutResponses
     HttpCapture::RESPONSES.last
   end
   def last_response_json
-    MultiJson.load(last_response.body)
+    ::JSON.parse(last_response.body)
   end
 end
 

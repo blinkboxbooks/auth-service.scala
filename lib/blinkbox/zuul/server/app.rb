@@ -1,6 +1,5 @@
 require "ipaddress"
 require "ipaddress/ipv4_loopback"
-require "multi_json"
 require "sandal"
 require "scrypt"
 
@@ -67,18 +66,17 @@ module Blinkbox::Zuul::Server
 
     post "/clients", provides: :json do
       client = register_client()
-      json build_client_info(client, include_client_secret: true)
+      client.to_json(include_client_secret: true)
     end
 
     get "/clients", provides: :json do
-      client_infos = current_user.registered_clients.map { |client| build_client_info(client) }
-      json({ "clients" => client_infos })
+      { "clients" => current_user.registered_clients }.to_json
     end
 
     get "/clients/:client_id", provides: :json do |client_id|
       client = Client.find_by_id(client_id)
       halt 404 if client.nil? || client.user != current_user || client.deregistered
-      json build_client_info(client)
+      client.to_json
     end
 
     patch "/clients/:client_id", provides: :json do |client_id|
@@ -97,7 +95,7 @@ module Blinkbox::Zuul::Server
         invalid_request e.message
       end
 
-      json build_client_info(client)
+      client.to_json
     end
 
     delete "/clients/:client_id", provides: :json do |client_id|
@@ -447,22 +445,8 @@ module Blinkbox::Zuul::Server
       }
       token_info["refresh_token"] = refresh_token.token if include_refresh_token
       token_info.merge!(refresh_token.user.as_json(format: :basic))
-      token_info.merge!(build_client_info(refresh_token.client, include_client_secret)) unless refresh_token.client.nil?
+      token_info.merge!(refresh_token.client.as_json(include_client_secret: include_client_secret)) unless refresh_token.client.nil?
       json token_info
-    end
-
-    def build_client_info(client, include_client_secret = false)
-      client_info = {
-        "client_id" => "urn:blinkbox:zuul:client:#{client.id}",
-        "client_uri" => "/clients/#{client.id}",
-        "client_name" => client.name,
-        "client_brand" => client.brand,
-        "client_model" => client.model,
-        "client_os" => client.os,
-        "last_used_date" => client.updated_at.utc.strftime("%F")
-      }
-      client_info["client_secret"] = client.client_secret if include_client_secret
-      client_info
     end
 
     def build_access_token(refresh_token, expires_in)

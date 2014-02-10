@@ -20,7 +20,6 @@ module Blinkbox::Zuul::Server
       NORMAL_ELEVATION_LIFETIME_IN_SECONDS = 1.days
     end
 
-
     belongs_to :user
     belongs_to :client
 
@@ -61,17 +60,13 @@ module Blinkbox::Zuul::Server
     end
 
     def extend_elevation_time
-
       case self.elevation
       when Elevation::CRITICAL
         self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
       when Elevation::ELEVATED
         self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
-      else
       end
-
       self.save!
-
     end
 
     def status

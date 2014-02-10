@@ -1,11 +1,11 @@
 require "sinatra/base"
-require "multi_json"
+require "json"
 
 module Sinatra
   module JSONHelper
     def json(data)
       content_type :json
-      data.is_a?(String) ? data : MultiJson.dump(data)
+      data.is_a?(String) ? data : ::JSON.generate(data)
     end
   end
 

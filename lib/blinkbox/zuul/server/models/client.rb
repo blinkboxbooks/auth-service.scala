@@ -58,6 +58,24 @@ module Blinkbox::Zuul::Server
       end
     end
 
+
+
+    def as_json(options = {})
+      json = {
+        "client_id" => "urn:blinkbox:zuul:client:#{id}",
+        "client_uri" => "/clients/#{id}",
+        "client_name" => name,
+        "client_brand" => brand,
+        "client_model" => model,
+        "client_os" => os,
+        "last_used_date" => updated_at.utc.strftime("%F")
+      }
+      if options[:include_client_secret]
+        json["client_secret"] = client_secret
+      end
+      json
+    end
+
     private
 
     def report_client_created

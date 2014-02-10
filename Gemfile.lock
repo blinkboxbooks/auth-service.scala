@@ -20,7 +20,7 @@ GEM
     amq-protocol (1.9.2)
     arel (4.0.1)
     atomic (1.1.14)
-    backports (3.4.0)
+    backports (3.4.1)
     builder (3.1.4)
     bunny (0.10.8)
       amq-protocol (>= 1.6.0)
@@ -96,12 +96,11 @@ GEM
       rspec-expectations (~> 2.14.0)
       rspec-mocks (~> 2.14.0)
     rspec-core (2.14.7)
-    rspec-expectations (2.14.4)
+    rspec-expectations (2.14.5)
       diff-lcs (>= 1.1.3, < 2.0)
-    rspec-mocks (2.14.4)
+    rspec-mocks (2.14.5)
     ruby-prof (0.14.2)
-    sandal (0.5.1)
-      multi_json (~> 1.7)
+    sandal (0.5.2)
     scrypt (1.2.0)
       ffi-compiler (>= 0.0.2)
       rake
@@ -136,7 +135,7 @@ GEM
       atomic
     tilt (1.4.1)
     timecop (0.7.1)
-    tins (0.13.1)
+    tins (0.13.2)
     tzinfo (0.3.38)
     yard (0.8.7.3)
 
@@ -155,7 +154,6 @@ DEPENDENCIES
   httparty
   ipaddress (~> 0.8)
   java_properties (~> 0.0, >= 0.0.4)
-  multi_json (~> 1.7)
   mysql2 (~> 0.3, >= 0.3.13)
   nokogiri (~> 1.6)
   rack-blinkbox-zuul-tokens (>= 0.0.2)

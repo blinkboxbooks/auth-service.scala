@@ -40,7 +40,7 @@ class TestUser
   def register
     response = $zuul.register_user(self)
     if response.status == 200
-      token_info = MultiJson.load(response.body)
+      token_info = ::JSON.parse(response.body)
       @access_token = token_info["access_token"]
       @refresh_token = token_info["refresh_token"]
       @id = token_info["user_id"]
@@ -52,7 +52,7 @@ class TestUser
   def register_with_client(client)
     response = $zuul.register_user_with_client(self, client)
     if response.status == 200
-      token_info = MultiJson.load(response.body)
+      token_info = ::JSON.parse(response.body)
       @access_token = token_info["access_token"]
       @refresh_token = token_info["refresh_token"]
       @id = token_info["user_id"]
@@ -64,7 +64,7 @@ class TestUser
   def authenticate(credentials)
     response = $zuul.authenticate(credentials)
     if response.status == 200
-      token_info = MultiJson.load(response.body)
+      token_info = ::JSON.parse(response.body)
       @access_token = token_info["access_token"]
       @refresh_token = token_info["refresh_token"] if token_info["refresh_token"]
       @id = token_info["user_id"]
