@@ -51,6 +51,10 @@ end
 
 When(/^I provide the same registration details I previously registered with$/, :noop)
 
+When(/^the email address is in a different case$/) do
+  @me.username.swapcase!
+end
+
 When(/^(?:I|they) submit the registration request$/) do
   @me.register
 end

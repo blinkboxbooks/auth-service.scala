@@ -31,7 +31,7 @@ module Blinkbox::Zuul::Server
 
     validates :first_name, length: { within: 1..50 }
     validates :last_name, length: { within: 1..50 }
-    validates :username, format: { with: /\A[^@]+@([^@\.]+\.)+[^@\.]+\Z/ }, uniqueness: true
+    validates :username, format: { with: /\A[^@]+@([^@\.]+\.)+[^@\.]+\Z/ }, uniqueness: { case_sensitive: false }
     validates :allow_marketing_communications, inclusion: { :in => [true, false] }
     validates :password_hash, presence: true
     validate :validate_password

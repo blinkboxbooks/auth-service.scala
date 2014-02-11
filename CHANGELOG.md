@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.11.1 (2014-01-10 18:18)
+
+### Bug Fixes
+
+- [CP-1108](https://tools.mobcastdev.com/jira/browse/CP-1108) - Registering users is now insensitive to the case of the email address.
+
 ## 0.11.0 (2014-01-23 18:12)
 
 ### New Features
