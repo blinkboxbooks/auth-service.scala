@@ -1,4 +1,4 @@
-@messaging @dev
+@messaging
 Feature: User authenticated events
   As a system in the blinkbox books platform
   I want to know when users have authenticated
