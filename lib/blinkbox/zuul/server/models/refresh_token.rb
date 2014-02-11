@@ -73,6 +73,21 @@ module Blinkbox::Zuul::Server
       self.expires_at.past? || self.revoked ? Status::INVALID : Status::VALID
     end
 
+    def as_json(options = {})
+      if status == RefreshToken::Status::INVALID
+        return { "token_status" => RefreshToken::Status::INVALID }
+      end
+
+      json = { "token_status" => status, "token_elevation" => elevation }
+      if elevation_expires_at.future?
+        expiry_time = critically_elevated? ? critical_elevation_expires_at : elevation_expires_at
+        json["token_elevation_expires_in"] = expiry_time.to_i - DateTime.now.to_i
+      end
+      json["user_roles"] = user.role_names if user.roles.any?
+      
+      json
+    end
+
     private
 
     def set_initial_critical_elevation
