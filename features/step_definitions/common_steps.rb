@@ -9,7 +9,7 @@ end
 
 Then(/^the request fails because it is invalid$/) do
   expect(last_response.status).to eq(400)
-  @response_json = MultiJson.load(last_response.body)
+  @response_json = ::JSON.parse(last_response.body)
   expect(@response_json["error"]).to eq("invalid_request")
 end
 

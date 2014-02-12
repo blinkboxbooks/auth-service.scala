@@ -1,6 +1,12 @@
 # Zuul Server Change Log
 
-## 0.11.1 (2014-01-10 18:18)
+## 0.11.2 (2014-02-11 09:22)
+
+### Improvements
+
+- Removed dependency on MultiJson in favour of built-in JSON library.
+
+## 0.11.1 (2014-02-10 18:10)
 
 ### Bug Fixes
 

@@ -20,7 +20,6 @@ module Blinkbox::Zuul::Server
       NORMAL_ELEVATION_LIFETIME_IN_SECONDS = 1.days
     end
 
-
     belongs_to :user
     belongs_to :client
 
@@ -61,21 +60,32 @@ module Blinkbox::Zuul::Server
     end
 
     def extend_elevation_time
-
       case self.elevation
       when Elevation::CRITICAL
         self.critical_elevation_expires_at = DateTime.now + LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS
       when Elevation::ELEVATED
         self.elevation_expires_at = DateTime.now + LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS
-      else
       end
-
       self.save!
-
     end
 
     def status
       self.expires_at.past? || self.revoked ? Status::INVALID : Status::VALID
+    end
+
+    def as_json(options = {})
+      if status == RefreshToken::Status::INVALID
+        return { "token_status" => RefreshToken::Status::INVALID }
+      end
+
+      json = { "token_status" => status, "token_elevation" => elevation }
+      if elevation_expires_at.future?
+        expiry_time = critically_elevated? ? critical_elevation_expires_at : elevation_expires_at
+        json["token_elevation_expires_in"] = expiry_time.to_i - DateTime.now.to_i
+      end
+      json["user_roles"] = user.role_names if user.roles.any?
+      
+      json
     end
 
     private

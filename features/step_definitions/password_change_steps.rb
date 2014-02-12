@@ -53,7 +53,7 @@ end
 
 Then(/^the reason is that the (old password is wrong|new password is too short|new password is missing)$/) do |reason|
   expect(last_response.status).to eq(400)
-  @response_json = MultiJson.load(last_response.body)
+  @response_json = ::JSON.parse(last_response.body)
   expect(@response_json["error"]).to eq("invalid_request")
 
   case reason
