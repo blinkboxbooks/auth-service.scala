@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.11.4 (2014-02-13 15:24)
+
+### Bug Fixes
+
+* [CP-1141](https://tools.mobcastdev.com/jira/browse/CP-1141): Fixed incorrect content-type return value on some routes (inc `/session`)
+
 ## 0.11.3 (2014-02-13 10:40)
 
 ### Improvements

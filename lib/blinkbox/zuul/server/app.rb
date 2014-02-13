@@ -111,7 +111,7 @@ module Blinkbox::Zuul::Server
       handle_token_request(params)
     end
 
-    post "/tokens/revoke" do
+    post "/tokens/revoke", provides: :json do
       token_value = params["refresh_token"]
       invalid_request "The refresh token is required for this grant type" if token_value.nil?
 
@@ -145,17 +145,17 @@ module Blinkbox::Zuul::Server
       current_user.to_json
     end
 
-    get "/session" do
+    get "/session", provides: :json do
       refresh_token = validate_refresh_token
       refresh_token.to_json
     end
 
-    post "/session" do
+    post "/session", provides: :json do
       refresh_token = validate_refresh_token
       handle_extend_token_info_request(refresh_token)
     end
 
-    post "/password/change" do
+    post "/password/change", provides: :json do
       new_password = @params[:new_password]
       old_password = @params[:old_password]
       invalid_request "new_password_missing", "The new password is not provided." if new_password.nil? || new_password.empty?
@@ -170,7 +170,7 @@ module Blinkbox::Zuul::Server
       nil # no entity-body needed
     end
 
-    post "/password/reset" do
+    post "/password/reset", provides: :json do
       username = params[:username]
       invalid_request "The username is required." if username.nil? || username.empty?
 
@@ -189,7 +189,7 @@ module Blinkbox::Zuul::Server
       nil # no entity-body needed
     end
 
-    post "/password/reset/validate-token" do
+    post "/password/reset/validate-token", provides: :json do
       token_value = params["password_reset_token"]
       invalid_request "A password reset token is required" if token_value.nil? || token_value.empty?
 
