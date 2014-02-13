@@ -27,7 +27,9 @@ _There is an issue with a DB deployment script in this release. Don't use it._
 
 - A database migration to schema version 12 is required.
 
-## 0.11.2 (2014-02-11 09:22)
+## ~~0.11.2 (2014-02-11 09:22)~~
+
+_There is an issue with returned media types in this release. Don't use it._
 
 ### Improvements
 
