@@ -1,12 +1,22 @@
 # Zuul Server Change Log
 
-## 0.11.4 (2014-02-13 15:24)
+## 0.11.5 (2014-02-13 15:47)
 
 ### Bug Fixes
 
-* [CP-1141](https://tools.mobcastdev.com/jira/browse/CP-1141): Fixed incorrect content-type return value on some routes (inc `/session`)
+- Fix an issue with the 0.11.3 deployment script which removed some roles from the super user instead of adding to them
 
-## 0.11.3 (2014-02-13 10:40)
+## ~~0.11.4 (2014-02-13 15:24)~~
+
+_There is an issue with a DB deployment script in this release. Don't use it._
+
+### Bug Fixes
+
+- [CP-1141](https://tools.mobcastdev.com/jira/browse/CP-1141): Fixed incorrect content-type return value on some routes (inc `/session`)
+
+## ~~0.11.3 (2014-02-13 10:40)~~
+
+_There is an issue with a DB deployment script in this release. Don't use it._
 
 ### Improvements
 
