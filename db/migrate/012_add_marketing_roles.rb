@@ -25,7 +25,7 @@ class AddMarketingRoles < ActiveRecord::Migration
         
         # update the well-known superuser to have the role
         user = User.where(username: "tm-books-itops@blinkbox.com").first
-        user.roles = roles
+        user.roles.concat(roles)
         user.save!
       end
       direction.down do
