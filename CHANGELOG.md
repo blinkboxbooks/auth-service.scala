@@ -16,7 +16,7 @@ _There is an issue with a DB deployment script in this release. Don't use it._
 
 ## ~~0.11.3 (2014-02-13 10:40)~~
 
-_There is an issue with a DB deployment script in this release. Don't use it._
+_There is an issue with returned media types and a DB deployment script in this release. Don't use it._
 
 ### Improvements
 
