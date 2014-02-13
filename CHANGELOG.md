@@ -1,5 +1,16 @@
 # Zuul Server Change Log
 
+## 0.11.3 (2014-02-13 10:40)
+
+### Improvements
+
+- Added 'mer' (Merchandising) and 'mkt' (Marketing) roles.
+- Added non-null constraints to roles/privileges tables.
+
+### Deployment Notes
+
+- A database migration to schema version 12 is required.
+
 ## 0.11.2 (2014-02-11 09:22)
 
 ### Improvements
