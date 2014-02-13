@@ -18,8 +18,9 @@ class AddMarketingRoles < ActiveRecord::Migration
   def change
     reversible do |direction|
       direction.up do
-        # add the role
+        # add the roles
         roles = []
+        roles << User::Role.create!(name: "mer", description: "Merchandising")
         roles << User::Role.create!(name: "mkt", description: "Marketing")
         
         # update the well-known superuser to have the role
@@ -28,14 +29,13 @@ class AddMarketingRoles < ActiveRecord::Migration
         user.save!
       end
       direction.down do
-        # remove all privileges using the role
-        role = User::Role.where(name: "mkt").first
-        User::Privilege.where(role: role).each do |privilege|
-          User::Privilege.destroy(privilege)
+        %w(mer mkt).each do |role_name|
+          role = User::Role.where(name: role_name).first
+          User::Privilege.where(role: role).each do |privilege|
+            User::Privilege.destroy(privilege)
+          end
+          User::Role.destroy(role)
         end
-
-        # remove the role
-        User::Role.destroy(role)
       end
     end
   end
