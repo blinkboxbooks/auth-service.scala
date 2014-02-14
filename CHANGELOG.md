@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.11.6 (2014-02-14 17:17)
+
+## Bug Fixes
+
+- [CP-1096](https://tools.mobcastdev.com/jira/browse/CP-1096): Fixed an issue where a user registration with a client will resulting in publishing a reporting message without a user_id for the respective client.
+
 ## 0.11.5 (2014-02-13 15:47)
 
 ### Bug Fixes

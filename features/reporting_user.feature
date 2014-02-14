@@ -16,6 +16,32 @@ Feature: Report user details
       | allow marketing communications |
     And it contains a user event timestamp
 
+  Scenario: A user registers with their device
+    When a user provides valid registration details
+    And they provide the client registration details:
+      | name  | Test Device |
+      | brand | Test Brand  |
+      | model | Test Model  |
+      | OS    | Test OS     |
+    And they submit the user and client registration request
+    Then a client registration message is sent
+    And it contains the user's id
+    And it contains the client's details:
+      | id    |
+      | name  |
+      | brand |
+      | model |
+      | os    |
+    And it contains a client event timestamp
+    And a user registration message is sent
+    And it contains the user's details:
+      | id                             |
+      | username                       |
+      | first name                     |
+      | last name                      |
+      | allow marketing communications |
+    And it contains a user event timestamp
+
   Scenario Outline: A user updates their details
     Given a user has registered an account
     When they change their <changeable_detail> to <new_value>

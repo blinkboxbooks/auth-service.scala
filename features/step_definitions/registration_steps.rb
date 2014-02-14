@@ -11,8 +11,8 @@ Given(/^another user has registered an account$/) do
   expect(last_response.status).to eq(200)
 end
 
-When(/^I submit the user and client registration request$/) do
-  $zuul.register_user_with_client(@me, @my_client)
+When(/^(?:I|they) submit the user and client registration request$/) do
+  @me.register_with_client(@my_client)
 end
 
 When(/^I try to register an account$/) do

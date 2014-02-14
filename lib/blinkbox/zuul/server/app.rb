@@ -271,8 +271,8 @@ module Blinkbox::Zuul::Server
 
       ActiveRecord::Base.transaction do
         begin
-          client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
           user.save!
+          client = create_client(user) if %w{client_name client_brand client_model client_os}.select{ |key| !params[key].nil? }.any?
         rescue ActiveRecord::RecordInvalid => e
           error = {}
           if user.errors[:username].include?(user.errors.generate_message(:username, :taken))
@@ -299,7 +299,7 @@ module Blinkbox::Zuul::Server
       username, password = params["username"], params["password"]
       invalid_request "The username and password are required for this grant type" if username.nil? || password.nil?
 
-      user = User.authenticate(username, password, request.ip) 
+      user = User.authenticate(username, password, request.ip)
       invalid_grant "The username and/or password is incorrect." if user.nil?
       client = authenticate_client(params, user)
 
