@@ -12,7 +12,6 @@ Given(/^another user has registered an account$/) do
 end
 
 When(/^(?:I|they) submit the user and client registration request$/) do
-  #$zuul.register_user_with_client(@me, @my_client)
   @me.register_with_client(@my_client)
 end
 
