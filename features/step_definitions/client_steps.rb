@@ -29,7 +29,7 @@ Given(/^I have registered (#{CAPTURE_INTEGER}) clients in total$/) do |count|
   end
 end
 
-When(/^I provide the client registration details:$/) do |table|
+When(/^(?:I|they) provide the client registration details:$/) do |table|
   @my_client ||= TestClient.new.generate_details
   table.rows_hash.each { |k, v| @my_client.send("#{oauth_param_name(k)}=", v) }
 end
