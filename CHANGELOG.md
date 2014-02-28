@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.11.7 (2014-02-28 18:52)
+
+## Bug Fixes
+
+- [CP-1217](https://tools.mobcastdev.com/jira/browse/CP-1217): Unsigned tokens cannot be used to authenticate.
+
 ## 0.11.6 (2014-02-14 17:17)
 
 ## Bug Fixes
