@@ -6,6 +6,7 @@ So that my account will be more difficult to break into
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: when authenticated, change password with correct existing password and new password that passes validation
     When I provide valid password change details
     And I request my password be changed

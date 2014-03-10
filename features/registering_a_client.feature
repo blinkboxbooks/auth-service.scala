@@ -7,6 +7,7 @@ Feature: Registering a client
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: Registering a client with all details, within critical elevation period
     Given I have a critically elevated access token
     When I provide the client registration details:

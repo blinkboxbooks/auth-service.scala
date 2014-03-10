@@ -9,6 +9,7 @@ Feature: Updating a client's information
     And I have registered a client
     And I have bound my tokens to my client
 
+  @smoke
   Scenario: Updating my current client's details, within critical elevation period
     Given I have a critically elevated access token
     When I change my client's details to:

@@ -1,0 +1,4 @@
+default: -r features -p terminal
+terminal: -r features --no-multiline -i -s --format progress
+ci: -r features --no-color --format progress -o log/features.log --format junit -o log/ --format html -o log/features.html --format pretty
+dev: -r features --format pretty -t @dev

@@ -12,3 +12,4 @@ migration.sql
 .idea/
 .bundle/
 vendor/
+results/

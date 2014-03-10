@@ -9,6 +9,7 @@ Feature: Getting a client's information
     And I have registered a client
     And I have bound my tokens to my client
 
+  @smoke
   Scenario: Getting my current client's information
     When I request client information for my client
     Then the response contains client information, excluding the client secret

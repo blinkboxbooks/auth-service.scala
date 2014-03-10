@@ -7,6 +7,7 @@ Feature: Revoking a refresh token
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: Revoking a refresh token
     When I request that my refresh token be revoked
     Then the request succeeds

@@ -7,6 +7,7 @@ Feature: Updating a user's information
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: Updating email address, within critical elevation period
     Given I have a critically elevated access token
     When I change my email address
