@@ -1,4 +1,4 @@
-@reporting
+@reporting @in_proc_only
 Feature: Report user's client details
   As a member of the marketing team
   I want to able to report client registrations
@@ -7,6 +7,7 @@ Feature: Report user's client details
   Background:
     Given a user has registered an account
 
+  @smoke
   Scenario: A user registers a client
     When they submit the client registration request
     Then a client registration message is sent

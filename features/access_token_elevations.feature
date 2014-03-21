@@ -7,6 +7,7 @@ Feature: Access token elevation
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: Authenticating with email address and password gives critical elevation
     Given I obtain an access token using my email address and password
     When I request information about the access token

@@ -7,6 +7,7 @@ Feature: Refreshing an access token
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: Refreshing an access token using a refresh token
     When I provide my refresh token
     And I submit the access token refresh request
@@ -19,6 +20,7 @@ Feature: Refreshing an access token
     And I submit the access token refresh request
     Then the request fails because it is invalid
 
+  @smoke
   Scenario: Trying to refresh an access token with a revoked refresh token
     Given I have revoked my refresh token
     When I provide my refresh token
@@ -30,6 +32,7 @@ Feature: Refreshing an access token
     And I submit the access token refresh request
     Then the response indicates that my refresh token is invalid
 
+  @smoke
   Scenario: Binding a refresh token to a client using client credentials
     Given I have registered a client
     When I provide my refresh token and client credentials

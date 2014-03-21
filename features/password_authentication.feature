@@ -7,6 +7,7 @@ Feature: Password authentication
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: Authenticating with valid credentials
     When I provide my email address and password
     And I submit the authentication request
@@ -40,6 +41,7 @@ Feature: Password authentication
     And I submit the authentication request
     Then the response indicates that my credentials are incorrect
 
+  @smoke
   Scenario: Authenticating with valid credentials and client credentials
     Given I have registered a client
     When I provide my email address, password and client credentials

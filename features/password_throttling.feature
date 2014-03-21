@@ -4,6 +4,7 @@ Feature: Password throttling
   I want attempts to authenticate with my email address to be throttled
   So that people cannot obtain access to my account by brute force password guessing
 
+  @smoke
   Scenario: Too many authentication attempts causes the user to be throttled
     Given I have registered an account
     And I have tried to authenticate with the wrong password 5 times within 20 seconds

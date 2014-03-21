@@ -22,6 +22,7 @@ group :development, :test do
   gem "bundler"
   gem "coveralls"
   gem "cucumber"
+  gem "cucumber-blinkbox"
   gem "cucumber-helpers"
   gem "cucumber-rest"
   gem "httparty"

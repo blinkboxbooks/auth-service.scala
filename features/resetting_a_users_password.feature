@@ -1,4 +1,4 @@
-@authentication @passwords @password_reset
+@authentication @passwords @password_reset @in_proc_only
 Feature: Resetting a user's password
   As a user
   I want to be able to reset my password
@@ -7,6 +7,7 @@ Feature: Resetting a user's password
   Background:
     Given I have registered an account
 
+  @smoke
   Scenario: Requesting a password reset using my email address sends a password reset email
     When I request my password is reset using my email address
     Then the request succeeds

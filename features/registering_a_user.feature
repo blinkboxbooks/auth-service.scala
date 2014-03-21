@@ -8,6 +8,7 @@ Feature: Registration
   I want to prevent customers outside the UK from registering
   So that I can manage my expansion to other countries
 
+  @smoke
   Scenario: Registering with all the required information
     When I provide valid registration details
     And I submit the registration request
@@ -16,6 +17,7 @@ Feature: Registration
     And it is not cacheable
     Then I receive a welcome email
 
+  @smoke
   Scenario: Registering a client with the user registration
     When I provide valid user registration details
     And I provide the client registration details:

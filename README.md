@@ -1,4 +1,4 @@
-# Zuul authentication server
+# Zuul authentication server [![Build Status](http://teamcity01.mobcastdev.local:8111/app/rest/builds/buildType:%28id:Platform_ZuulServer_RakeBuild%29/statusIcon)](http://teamcity01.mobcastdev.local:8111/viewType.html?buildTypeId=Platform_ZuulServer_RakeBuild&guest=1)
 
 An OAuth 2.0 based authentication server, supporting user registration and profile management, and client registration and management.
 

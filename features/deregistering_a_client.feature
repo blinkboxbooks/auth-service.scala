@@ -9,6 +9,7 @@ Feature: Deregistering a client
     And I have registered a client
     And I have bound my tokens to my client
 
+  @smoke
   Scenario: Deregistering my current client, within critical elevation period
     Given I have a critically elevated access token
     When I request that my current client be deregistered

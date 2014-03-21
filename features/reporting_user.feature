@@ -1,9 +1,10 @@
-@reporting
+@reporting @in_proc_only
 Feature: Report user details
   As a member of the marketing team
   I want to able to report user registrations
   So that I can tell how well we're doing at acquiring customers
 
+  @smoke
   Scenario: A user registers
     When a user provides valid registration details
     And they submit the registration request
