@@ -10,3 +10,4 @@ end
 
 require "blinkbox/zuul/server/app"
 require "blinkbox/zuul/server/app/admin"
+require "newrelic_rpm"
