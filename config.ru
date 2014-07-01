@@ -1,3 +1,5 @@
+GC::Profiler.enable
+
 $LOAD_PATH << "./lib"
 require "blinkbox/zuul/server"
 
