@@ -13,7 +13,7 @@ gem "rack-timekeeper", ">= 0.2.0"
 gem "sandal", "~> 0.6"
 gem "scrypt", "~> 1.2"
 gem "sinatra", "~> 1.2"
-gem "sinatra-activerecord", "~> 1.2"
+gem "sinatra-activerecord", "~> 2.0"
 gem "sinatra-contrib", "~> 1.4"
 gem "newrelic_rpm", "~> 3.9"
 
