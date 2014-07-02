@@ -26,7 +26,7 @@ group :development, :test do
   gem "cucumber-rest"
   gem "httparty"
   gem "rake"
-  gem "rspec"
+  gem "rspec", "~>2.99"
   gem "ruby-prof"
   gem "simplecov"
   gem "sqlite3"

@@ -72,7 +72,7 @@ Then(/^the response is a list containing (#{CAPTURE_INTEGER}) users?$/) do |coun
   expect(last_response.status).to eq(200)
   list = last_response_json
   expect(list["items"]).to be_a_kind_of(Array)
-  expect(list["items"]).to have(count).users
+  expect(list["items"].size).to eq(count)
 end
 
 Then(/^the (first|second) user matches (\w+)'s attributes$/) do |index, user_handle|

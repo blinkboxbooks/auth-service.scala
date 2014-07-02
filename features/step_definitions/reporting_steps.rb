@@ -12,7 +12,7 @@ end
 
 Then(/^a (user|client) (registration|update|deregistration) message is sent$/) do |message_type, event_type|
   raise "Test Error: Users cannot be deregistered!" if message_type == "user" && event_type == "deregistration"
-  expect(Blinkbox::Zuul::Server::Reporting.sent_messages).to have_at_least(1).message
+  expect(Blinkbox::Zuul::Server::Reporting.sent_messages.size).to be >= 1
   @message = Nokogiri::XML(Blinkbox::Zuul::Server::Reporting.sent_messages.pop)
   case event_type
   when "registration"
