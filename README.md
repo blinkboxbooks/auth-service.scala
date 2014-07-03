@@ -138,7 +138,7 @@ To start the server in development/test mode run:
 $ rackup --port 9393
 ```
 
-Ensure that you're using a decent web server such as Thin, because WEBrick will fall over in a massive heap as soon as you put any load on it.
+**Ensure that you're using a decent web server** such as Thin, because WEBrick will fall over in a massive heap as soon as you put any load on it.
 
 ## Running the tests
 
