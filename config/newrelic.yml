@@ -54,7 +54,7 @@ common: &default_settings
   # The newrelic agent generates its own log file to keep its logging
   # information separate from that of your application. Specify its
   # log level here.
-  log_level: debug
+  log_level: info
 
   # Optionally set the path to the log file This is expanded from the
   # root directory (may be relative or absolute, e.g. 'log/' or
@@ -80,7 +80,7 @@ common: &default_settings
   browser_monitoring:
       # By default the agent automatically injects the monitoring JavaScript
       # into web pages. Set this attribute to false to turn off this behavior.
-      auto_instrument: true
+      auto_instrument: false
 
   # Proxy settings for connecting to the New Relic server.
   #
@@ -107,6 +107,7 @@ common: &default_settings
   #     a comma separated list of HTTP parameter names.
   #     ex: ignored_params: credit_card, ssn, password
   capture_params: true
+  ignored_params:last_name, username, password, refresh_token, client_secret
 
   # Transaction tracer captures deep information about slow
   # transactions and sends this to the New Relic service once a
