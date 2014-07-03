@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.12.0 ([#98](https://git.mobcastdev.com/Zuul/zuul-server/pull/98) 2014-06-30 16:18:52)
+
+New Relic integration
+
+### New Feature
+
+- Added first-stage New Relic integration.
+- Upgraded to using Artifactory for gems.
+
 ## 0.11.7 (2014-02-28 18:52)
 
 ## Bug Fixes
