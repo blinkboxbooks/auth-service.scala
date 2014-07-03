@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.12.1 ([#99](https://git.mobcastdev.com/Zuul/zuul-server/pull/99) 2014-07-03 10:44:16)
+
+Updated README
+
+### Improvement
+
+- updated README
+
 ## 0.12.0 ([#98](https://git.mobcastdev.com/Zuul/zuul-server/pull/98) 2014-06-30 16:18:52)
 
 New Relic integration
