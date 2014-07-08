@@ -1,15 +1,36 @@
-package com.blinkbox.books.agora
+package com.blinkbox.books.auth.server
 
 import com.wordnik.swagger.annotations.{ApiModel, ApiModelProperty}
 import scala.annotation.meta.field
 import org.joda.time.DateTime
 
 
+object OAuthErrorCode extends Enumeration {
+  type OAuthErrorCode = Value
+  val InvalidRequest = Value("invalid_request")
+
+}
+
+object OAuthErrorReason extends Enumeration {
+  type OAuthErrorReason = Value
+  val UsernameAlreadyTaken = Value("username_already_taken")
+  val ClientLimitReached = Value("client_limit_reached")
+}
+
+import OAuthErrorCode._
+import OAuthErrorReason._
+
+class OAuthException(message: String, val code: OAuthErrorCode, val reason: Option[OAuthErrorReason] = None) extends Exception(message)
+class UserAlreadyExists(message: String) extends OAuthException(message, InvalidRequest, Some(UsernameAlreadyTaken))
+
 case class OAuthError(
-  error: String,
-  error_description: String,
-error_reason: Option[String] = None
-                       )
+  error: OAuthErrorCode,
+  error_reason: Option[OAuthErrorReason],
+  error_description: String)
+
+object OAuthError {
+  def apply(e: OAuthException): OAuthError = OAuthError(e.code, e.reason, e.getMessage)
+}
 
 // TODO: Add user properties
 @ApiModel(description = "A user")
@@ -18,7 +39,7 @@ case class AuthUser(
   @(ApiModelProperty @field)(position = 1, value = "The simple identifier") id: Int,
   @(ApiModelProperty @field)(position = 2, value = "The name") name: String)
 
-case class Registration(
+case class UserRegistration(
   firstName: String,
   lastName: String,
   username: String,
@@ -29,17 +50,20 @@ case class Registration(
   clientBrand: Option[String],
   clientModel: Option[String],
   clientOS: Option[String]) {
-  // TODO: require(name.length > 0)
+  val client = {
+    val details = List(clientName, clientBrand, clientModel, clientOS).flatten
+    details.size match {
+      case 4 => Some(ClientRegistration(details(0), details(1), details(2), details(3)))
+      case 0 => None
+      case _ => throw new OAuthException("Incomplete client details", InvalidRequest)
+    }
+  }
 }
 
-
-//"client_id" => "urn:blinkbox:zuul:client:#{id}",
-//"client_uri" => "/clients/#{id}",
-//"client_name" => name,
-//"client_brand" => brand,
-//"client_model" => model,
-//"client_os" => os,
-//"last_used_date" => updated_at.utc.strftime("%F")
+case class ClientRegistration(name: String,
+                              brand: String,
+                              model: String,
+                              os: String)
 
 @ApiModel(description = "A user")
 case class TokenInfo(

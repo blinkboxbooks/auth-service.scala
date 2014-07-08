@@ -1,4 +1,4 @@
-package com.blinkbox.books.agora
+package com.blinkbox.books.auth.server
 
 import akka.actor.ActorRefFactory
 import com.blinkbox.books.config.SwaggerConfig

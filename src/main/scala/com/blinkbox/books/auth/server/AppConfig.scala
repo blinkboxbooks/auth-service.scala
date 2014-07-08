@@ -1,4 +1,4 @@
-package com.blinkbox.books.agora
+package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.config._
 import com.typesafe.config.Config

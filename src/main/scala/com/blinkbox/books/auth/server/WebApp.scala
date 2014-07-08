@@ -1,4 +1,4 @@
-package com.blinkbox.books.agora
+package com.blinkbox.books.auth.server
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
