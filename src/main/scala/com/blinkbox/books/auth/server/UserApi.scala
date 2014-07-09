@@ -127,6 +127,18 @@ class UserApi(config: ApiConfig, userService: UserService)(implicit val actorRef
     }
   }
 
+  val authenticate: Route = post {
+    path("oauth2" / "token") {
+      formField('grant_type ! "password") {
+        formFields('username, 'password, 'client_id.?, 'client_secret.?).as(PasswordCredentials) { credentials =>
+          onSuccess(userService.authenticate(credentials)) { tokenInfo =>
+            uncacheable(OK, tokenInfo)
+          }
+        }
+      }
+    }
+  }
+
 
 
 //
@@ -181,7 +193,7 @@ class UserApi(config: ApiConfig, userService: UserService)(implicit val actorRef
       handleRejections(rejectionHandler) {
         //rawPathPrefix(PathMatcher[HNil](config.externalUrl.path, HNil)) {
         //respondWithHeader(RawHeader("Vary", "Accept, Accept-Encoding")) {
-        registerUser
+        authenticate ~ registerUser
         //}
         //}
       }

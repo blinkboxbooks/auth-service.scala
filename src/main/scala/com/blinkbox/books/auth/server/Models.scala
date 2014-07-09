@@ -7,8 +7,9 @@ import org.joda.time.DateTime
 
 object OAuthErrorCode extends Enumeration {
   type OAuthErrorCode = Value
+  val InvalidClient = Value("invalid_client")
+  val InvalidGrant = Value("invalid_grant")
   val InvalidRequest = Value("invalid_request")
-
 }
 
 object OAuthErrorReason extends Enumeration {
@@ -58,6 +59,10 @@ case class UserRegistration(
       case _ => throw new OAuthException("Incomplete client details", InvalidRequest)
     }
   }
+}
+
+case class PasswordCredentials(username: String, password: String, clientId: Option[String], clientSecret: Option[String]) {
+  if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthException("Both client id and client secret are required.", InvalidClient)
 }
 
 case class ClientRegistration(name: String,
