@@ -31,7 +31,7 @@ val dependencySettings = Seq(
       "com.lambdaworks"       %   "scrypt"                % "1.4.0",
       "com.blinkbox.books"    %%  "common-config"         % "0.7.0",
       "com.blinkbox.books"    %%  "common-spray"          % "0.12.0",
-      "com.blinkbox.books"    %%  "common-spray-auth"     % "0.4.0",
+      "com.blinkbox.books"    %%  "common-spray-auth"     % "0.5.0-SNAPSHOT",
       "mysql"                 %   "mysql-connector-java"  % "5.1.31",
       "io.spray"              %   "spray-testkit"         % sprayV    % "test",
       "com.typesafe.akka"     %%  "akka-testkit"          % akkaV     % "test",

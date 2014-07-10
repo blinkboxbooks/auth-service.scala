@@ -6,19 +6,22 @@ import akka.util.Timeout
 import org.json4s.ext.EnumNameSerializer
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
+import com.blinkbox.books.spray._
 import com.blinkbox.books.spray.Directives
 import com.blinkbox.books.spray.v1._
 import com.wordnik.swagger.annotations._
 import org.slf4j.LoggerFactory
 import shapeless.HNil
+import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http.StatusCodes._
-import spray.http.HttpCharsets
+import spray.http.{HttpChallenge, HttpCharsets}
 import spray.routing._
 import org.json4s._
 import spray.httpx.unmarshalling.FormDataUnmarshallers
 import com.blinkbox.books.auth.User
 import java.lang.reflect.InvocationTargetException
 import spray.httpx.Json4sJacksonSupport
+import spray.routing.authentication.ContextAuthenticator
 
 @Api(value = "/user", description = "An API for managing widgets.", protocols = "https",
      produces = "application/vnd.blinkboxbooks.data.v1+json", consumes = "application/vnd.blinkboxbooks.data.v1+json")
@@ -79,14 +82,14 @@ trait UserRoutes extends HttpService {
 //  def deleteById: Route
 }
 
-class UserApi(config: ApiConfig, userService: UserService)(implicit val actorRefFactory: ActorRefFactory)
+class UserApi(config: ApiConfig, userService: UserService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends UserRoutes with Directives with FormDataUnmarshallers with Json4sJacksonSupport {
 
   implicit val log = LoggerFactory.getLogger(classOf[UserApi])
   implicit val executionContext = DiagnosticExecutionContext(actorRefFactory.dispatcher)
   implicit val timeout: Timeout = config.timeout
 
-  implicit def json4sJacksonFormats: Formats = DefaultFormats + new EnumNameSerializer(OAuthErrorCode) + new EnumNameSerializer(OAuthErrorReason)
+  implicit def json4sJacksonFormats: Formats = DefaultFormats + new EnumNameSerializer(OAuthServerErrorCode) + new EnumNameSerializer(OAuthServerErrorReason)
 
 //  implicit def version1JsonUnmarshaller[T: Manifest]: Unmarshaller[T] =
 //    Unmarshaller[T](`application/vnd.blinkboxbooks.data.v1+json`) {
@@ -119,8 +122,10 @@ class UserApi(config: ApiConfig, userService: UserService)(implicit val actorRef
     path("oauth2" / "token") {
       formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
         formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>
-          onSuccess(userService.registerUser(registration)) { tokenInfo =>
-            uncacheable(OK, tokenInfo)
+          extract(_.request.clientIP) { clientIP =>
+            onSuccess(userService.registerUser(registration, clientIP)) { tokenInfo =>
+              uncacheable(OK, tokenInfo)
+            }
           }
         }
       }
@@ -131,9 +136,21 @@ class UserApi(config: ApiConfig, userService: UserService)(implicit val actorRef
     path("oauth2" / "token") {
       formField('grant_type ! "password") {
         formFields('username, 'password, 'client_id.?, 'client_secret.?).as(PasswordCredentials) { credentials =>
-          onSuccess(userService.authenticate(credentials)) { tokenInfo =>
-            uncacheable(OK, tokenInfo)
+          extract(_.request.clientIP) { clientIP =>
+            onSuccess(userService.authenticate(credentials, clientIP)) { tokenInfo =>
+              uncacheable(OK, tokenInfo)
+            }
           }
+        }
+      }
+    }
+  }
+
+  val querySession: Route = get {
+    path("session") {
+      authenticate(authenticator) { user =>
+        onSuccess(userService.querySession(user)) { sessionInfo =>
+          uncacheable(OK, sessionInfo)
         }
       }
     }
@@ -193,26 +210,27 @@ class UserApi(config: ApiConfig, userService: UserService)(implicit val actorRef
       handleRejections(rejectionHandler) {
         //rawPathPrefix(PathMatcher[HNil](config.externalUrl.path, HNil)) {
         //respondWithHeader(RawHeader("Vary", "Accept, Accept-Encoding")) {
-        authenticate ~ registerUser
+        authenticate ~ registerUser ~ querySession
         //}
         //}
       }
     }
   }
 
-  import OAuthErrorCode._
+  import OAuthServerErrorCode._
 
   def exceptionHandler = ExceptionHandler {
-    case e: OAuthException => complete(BadRequest, OAuthError(e))
+    case e: OAuthServerException => complete(BadRequest, OAuthServerError(e))
+    case e: OAuthClientException => complete(Unauthorized, "TODO: This should have a WWW-Authenticate header")
     case x =>
       log.error("hello", x)
       complete(InternalServerError)
   }
 
   def rejectionHandler = RejectionHandler {
-    case MissingFormFieldRejection(field) :: _ => complete(BadRequest, OAuthError(InvalidRequest, None, s"Missing field: $field"))
-    case MalformedFormFieldRejection(field, message, _) :: _ => complete(BadRequest, OAuthError(InvalidRequest, None, s"$field: $message"))
-    case ValidationRejection(message, _) :: _ => complete(BadRequest, OAuthError(InvalidRequest, None, message))
+    case MissingFormFieldRejection(field) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, s"Missing field: $field"))
+    case MalformedFormFieldRejection(field, message, _) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, s"$field: $message"))
+    case ValidationRejection(message, _) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, message))
     case x =>
       log.error("hello", x)
       complete(InternalServerError)

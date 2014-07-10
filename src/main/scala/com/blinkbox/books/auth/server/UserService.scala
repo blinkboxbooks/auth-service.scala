@@ -1,69 +1,61 @@
 package com.blinkbox.books.auth.server
 
+import java.nio.file.{Files, Paths}
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
+import java.security.{KeyFactory, SecureRandom}
+import java.util.concurrent.TimeUnit
+
+import com.blinkbox.books.auth.{Elevation, User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
 import com.blinkbox.books.spray._
-import com.mysql.jdbc.MysqlDataTruncation
-import scala.concurrent.{ExecutionContext, Future}
-import scala.slick.driver.MySQLDriver
-import scala.slick.driver.MySQLDriver.simple._
-//import java.sql.Date
-import com.lambdaworks.crypto.SCryptUtil
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException
-import java.security.SecureRandom
+import com.blinkbox.security.jwt.TokenEncoder
+import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
+import com.blinkbox.security.jwt.signatures.ES256
 import com.blinkbox.security.jwt.util.Base64
-import scala.Some
-import org.joda.time.{DateTimeZone, DateTime}
+import com.lambdaworks.crypto.SCryptUtil
+import com.mysql.jdbc.MysqlDataTruncation
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException
+import org.joda.time.{DateTime, DateTimeZone}
+import spray.http.RemoteAddress
 
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
+import scala.slick.driver.MySQLDriver.simple._
 
-// TODO: Use a proper database
+import com.blinkbox.books.auth.server.OAuthClientErrorCode._
+import com.blinkbox.books.auth.server.OAuthClientErrorReason._
+import com.blinkbox.books.auth.server.OAuthServerErrorCode._
 
 trait UserService {
-  def registerUser(registration: UserRegistration): Future[TokenInfo]
-  def authenticate(credentials: PasswordCredentials): Future[TokenInfo]
+  def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
+  def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
+  def querySession(user: AuthenticatedUser): Future[SessionInfo]
 //  def list(page: Page)(implicit user: User): Future[ListPage[User]]
 //  def getById(id: Int)(implicit user: User): Future[Option[User]]
 //  def update(id: Int, patch: UserPatch)(implicit user: User): Future[Option[User]]
 //  def delete(id: Int)(implicit user: User): Future[Unit]
 }
 
-case class User(id: Int, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)
-object User {
-  import scala.language.implicitConversions
-  def newUser(r: UserRegistration) = {
-    val now = DateTime.now(DateTimeZone.UTC)
-    val h = SCryptUtil.scrypt(r.password, 16384, 8, 1)
-    User(-1, now, now, r.username, r.firstName, r.lastName, h, r.allowMarketing)
+
+object DataModel {
+
+  case class User(id: Int, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)
+
+  case class Client(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
+
+  case class RefreshToken(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, clientId: Option[Int], token: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime) {
+    def isValid = !expiresAt.isBeforeNow && !isRevoked
+    def status = if (isValid) RefreshTokenStatus.Valid else RefreshTokenStatus.Invalid
+    def isElevated = !elevationExpiresAt.isBeforeNow
+    def isCriticallyElevated = !criticalElevationExpiresAt.isBeforeNow
+    def elevation = if (isCriticallyElevated) Elevation.Critical
+                    else if (isElevated) Elevation.Elevated
+                    else Elevation.Unelevated
+    def elevationDropsAt = if (isCriticallyElevated) criticalElevationExpiresAt else elevationExpiresAt
+    def elevationDropsIn = FiniteDuration(elevationDropsAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
   }
-}
 
-case class Client(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
-object Client {
-  def newClient(userId: Int, r: ClientRegistration) = {
-    val now = DateTime.now(DateTimeZone.UTC)
-    val buf = new Array[Byte](32)
-    new SecureRandom().nextBytes(buf)
-    val secret = Base64.encode(buf)
-    Client(-1, now, now, userId, r.name, r.brand, r.model, r.os, secret, false)
-  }
-}
-
-case class RefreshToken(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, clientId: Option[Int], token: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime)
-object RefreshToken {
-  def newToken(userId: Int, clientId: Option[Int]) = {
-    val now = DateTime.now(DateTimeZone.UTC)
-    val buf = new Array[Byte](32)
-    new SecureRandom().nextBytes(buf)
-    val token = Base64.encode(buf)
-    RefreshToken(-1, now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
-  }
-}
-
-case class LoginAttempt(createdAt: DateTime, username: String, successful: Boolean, clientIP: String)
-object LoginAttempt {
-  def newAttempt(username: String, successful: Boolean, clientIP: String) = LoginAttempt(DateTime.now(DateTimeZone.UTC), username, successful, clientIP)
-}
-
-object Tables {
+  case class LoginAttempt(createdAt: DateTime, username: String, successful: Boolean, clientIP: String)
 
   implicit def dateTime = MappedColumnType.base[DateTime, java.sql.Timestamp](
     dt => new java.sql.Timestamp(dt.getMillis),
@@ -125,52 +117,183 @@ object Tables {
     def clientIP = column[String]("client_ip", O.NotNull)
     def * = (createdAt, username, successful, clientIP) <> ((LoginAttempt.apply _).tupled, LoginAttempt.unapply)
   }
-}
 
-import OAuthErrorCode._
-import OAuthErrorReason._
+  object LoginAttempt {
+    def newAttempt(username: String, successful: Boolean, clientIP: String) = LoginAttempt(DateTime.now(DateTimeZone.UTC), username, successful, clientIP)
+  }
+
+  object User {
+
+    def create(registration: UserRegistration)(implicit session: Session): User = {
+      val user = User.forInsert(registration)
+      val id = (users returning users.map(_.id)) += user
+      user.copy(id = id)
+    }
+
+    def authenticate(username: String, password: String, clientIP: Option[RemoteAddress])(implicit session: Session): User = {
+      val user = users.where(_.username === username).firstOption
+      val passwordValid = if (user.isDefined) {
+        SCryptUtil.check(password, user.get.passwordHash)
+      } else {
+        // even if the user isn't found we still need to perform an scrypt hash of something to help
+        // prevent timing attacks as this hashing process is the bulk of the request time
+        hashPassword("random string")
+        false
+      }
+      loginAttempts += LoginAttempt.newAttempt(username, passwordValid, clientIP.fold("unknown")(_.toString()))
+      if (!passwordValid) throw new OAuthServerException("The username and/or password is incorrect.", InvalidGrant)
+      user.get
+    }
+
+    private def forInsert(r: UserRegistration) = {
+      val now = DateTime.now(DateTimeZone.UTC)
+      val passwordHash = hashPassword(r.password)
+      User(-1, now, now, r.username, r.firstName, r.lastName, passwordHash, r.allowMarketing)
+    }
+
+    private def hashPassword(password: String) = SCryptUtil.scrypt(password, 16384, 8, 1)
+  }
+
+  object Client {
+    val ClientId = """urn:blinkbox:zuul:client:([0-9]+)""".r
+
+    def create(userId: Int, registration: ClientRegistration)(implicit session: Session): Client = {
+      val client = Client.forInsert(userId, registration)
+      val id = (clients returning clients.map(_.id)) += client
+      client.copy(id = id)
+    }
+
+    def authenticate(id: Option[String], secret: Option[String], user: User)(implicit session: Session): Option[Client] = {
+      if (id.isEmpty || secret.isEmpty) return None
+
+      val numericId = id.get match {
+        case ClientId(n) => try Some(n.toInt) catch { case _: NumberFormatException => None }
+        case _ => None
+      }
+
+      val client = numericId.flatMap(nid => clients.where(c => c.id === nid && c.secret === secret).firstOption)
+      if (client.isEmpty) throw new OAuthServerException("The client id and/or client secret is incorrect.", InvalidClient)
+      if (client.get.userId != user.id) throw new OAuthServerException("You are not authorised to use this client.", InvalidClient)
+
+      clients.where(_.id === client.get.id).map(_.updatedAt).update(DateTime.now(DateTimeZone.UTC))
+      client
+    }
+
+    def forInsert(userId: Int, r: ClientRegistration) = {
+      val now = DateTime.now(DateTimeZone.UTC)
+      val buf = new Array[Byte](32)
+      new SecureRandom().nextBytes(buf)
+      val secret = Base64.encode(buf)
+      Client(-1, now, now, userId, r.name, r.brand, r.model, r.os, secret, false)
+    }
+  }
+
+  object RefreshToken {
+
+    def create(userId: Int, clientId: Option[Int])(implicit session: Session): RefreshToken = {
+      val token = RefreshToken.forInsert(userId, clientId)
+      val id = (refreshTokens returning refreshTokens.map(_.id)) += token
+      token.copy(id = id)
+    }
+
+    private def forInsert(userId: Int, clientId: Option[Int]) = {
+      val now = DateTime.now(DateTimeZone.UTC)
+      val buf = new Array[Byte](32)
+      new SecureRandom().nextBytes(buf)
+      val token = Base64.encode(buf)
+      RefreshToken(-1, now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
+    }
+  }
+}
 
 class DefaultUserService(config: DatabaseConfig)(implicit executionContext: ExecutionContext) extends UserService {
   val db = Database.forURL("jdbc:" + config.uri.withUserInfo("").toString, driver="com.mysql.jdbc.Driver", user = "zuul", password = "mypass")
 
-  import Tables._
+  import com.blinkbox.books.auth.server.DataModel._
 
-  def registerUser(registration: UserRegistration): Future[TokenInfo] = {
-    if (!registration.acceptedTerms) return Future.failed(new OAuthException("You must accept the terms and conditions", InvalidRequest))
-    if (registration.password.length < 6) return Future.failed(new OAuthException("password must be at least 6 characters", InvalidRequest))
+  def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
+    if (!registration.acceptedTerms) return Future.failed(new OAuthServerException("You must accept the terms and conditions", InvalidRequest))
+    if (registration.password.length < 6) return Future.failed(new OAuthServerException("password must be at least 6 characters", InvalidRequest))
     Future {
-
       // TODO: GeoIP checks
-
       val (user, client, token) = db.withTransaction { implicit transaction =>
-        val u = insertUser(registration)
-        val c = registration.client.map(insertClient(u.id, _))
-        val t = insertRefreshToken(u.id, c.map(_.id))
+        val u = User.create(registration)
+        val c = registration.client.map(Client.create(u.id, _))
+        val t = RefreshToken.create(u.id, c.map(_.id))
         (u, c, t)
       }
-
       // TODO: Send user registered message
-
-      issueAccessToken(user, client, token, includeRefreshToken = true)
+      issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
     } recoverWith {
-      case e: MysqlDataTruncation => Future.failed(new OAuthException(e.getMessage, InvalidRequest))
+      case e: MysqlDataTruncation => Future.failed(new OAuthServerException(e.getMessage, InvalidRequest))
       case e: MySQLIntegrityConstraintViolationException => Future.failed(new UserAlreadyExists(e.getMessage))
     }
   }
 
-  def authenticate(credentials: PasswordCredentials): Future[TokenInfo] = Future {
-    val user = authenticateUser(credentials)
-    val client = authenticateClient(user, credentials)
-
+  def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
+    val (user, client, token) = db.withTransaction { implicit transaction =>
+      val u = User.authenticate(credentials.username, credentials.password, clientIP)
+      val c = Client.authenticate(credentials.clientId, credentials.clientSecret, u)
+      val t = RefreshToken.create(u.id, c.map(_.id))
+      (u, c, t)
+    }
     // TODO: Send user authenticated message
-
-    val token = db.withSession { implicit session => insertRefreshToken(user.id, client.map(_.id)) }
     issueAccessToken(user, client, token, includeRefreshToken = true)
   }
 
+  def querySession(user: AuthenticatedUser): Future[SessionInfo] = Future {
+    val tokenId = user.claims.get("zl/rti").get.asInstanceOf[Int]
+    val token = db.withSession { implicit session =>
+      refreshTokens.where(_.id === tokenId).firstOption
+    } getOrElse(throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity)))
+
+
+    SessionInfo(
+      token_status = token.status,
+      token_elevation = if (token.isValid) Some(token.elevation) else None,
+      token_elevation_expires_in = if (token.isValid) Some(token.elevationDropsIn.toSeconds) else None
+      // TODO: Roles
+    )
+  }
+
+  private def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, expiresAt: DateTime) = {
+
+    // TODO: Do this properly with configurable keys etc.
+
+    val claims = new java.util.LinkedHashMap[String, AnyRef]
+    claims.put("sub", s"urn:blinkbox:zuul:user:${user.id}")
+    claims.put("exp", Long.box(expiresAt.getMillis))
+    client.foreach(c => claims.put("bb/cid", s"urn:blinkbox:zuul:client:${c.id}"))
+    // TODO: Roles
+    claims.put("zl/rti", Int.box(token.id))
+
+    val signingKeyData = Files.readAllBytes(Paths.get("/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"))
+    val signingKeySpec = new PKCS8EncodedKeySpec(signingKeyData)
+    val signingKey = KeyFactory.getInstance("EC").generatePrivate(signingKeySpec)
+    val signer = new ES256(signingKey)
+    val signingHeaders = new java.util.LinkedHashMap[String, AnyRef]
+    signingHeaders.put("kid", "/blinkbox/zuul/sig/ec/1")
+
+    val encryptionKeyData = Files.readAllBytes(Paths.get("/opt/bbb/keys/blinkbox/plat/enc/rsa/1/public.key"))
+    val encryptionKeySpec = new X509EncodedKeySpec(encryptionKeyData)
+    val encryptionKey = KeyFactory.getInstance("RSA").generatePublic(encryptionKeySpec)
+    val encryptionAlgorithm = new RSA_OAEP(encryptionKey)
+    val encrypter = new A128GCM(encryptionAlgorithm)
+    val encryptionHeaders = new java.util.LinkedHashMap[String, AnyRef]
+    encryptionHeaders.put("kid", "/blinkbox/plat/enc/rsa/1")
+    encryptionHeaders.put("cty", "JWT")
+
+    val encoder = new TokenEncoder()
+    val signed = encoder.encode(claims, signer, signingHeaders)
+    val encrypted = encoder.encode(signed, encrypter, encryptionHeaders)
+
+    encrypted
+  }
+
   private def issueAccessToken(user: User, client: Option[Client], token: RefreshToken, includeRefreshToken: Boolean = false, includeClientSecret: Boolean = false): TokenInfo = {
+    val expiresAt = DateTime.now(DateTimeZone.UTC).plusSeconds(1800)
     TokenInfo(
-      access_token = "the access token", // TODO: Real token
+      access_token = buildAccessToken(user, client, token, expiresAt),
       token_type = "bearer",
       expires_in = 1800,
       refresh_token = if (includeRefreshToken) Some(token.token) else None,
@@ -187,64 +310,6 @@ class DefaultUserService(config: DatabaseConfig)(implicit executionContext: Exec
       client_os = client.map(_.os),
       client_secret = if (includeClientSecret) client.map(_.secret) else None,
       last_used_date = client.map(_.updatedAt))
-  }
-
-  private def authenticateUser(credentials: PasswordCredentials): User = {
-    val user = db.withSession { implicit session =>
-      val u = users.where(_.username === credentials.username).firstOption
-      val successful = if (u.isDefined) {
-        SCryptUtil.check(credentials.password, u.get.passwordHash)
-      } else {
-        // even if the user isn't found we still need to perform an scrypt hash of something to help
-        // prevent timing attacks as this hashing process is the bulk of the request time
-        SCryptUtil.scrypt("random string", 16384, 8, 1)
-        false
-      }
-      // TODO: The client IP
-      loginAttempts += LoginAttempt.newAttempt(credentials.username, successful, "clientIP")
-      if (successful) u else None
-    }
-
-    if (user.isEmpty) throw new OAuthException("The username and/or password is incorrect.", InvalidGrant)
-    user.get
-  }
-
-  private def authenticateClient(user: User, credentials: PasswordCredentials): Option[Client] = {
-    if (credentials.clientId.isEmpty) return None
-
-    val ClientId = """urn:blinkbox:zuul:client:(\d+)""".r
-    val clientIntId = credentials.clientId match {
-      case Some(ClientId(intVal)) => intVal.toInt
-      case _ => -1
-    }
-    val client = db.withSession { implicit session =>
-      clients.where(c => c.id === clientIntId && c.secret === credentials.clientSecret).firstOption
-    }
-
-    if (client.isEmpty) throw new OAuthException("The client id and/or client secret is incorrect.", InvalidClient)
-    if (client.get.userId != user.id) throw new OAuthException("You are not authorised to use this client.", InvalidClient)
-
-    // TODO: Update client last used date
-
-    client
-  }
-
-  private def insertUser(registration: UserRegistration)(implicit session: Session): User = {
-    val user = User.newUser(registration)
-    val id = (users returning users.map(_.id)) += user
-    user.copy(id = id)
-  }
-
-  private def insertClient(userId: Int, registration: ClientRegistration)(implicit session: Session): Client = {
-    val client = Client.newClient(userId, registration)
-    val id = (clients returning clients.map(_.id)) += client
-    client.copy(id = id)
-  }
-
-  private def insertRefreshToken(userId: Int, clientId: Option[Int])(implicit session: Session): RefreshToken = {
-    val token = RefreshToken.newToken(userId, clientId)
-    val id = (refreshTokens returning refreshTokens.map(_.id)) += token
-    token.copy(id = id)
   }
   
   

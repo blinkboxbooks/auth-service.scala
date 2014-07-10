@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
-import com.blinkbox.books.auth.{ZuulElevationChecker, ZuulTokenDecoder, ZuulTokenDeserializer}
+import com.blinkbox.books.auth.{Elevation, ZuulElevationChecker, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.spray._
 import spray.can.Http
@@ -10,13 +10,15 @@ import spray.http.{AllOrigins, Uri}
 import spray.http.HttpHeaders.`Access-Control-Allow-Origin`
 import spray.routing._
 
+import scala.concurrent.Future
+
 class WebService(config: AppConfig) extends HttpServiceActor {
   implicit val executionContext = actorRefFactory.dispatcher
-//  val authenticator = new ZuulTokenAuthenticator(
-//    new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
-//    new ZuulElevationChecker(config.auth.sessionUrl.toString))
+  val authenticator = new ZuulTokenAuthenticator(
+    new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
+    _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
   val service = new DefaultUserService(config.db)
-  val users = new UserApi(config.service, service)
+  val users = new UserApi(config.service, service, authenticator)
   val swagger = new SwaggerApi(config.swagger)
   val route = users.routes ~ respondWithHeader(`Access-Control-Allow-Origin`(AllOrigins)) { swagger.routes }
   def receive = runRoute(route)
