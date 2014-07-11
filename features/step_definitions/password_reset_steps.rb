@@ -103,6 +103,8 @@ When(/^(\w+) obtains an access token using (?:his|her|their) password reset toke
 end
 
 Then(/^I receive a (.+) email$/) do |email_type|
+  pending "Messaging cannot be tested out-of-proc" unless TEST_CONFIG[:in_proc]
+
   @email_message = Nokogiri::XML(Blinkbox::Zuul::Server::Email.sent_messages.pop)
 
   email_message_value("/e:sendEmail/e:to/e:recipient/e:name") do |text| 
@@ -130,6 +132,7 @@ Then(/^(?:the email|it) contains a password reset token with at least (#{CAPTURE
 end
 
 Then(/^no email is sent$/) do
+  pending "Messaging cannot be tested out-of-proc" unless TEST_CONFIG[:in_proc]
   expect(Blinkbox::Zuul::Server::Email.sent_messages.count).to eq(0)
 end
 

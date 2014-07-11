@@ -11,6 +11,8 @@ When(/^they change their( client's)? (.+) to (.+)$/) do |client, detail, value|
 end
 
 Then(/^a (user|client) (registration|update|deregistration) message is sent$/) do |message_type, event_type|
+  pending "Messaging cannot be tested out-of-proc" unless TEST_CONFIG[:in_proc]
+
   raise "Test Error: Users cannot be deregistered!" if message_type == "user" && event_type == "deregistration"
   expect(Blinkbox::Zuul::Server::Reporting.sent_messages).to have_at_least(1).message
   @message = Nokogiri::XML(Blinkbox::Zuul::Server::Reporting.sent_messages.pop)

@@ -25,11 +25,18 @@ import scala.slick.driver.MySQLDriver.simple._
 import com.blinkbox.books.auth.server.OAuthClientErrorCode._
 import com.blinkbox.books.auth.server.OAuthClientErrorReason._
 import com.blinkbox.books.auth.server.OAuthServerErrorCode._
+import com.blinkbox.books.auth.server.OAuthServerErrorReason._
 
 trait UserService {
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
-  def querySession(user: AuthenticatedUser): Future[SessionInfo]
+  def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
+  def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
+  def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo]
+  def listClients()(implicit user: AuthenticatedUser): Future[ClientList]
+  def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
+  def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit]
 //  def list(page: Page)(implicit user: User): Future[ListPage[User]]
 //  def getById(id: Int)(implicit user: User): Future[Option[User]]
 //  def update(id: Int, patch: UserPatch)(implicit user: User): Future[Option[User]]
@@ -44,7 +51,8 @@ object DataModel {
   case class Client(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
 
   case class RefreshToken(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, clientId: Option[Int], token: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime) {
-    def isValid = !expiresAt.isBeforeNow && !isRevoked
+    def isExpired = expiresAt.isBeforeNow
+    def isValid = !isExpired && !isRevoked
     def status = if (isValid) RefreshTokenStatus.Valid else RefreshTokenStatus.Invalid
     def isElevated = !elevationExpiresAt.isBeforeNow
     def isCriticallyElevated = !criticalElevationExpiresAt.isBeforeNow
@@ -163,7 +171,7 @@ object DataModel {
       client.copy(id = id)
     }
 
-    def authenticate(id: Option[String], secret: Option[String], user: User)(implicit session: Session): Option[Client] = {
+    def authenticate(id: Option[String], secret: Option[String], userId: Int)(implicit session: Session): Option[Client] = {
       if (id.isEmpty || secret.isEmpty) return None
 
       val numericId = id.get match {
@@ -173,7 +181,7 @@ object DataModel {
 
       val client = numericId.flatMap(nid => clients.where(c => c.id === nid && c.secret === secret).firstOption)
       if (client.isEmpty) throw new OAuthServerException("The client id and/or client secret is incorrect.", InvalidClient)
-      if (client.get.userId != user.id) throw new OAuthServerException("You are not authorised to use this client.", InvalidClient)
+      if (client.get.userId != userId) throw new OAuthServerException("You are not authorised to use this client.", InvalidClient)
 
       clients.where(_.id === client.get.id).map(_.updatedAt).update(DateTime.now(DateTimeZone.UTC))
       client
@@ -206,7 +214,10 @@ object DataModel {
   }
 }
 
-class DefaultUserService(config: DatabaseConfig)(implicit executionContext: ExecutionContext) extends UserService {
+trait Clock { def now() = DateTime.now(DateTimeZone.UTC) }
+object SystemClock extends Clock
+
+class DefaultUserService(config: DatabaseConfig, clock: Clock)(implicit executionContext: ExecutionContext) extends UserService {
   val db = Database.forURL("jdbc:" + config.uri.withUserInfo("").toString, driver="com.mysql.jdbc.Driver", user = "zuul", password = "mypass")
 
   import com.blinkbox.books.auth.server.DataModel._
@@ -233,7 +244,7 @@ class DefaultUserService(config: DatabaseConfig)(implicit executionContext: Exec
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     val (user, client, token) = db.withTransaction { implicit transaction =>
       val u = User.authenticate(credentials.username, credentials.password, clientIP)
-      val c = Client.authenticate(credentials.clientId, credentials.clientSecret, u)
+      val c = Client.authenticate(credentials.clientId, credentials.clientSecret, u.id)
       val t = RefreshToken.create(u.id, c.map(_.id))
       (u, c, t)
     }
@@ -241,7 +252,29 @@ class DefaultUserService(config: DatabaseConfig)(implicit executionContext: Exec
     issueAccessToken(user, client, token, includeRefreshToken = true)
   }
 
-  def querySession(user: AuthenticatedUser): Future[SessionInfo] = Future {
+  def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
+    val (user1, client1, token1) = db.withTransaction { implicit transaction =>
+      val t = refreshTokens.where(_.token === credentials.token).list.headOption.getOrElse(
+        throw new OAuthServerException("The refresh token is invalid.", InvalidGrant))
+      if (t.isExpired) throw new OAuthServerException("The refresh token has expired.", InvalidGrant)
+      if (t.isRevoked) throw new OAuthServerException("The refresh token has been revoked.", InvalidGrant)
+      val c = Client.authenticate(credentials.clientId, credentials.clientSecret, t.userId)
+      if (t.clientId.isEmpty) {
+        if (c.isDefined) {
+          refreshTokens.where(_.id === t.id).map(c => (c.updatedAt, c.clientId)).update(clock.now(), c.map(_.id))
+        }
+      } else if (c.isEmpty || t.clientId.get != c.get.id) {
+        throw new OAuthServerException("Your client is not authorised to use this refresh token", InvalidClient)
+      }
+      // TODO: Extend refresh token lifetime
+      // TODO: Send user authenticated message
+      val u = users.where(_.id === t.userId).list.head
+      (u, c, t)
+    }
+    issueAccessToken(user1, client1, token1)
+  }
+
+  def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {
     val tokenId = user.claims.get("zl/rti").get.asInstanceOf[Int]
     val token = db.withSession { implicit session =>
       refreshTokens.where(_.id === tokenId).firstOption
@@ -255,6 +288,69 @@ class DefaultUserService(config: DatabaseConfig)(implicit executionContext: Exec
       // TODO: Roles
     )
   }
+
+  def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
+    val client = db.withTransaction { implicit transaction =>
+      val MaxClients = 12// TODO: Make max number of clients configurable
+      if (clients.where(c => c.userId === user.id && !c.isDeregistered).length.run > MaxClients) {
+        throw new OAuthServerException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
+      }
+      Client.create(user.id, registration)
+    }
+    clientInfo(client, includeClientSecret = true)
+  } recoverWith {
+    case e: MysqlDataTruncation => Future.failed(new OAuthServerException(e.getMessage, InvalidRequest))
+  }
+
+  def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
+    val clientList = db.withSession { implicit session =>
+      clients.where(c => c.userId === user.id && !c.isDeregistered).list
+    }
+    ClientList(clientList.map(clientInfo(_)))
+  }
+
+  def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
+    val client = db.withSession { implicit session =>
+      clients.where(c => c.id === id && c.userId === user.id && !c.isDeregistered).list.headOption
+    }
+    client.map(clientInfo(_))
+  }
+
+  def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
+    val client = db.withTransaction { implicit transaction =>
+      val c = clients.where(c => c.id === id && c.userId === user.id && !c.isDeregistered).list.headOption
+      c.map { c2 =>
+        val c3 = c2.copy(
+          updatedAt = clock.now(),
+          name = patch.client_name.getOrElse(c2.name),
+          brand = patch.client_brand.getOrElse(c2.brand),
+          model = patch.client_model.getOrElse(c2.model),
+          os = patch.client_os.getOrElse(c2.os))
+        clients.where(_.id === c2.id).update(c3)
+        c3
+      }
+    }
+    client.map(clientInfo(_))
+  }
+
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit] = Future {
+    db.withSession { implicit session =>
+      val c = clients.where(c => c.id === id && c.userId === user.id && !c.isDeregistered).list.headOption
+      c.foreach { c2 =>
+        clients.where(_.id === c2.id).map(c => (c.updatedAt, c.isDeregistered)).update(clock.now(), true)
+      }
+    }
+  }
+
+  private def clientInfo(client: Client, includeClientSecret: Boolean = false) = ClientInfo(
+    client_id = s"urn:blinkbox:zuul:client:${client.id}",
+    client_uri = s"/clients/${client.id}",
+    client_name = client.name,
+    client_brand = client.brand,
+    client_model = client.model,
+    client_os = client.os,
+    client_secret = if (includeClientSecret) Some(client.secret) else None,
+    last_used_date = client.createdAt)
 
   private def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, expiresAt: DateTime) = {
 

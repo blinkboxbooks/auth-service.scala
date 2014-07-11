@@ -146,11 +146,79 @@ class UserApi(config: ApiConfig, userService: UserService, authenticator: Contex
     }
   }
 
+  val refreshAccessToken: Route = post {
+    path("oauth2" / "token") {
+      formField('grant_type ! "refresh_token") {
+        formFields('refresh_token, 'client_id.?, 'client_secret.?).as(RefreshTokenCredentials) { credentials =>
+          onSuccess(userService.refreshAccessToken(credentials)) { tokenInfo =>
+            uncacheable(OK, tokenInfo)
+          }
+        }
+      }
+    }
+  }
+
   val querySession: Route = get {
     path("session") {
-      authenticate(authenticator) { user =>
-        onSuccess(userService.querySession(user)) { sessionInfo =>
+      authenticate(authenticator) { implicit user =>
+        onSuccess(userService.querySession) { sessionInfo =>
           uncacheable(OK, sessionInfo)
+        }
+      }
+    }
+  }
+
+  val registerClient: Route = post {
+    path("clients") {
+      authenticate(authenticator) { implicit user =>
+        formFields('client_name, 'client_brand, 'client_model, 'client_os).as(ClientRegistration) { registration =>
+          onSuccess(userService.registerClient(registration)) { client =>
+            uncacheable(OK, client)
+          }
+        }
+      }
+    }
+  }
+
+  val listClients: Route = get {
+    path("clients") {
+      authenticate(authenticator) { implicit user =>
+        onSuccess(userService.listClients) { clients =>
+          uncacheable(OK, clients)
+        }
+      }
+    }
+  }
+
+  val getClientById: Route = get {
+    path("clients" / IntNumber) { id =>
+      authenticate(authenticator) { implicit user =>
+        onSuccess(userService.getClientById(id)) {
+          case Some(client) => uncacheable(OK, client)
+          case None => complete(NotFound, None)
+        }
+      }
+    }
+  }
+
+  val updateClient: Route = patch {
+    path("clients" / IntNumber) { id =>
+      authenticate(authenticator) { implicit user =>
+        formFields('client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(ClientPatch) { patch =>
+          onSuccess(userService.updateClient(id, patch)) {
+            case Some(client) => uncacheable(OK, client)
+            case None => complete(NotFound, None)
+          }
+        }
+      }
+    }
+  }
+
+  val deleteClient: Route = delete {
+    path("clients" / IntNumber) { id =>
+      authenticate(authenticator) { implicit user =>
+        onSuccess(userService.deleteClient(id)) { _ =>
+          complete(OK, None)
         }
       }
     }
@@ -210,7 +278,7 @@ class UserApi(config: ApiConfig, userService: UserService, authenticator: Contex
       handleRejections(rejectionHandler) {
         //rawPathPrefix(PathMatcher[HNil](config.externalUrl.path, HNil)) {
         //respondWithHeader(RawHeader("Vary", "Accept, Accept-Encoding")) {
-        authenticate ~ registerUser ~ querySession
+        querySession ~ refreshAccessToken ~ authenticate ~ registerUser ~ registerClient ~ listClients ~ getClientById ~ updateClient ~ deleteClient
         //}
         //}
       }
@@ -222,17 +290,17 @@ class UserApi(config: ApiConfig, userService: UserService, authenticator: Contex
   def exceptionHandler = ExceptionHandler {
     case e: OAuthServerException => complete(BadRequest, OAuthServerError(e))
     case e: OAuthClientException => complete(Unauthorized, "TODO: This should have a WWW-Authenticate header")
-    case x =>
-      log.error("hello", x)
-      complete(InternalServerError)
+//    case x =>
+//      log.error("hello", x)
+//      complete(InternalServerError)
   }
 
   def rejectionHandler = RejectionHandler {
     case MissingFormFieldRejection(field) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, s"Missing field: $field"))
     case MalformedFormFieldRejection(field, message, _) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, s"$field: $message"))
     case ValidationRejection(message, _) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, message))
-    case x =>
-      log.error("hello", x)
-      complete(InternalServerError)
+//    case x =>
+//      log.error("hello", x)
+//      complete(InternalServerError)
   }
 }

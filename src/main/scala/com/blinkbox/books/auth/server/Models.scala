@@ -89,37 +89,59 @@ case class PasswordCredentials(username: String, password: String, clientId: Opt
   if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthServerException("Both client id and client secret are required.", InvalidClient)
 }
 
-case class ClientRegistration(name: String,
-                              brand: String,
-                              model: String,
-                              os: String)
+case class RefreshTokenCredentials(token: String, clientId: Option[String], clientSecret: Option[String]) {
+  if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthServerException("Both client id and client secret are required.", InvalidClient)
+}
 
-@ApiModel(description = "A user")
+
+case class ClientRegistration(
+  name: String,
+  brand: String,
+  model: String,
+  os: String)
+
 case class TokenInfo(
   access_token: String,
-token_type: String,
+  token_type: String,
   expires_in: Int,
   refresh_token: Option[String],
-                      user_id: String,
-                      user_uri: String,
-                      user_username: String,
-                      user_first_name: String,
-                      user_last_name: String,
-                      client_id: Option[String] = None,
-                      client_uri: Option[String] = None,
-                      client_name: Option[String] = None,
-                      client_brand: Option[String] = None,
-                      client_model: Option[String] = None,
-                      client_os: Option[String] = None,
-                      client_secret: Option[String] = None,
-                      last_used_date: Option[DateTime] = None)
+  user_id: String,
+  user_uri: String,
+  user_username: String,
+  user_first_name: String,
+  user_last_name: String,
+  client_id: Option[String] = None,
+  client_uri: Option[String] = None,
+  client_name: Option[String] = None,
+  client_brand: Option[String] = None,
+  client_model: Option[String] = None,
+  client_os: Option[String] = None,
+  client_secret: Option[String] = None,
+  last_used_date: Option[DateTime] = None)
+
+case class ClientInfo(
+  client_id: String,
+  client_uri: String,
+  client_name: String,
+  client_brand: String,
+  client_model: String,
+  client_os: String,
+  client_secret: Option[String],
+  last_used_date: DateTime)
+
+case class ClientPatch(
+  client_name: Option[String] = None,
+  client_brand: Option[String] = None,
+  client_model: Option[String] = None,
+  client_os: Option[String] = None)
+
+case class ClientList(clients: List[ClientInfo])
 
 case class SessionInfo(
   token_status: RefreshTokenStatus,
   token_elevation: Option[Elevation],
   token_elevation_expires_in: Option[Long],
-  user_roles: Option[List[String]] = None
-                        )
+  user_roles: Option[List[String]] = None)
 
 // TODO: Add user patch properties
 @ApiModel(description = "Updates to a user")
