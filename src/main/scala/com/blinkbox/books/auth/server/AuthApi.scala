@@ -25,7 +25,7 @@ import spray.routing.authentication.ContextAuthenticator
 
 @Api(value = "/user", description = "An API for managing widgets.", protocols = "https",
      produces = "application/vnd.blinkboxbooks.data.v1+json", consumes = "application/vnd.blinkboxbooks.data.v1+json")
-trait UserRoutes extends HttpService {
+trait AuthRoutes extends HttpService {
 
   @ApiOperation(position = 0, httpMethod = "POST", response = classOf[User], value = "Creates a user")
   @ApiImplicitParams(Array(
@@ -82,10 +82,10 @@ trait UserRoutes extends HttpService {
 //  def deleteById: Route
 }
 
-class UserApi(config: ApiConfig, userService: UserService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
-  extends UserRoutes with Directives with FormDataUnmarshallers with Json4sJacksonSupport {
+class AuthApi(config: ApiConfig, userService: AuthService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
+  extends AuthRoutes with Directives with FormDataUnmarshallers with Json4sJacksonSupport {
 
-  implicit val log = LoggerFactory.getLogger(classOf[UserApi])
+  implicit val log = LoggerFactory.getLogger(classOf[AuthApi])
   implicit val executionContext = DiagnosticExecutionContext(actorRefFactory.dispatcher)
   implicit val timeout: Timeout = config.timeout
 

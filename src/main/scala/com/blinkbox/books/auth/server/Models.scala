@@ -15,6 +15,7 @@ object OAuthServerErrorCode extends Enumeration {
 
 object OAuthServerErrorReason extends Enumeration {
   type OAuthServerErrorReason = Value
+  val CountryGeoBlocked = Value("country_geoblocked")
   val UsernameAlreadyTaken = Value("username_already_taken")
   val ClientLimitReached = Value("client_limit_reached")
 }
@@ -57,13 +58,6 @@ object OAuthServerError {
   def apply(e: OAuthServerException): OAuthServerError = OAuthServerError(e.code, e.reason, e.getMessage)
 }
 
-// TODO: Add user properties
-@ApiModel(description = "A user")
-case class AuthUser(
-  @(ApiModelProperty @field)(position = 0, value = "The globally unique identifier") guid: String,
-  @(ApiModelProperty @field)(position = 1, value = "The simple identifier") id: Int,
-  @(ApiModelProperty @field)(position = 2, value = "The name") name: String)
-
 case class UserRegistration(
   firstName: String,
   lastName: String,
@@ -85,11 +79,16 @@ case class UserRegistration(
   }
 }
 
-case class PasswordCredentials(username: String, password: String, clientId: Option[String], clientSecret: Option[String]) {
+trait ClientCredentials {
+  val clientId: Option[String]
+  val clientSecret: Option[String]
+}
+
+case class PasswordCredentials(username: String, password: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
   if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthServerException("Both client id and client secret are required.", InvalidClient)
 }
 
-case class RefreshTokenCredentials(token: String, clientId: Option[String], clientSecret: Option[String]) {
+case class RefreshTokenCredentials(token: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
   if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthServerException("Both client id and client secret are required.", InvalidClient)
 }
 
