@@ -2,18 +2,77 @@ package com.blinkbox.books.auth.server
 
 import java.security.SecureRandom
 
+import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.config.DatabaseConfig
+import com.blinkbox.books.spray.uri2uri
 import com.blinkbox.security.jwt.util.Base64
 import com.lambdaworks.crypto.SCryptUtil
 import spray.http.RemoteAddress
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
 
-import scala.slick.driver.MySQLDriver.simple._
+import scala.slick.driver.{MySQLDriver, JdbcDriver}
+import scala.slick.profile.BasicDriver
 
-class AuthRepo(clock: Clock) {
-  val ClientId = """urn:blinkbox:zuul:client:([0-9]+)""".r
+/**
+ * Allows the time to be queried from a specified clock. Useful to allow testing of time-dependent functions.
+ */
+trait TimeSupport {
+  /**
+   * A clock that gives the current time, which defaults to the system clock.
+   */
+  val clock: Clock = SystemClock
+}
+
+trait SlickSupport {
+  type Session = driver.backend.Session
+  protected val driver: BasicDriver
+  protected val driverName: String
+  val db: driver.backend.Database
+}
+
+trait JdbcSupport extends SlickSupport {
+  protected val driver: JdbcDriver
+}
+
+trait MySqlSupport extends JdbcSupport {
+  protected val driver: MySQLDriver = MySQLDriver
+  protected val driverName: String = "com.mysql.jdbc.Driver"
+}
+
+class MySqlAuthRepository(config: DatabaseConfig) extends JdbcAuthRepository with MySqlSupport with TimeSupport {
+  val db = {
+    val jdbcUrl = s"jdbc:${config.uri.withUserInfo("")}"
+    val Array(user, password) = config.uri.getUserInfo.split(':')
+    driver.backend.Database.forURL(jdbcUrl, driver = driverName, user = user, password = password)
+  }
+}
+
+trait AuthRepository extends SlickSupport {
+  import com.blinkbox.books.auth.server.DataModel._
+
+  def createUser(registration: UserRegistration)(implicit session: Session): User
+  def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
+  def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
+  def userWithId(id: Int)(implicit session: Session): Option[User]
+  def createClient(userId: Int, registration: ClientRegistration)(implicit session: Session): Client
+  def authenticateClient(id: String, secret: String, userId: Int)(implicit session: Session): Option[Client]
+  def activeClients(implicit session: Session, user: AuthenticatedUser): List[Client]
+  def activeClientCount(implicit session: Session, user: AuthenticatedUser): Int
+  def clientWithId(id: Int)(implicit session: Session, user: AuthenticatedUser): Option[Client]
+  def updateClient(client: Client)(implicit session: Session, user: AuthenticatedUser): Unit
+  def createRefreshToken(userId: Int, clientId: Option[Int])(implicit session: Session): RefreshToken
+  def refreshTokenWithId(id: Int)(implicit session: Session): Option[RefreshToken]
+  def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
+  def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session)
+  def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session): Unit
+}
+
+trait JdbcAuthRepository extends AuthRepository with AuthTables {
+  this: JdbcSupport with TimeSupport =>
 
   import com.blinkbox.books.auth.server.DataModel._
-  import com.blinkbox.books.auth.server.DataTables._
+  import driver.simple._
+
+  val ClientId = """urn:blinkbox:zuul:client:([0-9]+)""".r
 
   def createUser(registration: UserRegistration)(implicit session: Session): User = {
     val user = newUser(registration)
@@ -89,11 +148,11 @@ class AuthRepo(clock: Clock) {
     refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.expiresAt)).update(now, now.plusDays(90))
   }
 
-  def clientsForUser(user: AuthenticatedUser)(implicit session: Session) = {
+  def activeClients(implicit session: Session, user: AuthenticatedUser) = {
     clients.where(c => c.userId === user.id && !c.isDeregistered).list
   }
 
-  def numberOfClientsForUser(user: AuthenticatedUser)(implicit session: Session) = {
+  def activeClientCount(implicit session: Session, user: AuthenticatedUser) = {
     clients.where(c => c.userId === user.id && !c.isDeregistered).length.run
   }
 

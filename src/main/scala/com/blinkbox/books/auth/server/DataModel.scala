@@ -6,7 +6,6 @@ import com.blinkbox.books.auth.Elevation
 import org.joda.time.DateTime
 
 import scala.concurrent.duration.FiniteDuration
-import scala.slick.driver.MySQLDriver.simple._
 
 object DataModel {
 
@@ -38,17 +37,20 @@ object DataModel {
 
 }
 
-object DataTables {
-  import com.blinkbox.books.auth.server.DataModel._
+trait AuthTables {
+  this: JdbcSupport =>
+
+  import driver.simple._
+  import DataModel._
 
   implicit def dateTime = MappedColumnType.base[DateTime, java.sql.Timestamp](
     dt => new java.sql.Timestamp(dt.getMillis),
     ts => new DateTime(ts.getTime))
 
-  val users = TableQuery[Users]
-  val clients = TableQuery[Clients]
-  val refreshTokens = TableQuery[RefreshTokens]
-  val loginAttempts = TableQuery[LoginAttempts]
+  lazy val users = TableQuery[Users]
+  lazy val clients = TableQuery[Clients]
+  lazy val refreshTokens = TableQuery[RefreshTokens]
+  lazy val loginAttempts = TableQuery[LoginAttempts]
 
   class Users(tag: Tag) extends Table[User](tag, "users") {
     def id = column[Int]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
@@ -59,7 +61,7 @@ object DataTables {
     def lastName = column[String]("last_name", O.NotNull)
     def passwordHash = column[String]("password_hash", O.NotNull)
     def allowMarketing = column[Boolean]("allow_marketing_communications", O.NotNull)
-    def * = (id, createdAt, updatedAt, username, firstName, lastName, passwordHash, allowMarketing) <> ((User.apply _).tupled, User.unapply)
+    def * = (id, createdAt, updatedAt, username, firstName, lastName, passwordHash, allowMarketing) <> (User.tupled, User.unapply)
     def indexOnUsername = index("index_users_on_username", username, unique = true)
   }
 
@@ -74,7 +76,7 @@ object DataTables {
     def os = column[String]("os", O.NotNull)
     def secret = column[String]("client_secret", O.NotNull)
     def isDeregistered = column[Boolean]("deregistered", O.NotNull)
-    def * = (id, createdAt, updatedAt, userId, name, brand, model, os, secret, isDeregistered) <> ((Client.apply _).tupled, Client.unapply)
+    def * = (id, createdAt, updatedAt, userId, name, brand, model, os, secret, isDeregistered) <> (Client.tupled, Client.unapply)
     def indexOnUserId = index("index_users_on_username", userId)
   }
 
@@ -89,7 +91,7 @@ object DataTables {
     def expiresAt = column[DateTime]("expires_at", O.NotNull)
     def elevationExpiresAt = column[DateTime]("elevation_expires_at", O.NotNull)
     def criticalElevationExpiresAt = column[DateTime]("critical_elevation_expires_at", O.NotNull)
-    def * = (id, createdAt, updatedAt, userId, clientId, token, isRevoked, expiresAt, elevationExpiresAt, criticalElevationExpiresAt) <> ((RefreshToken.apply _).tupled, RefreshToken.unapply)
+    def * = (id, createdAt, updatedAt, userId, clientId, token, isRevoked, expiresAt, elevationExpiresAt, criticalElevationExpiresAt) <> (RefreshToken.tupled, RefreshToken.unapply)
     def indexOnToken = index("index_refresh_tokens_on_token", token)
     def user = foreignKey("fk_refresh_tokens_to_users", userId, users)(_.id)
   }
@@ -99,7 +101,7 @@ object DataTables {
     def username = column[String]("username", O.NotNull)
     def successful = column[Boolean]("successful", O.NotNull)
     def clientIP = column[String]("client_ip", O.NotNull)
-    def * = (createdAt, username, successful, clientIP) <> ((LoginAttempt.apply _).tupled, LoginAttempt.unapply)
+    def * = (createdAt, username, successful, clientIP) <> (LoginAttempt.tupled, LoginAttempt.unapply)
   }
 
 }

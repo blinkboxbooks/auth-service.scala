@@ -4,13 +4,13 @@ import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
+import com.blinkbox.books.auth.server.DataModel._
 import com.blinkbox.books.auth.server.OAuthClientErrorCode._
 import com.blinkbox.books.auth.server.OAuthClientErrorReason._
 import com.blinkbox.books.auth.server.OAuthServerErrorCode._
 import com.blinkbox.books.auth.server.OAuthServerErrorReason._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
-import com.blinkbox.books.spray._
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
@@ -19,9 +19,8 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationExceptio
 import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
 
-import com.blinkbox.books.auth.server.DataModel._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.slick.driver.MySQLDriver.simple._
+//import scala.slick.driver.MySQLDriver.simple._
 
 trait AuthService {
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
@@ -52,21 +51,18 @@ object FailWith {
   def unverifiedIdentity: Nothing = throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
 }
 
-class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, geoIP: GeoIP, notifier: Notifier)(implicit executionContext: ExecutionContext) extends AuthService {
-  val db = Database.forURL("jdbc:" + config.uri.withUserInfo("").toString, driver="com.mysql.jdbc.Driver", user = "zuul", password = "mypass")
-
-  import DataModel._
-  //import DataTables._ // TODO: Should not be importing this
+class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepository, geoIP: GeoIP, notifier: Notifier)(implicit executionContext: ExecutionContext) extends AuthService {
+  import com.blinkbox.books.auth.server.DataModel._
 
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
     if (!registration.acceptedTerms) return Future.failed(new OAuthServerException("You must accept the terms and conditions", InvalidRequest))
     if (registration.password.length < 6) return Future.failed(new OAuthServerException("password must be at least 6 characters", InvalidRequest))
     Future {
-      if (clientIP.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty) {
+      if (clientIP.isDefined && clientIP.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty) {
         throw new OAuthServerException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
       }
 
-      val (user, client, token) = db.withTransaction { implicit transaction =>
+      val (user, client, token) = repo.db.withTransaction { implicit transaction =>
         val u = repo.createUser(registration)
         val c = registration.client.map(repo.createClient(u.id, _))
         val t = repo.createRefreshToken(u.id, c.map(_.id))
@@ -81,7 +77,7 @@ class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, g
   }
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
-    val (user, client, token) = db.withTransaction { implicit transaction =>
+    val (user, client, token) = repo.db.withTransaction { implicit transaction =>
       val u = authenticateUser(credentials, clientIP)
       val c = authenticateClient(credentials, u)
       val t = repo.createRefreshToken(u.id, c.map(_.id))
@@ -92,7 +88,7 @@ class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, g
   }
 
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
-    val (user1, client1, token1) = db.withTransaction { implicit transaction =>
+    val (user1, client1, token1) = repo.db.withTransaction { implicit transaction =>
       val t = repo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
       val u = repo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
       val c = authenticateClient(credentials, u)
@@ -110,7 +106,7 @@ class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, g
 
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {
     val tokenId = user.claims.get("zl/rti").get.asInstanceOf[Int]
-    val token = db.withSession(implicit session => repo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
+    val token = repo.db.withSession(implicit session => repo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
     SessionInfo(
       token_status = token.status,
       token_elevation = if (token.isValid) Some(token.elevation) else None,
@@ -120,9 +116,9 @@ class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, g
   }
 
   def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
-    val client = db.withTransaction { implicit transaction =>
+    val client = repo.db.withTransaction { implicit transaction =>
       val MaxClients = 12// TODO: Make max number of clients configurable
-      if (repo.numberOfClientsForUser(user) > MaxClients) {
+      if (repo.activeClientCount > MaxClients) {
         throw new OAuthServerException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
       }
       repo.createClient(user.id, registration)
@@ -133,17 +129,17 @@ class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, g
   }
 
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
-    val clientList = db.withSession(implicit session => repo.clientsForUser(user))
+    val clientList = repo.db.withSession(implicit session => repo.activeClients)
     ClientList(clientList.map(clientInfo(_)))
   }
 
   def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = db.withSession(implicit session => repo.clientWithId(id))
+    val client = repo.db.withSession(implicit session => repo.clientWithId(id))
     client.map(clientInfo(_))
   }
 
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = db.withTransaction { implicit transaction =>
+    val client = repo.db.withTransaction { implicit transaction =>
       val c = repo.clientWithId(id)
       c.map { c2 =>
         val c3 = c2.copy(
@@ -160,7 +156,7 @@ class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, g
   }
 
   def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit] = Future {
-    db.withSession { implicit session =>
+    repo.db.withSession { implicit session =>
       val c = repo.clientWithId(id)
       c.foreach { c2 =>
         val c3 = c2.copy(updatedAt = clock.now(), isDeregistered = true)
@@ -169,14 +165,14 @@ class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepo, g
     }
   }
 
-  private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: Session): User = {
+  private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {
     val user = repo.authenticateUser(credentials.username, credentials.password)
     repo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
     if (user.isEmpty) throw new OAuthServerException("The username and/or password is incorrect.", InvalidGrant)
     user.get
   }
 
-  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: Session): Option[Client] = {
+  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: repo.Session): Option[Client] = {
     if (credentials.clientId.isDefined && credentials.clientSecret.isDefined) {
       val client = repo.authenticateClient(credentials.clientId.get, credentials.clientSecret.get, user.id)
       if (client.isEmpty) throw new OAuthServerException("Invalid client credentials.", InvalidClient)

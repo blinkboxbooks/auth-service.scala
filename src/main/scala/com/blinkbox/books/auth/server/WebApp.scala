@@ -30,7 +30,7 @@ class WebService(config: AppConfig) extends HttpServiceActor {
   val authenticator = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
-  val service = new DefaultAuthService(config.db, SystemClock, new AuthRepo(SystemClock), DummyGeoIP, new DummyNotifier)
+  val service = new DefaultAuthService(config.db, SystemClock, new MySqlAuthRepository(config.db), DummyGeoIP, new DummyNotifier)
   val users = new AuthApi(config.service, service, authenticator)
   val swagger = new SwaggerApi(config.swagger)
   val route = users.routes ~ respondWithHeader(`Access-Control-Allow-Origin`(AllOrigins)) { swagger.routes }
