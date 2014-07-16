@@ -132,13 +132,13 @@ $ cp zuul.properties.development zuul.properties
 
 Once that is done, edit the file to ensure you have the correct settings. Most of them should be fine as they are, but you'll probably need to put the correct credentials in the `database_url` property, as described in setting up the database.
 
-To start the server in development/test mode run: 
+**Ensure that you're using a decent web server** such as Thin, because WEBrick will fall over in a massive heap as soon as you put any load on it.
+
+To start the server in development/test mode using Thin run: 
 
 ```
-$ rackup --port 9393
+$ rackup -s thin --port 9393
 ```
-
-Ensure that you're using a decent web server such as Thin, because WEBrick will fall over in a massive heap as soon as you put any load on it.
 
 ## Running the tests
 

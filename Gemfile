@@ -1,6 +1,5 @@
-source "http://gems.mobcastdev.com/"
-source "https://rubygems.org"
-ruby "2.0.0"
+source "http://artifactory.blinkbox.local/artifactory/api/gems/bbb-gems/"
+source "http://artifactory.blinkbox.local/artifactory/api/gems/rubygems/"
 
 gem "activerecord", "~> 4.0"
 gem "bunny", "~> 0.0", ">= 0.10.8"
@@ -14,9 +13,9 @@ gem "rack-timekeeper", ">= 0.2.0"
 gem "sandal", "~> 0.6"
 gem "scrypt", "~> 1.2"
 gem "sinatra", "~> 1.2"
-gem "sinatra-activerecord", "~> 1.2"
+gem "sinatra-activerecord", "~> 2.0"
 gem "sinatra-contrib", "~> 1.4"
-
+gem "newrelic_rpm", "~> 3.9"
 
 group :development, :test do
   gem "bundler"
@@ -27,7 +26,7 @@ group :development, :test do
   gem "cucumber-rest"
   gem "httparty"
   gem "rake"
-  gem "rspec"
+  gem "rspec", "~>2.99"
   gem "ruby-prof"
   gem "simplecov"
   gem "sqlite3"
