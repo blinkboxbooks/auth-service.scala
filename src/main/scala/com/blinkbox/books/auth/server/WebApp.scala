@@ -2,7 +2,8 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
-import com.blinkbox.books.auth.server.DataModel.{Client, User}
+import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.data.MySqlAuthRepository
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers
@@ -25,12 +26,12 @@ object DummyGeoIP extends GeoIP {
   override def countryCode(address: RemoteAddress): String = "GB"
 }
 
-class WebService(config: AppConfig) extends HttpServiceActor {
+class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupport {
   implicit val executionContext = actorRefFactory.dispatcher
   val authenticator = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
-  val service = new DefaultAuthService(config.db, SystemClock, new MySqlAuthRepository(config.db), DummyGeoIP, new DummyNotifier)
+  val service = new DefaultAuthService(config.db, new MySqlAuthRepository(config.db), DummyGeoIP, new DummyNotifier)
   val users = new AuthApi(config.service, service, authenticator)
   val swagger = new SwaggerApi(config.swagger)
   val route = users.routes ~ respondWithHeader(`Access-Control-Allow-Origin`(AllOrigins)) { swagger.routes }

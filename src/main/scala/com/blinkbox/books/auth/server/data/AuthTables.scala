@@ -1,51 +1,12 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.data
 
-import java.util.concurrent.TimeUnit
-
-import com.blinkbox.books.auth.Elevation
+import com.blinkbox.books.slick.JdbcSupport
 import org.joda.time.DateTime
-
-import scala.concurrent.duration.FiniteDuration
-
-object DataModel {
-
-  case class User(id: Int, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)
-
-  case class Client(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
-
-  case class RefreshToken(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, clientId: Option[Int], token: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime) {
-    def isExpired = expiresAt.isBeforeNow
-
-    def isValid = !isExpired && !isRevoked
-
-    def status = if (isValid) RefreshTokenStatus.Valid else RefreshTokenStatus.Invalid
-
-    def isElevated = !elevationExpiresAt.isBeforeNow
-
-    def isCriticallyElevated = !criticalElevationExpiresAt.isBeforeNow
-
-    def elevation = if (isCriticallyElevated) Elevation.Critical
-    else if (isElevated) Elevation.Elevated
-    else Elevation.Unelevated
-
-    def elevationDropsAt = if (isCriticallyElevated) criticalElevationExpiresAt else elevationExpiresAt
-
-    def elevationDropsIn = FiniteDuration(elevationDropsAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-  }
-
-  case class LoginAttempt(createdAt: DateTime, username: String, successful: Boolean, clientIP: String)
-
-}
 
 trait AuthTables {
   this: JdbcSupport =>
 
   import driver.simple._
-  import DataModel._
-
-  implicit def dateTime = MappedColumnType.base[DateTime, java.sql.Timestamp](
-    dt => new java.sql.Timestamp(dt.getMillis),
-    ts => new DateTime(ts.getTime))
 
   lazy val users = TableQuery[Users]
   lazy val clients = TableQuery[Clients]
@@ -103,6 +64,4 @@ trait AuthTables {
     def clientIP = column[String]("client_ip", O.NotNull)
     def * = (createdAt, username, successful, clientIP) <> (LoginAttempt.tupled, LoginAttempt.unapply)
   }
-
 }
-

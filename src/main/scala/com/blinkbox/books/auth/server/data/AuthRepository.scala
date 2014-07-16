@@ -1,44 +1,18 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.data
 
 import java.security.SecureRandom
 
+import com.blinkbox.books.auth.server.{Clock, ClientRegistration, TimeSupport, UserRegistration}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
+import com.blinkbox.books.slick.{JdbcSupport, MySqlSupport, SlickSupport}
 import com.blinkbox.books.spray.uri2uri
 import com.blinkbox.security.jwt.util.Base64
 import com.lambdaworks.crypto.SCryptUtil
 import spray.http.RemoteAddress
 
-import scala.slick.driver.{MySQLDriver, JdbcDriver}
-import scala.slick.profile.BasicDriver
 
-/**
- * Allows the time to be queried from a specified clock. Useful to allow testing of time-dependent functions.
- */
-trait TimeSupport {
-  /**
-   * A clock that gives the current time, which defaults to the system clock.
-   */
-  val clock: Clock = SystemClock
-}
-
-trait SlickSupport {
-  type Session = driver.backend.Session
-  protected val driver: BasicDriver
-  protected val driverName: String
-  val db: driver.backend.Database
-}
-
-trait JdbcSupport extends SlickSupport {
-  protected val driver: JdbcDriver
-}
-
-trait MySqlSupport extends JdbcSupport {
-  protected val driver: MySQLDriver = MySQLDriver
-  protected val driverName: String = "com.mysql.jdbc.Driver"
-}
-
-class MySqlAuthRepository(config: DatabaseConfig) extends JdbcAuthRepository with MySqlSupport with TimeSupport {
+class MySqlAuthRepository(config: DatabaseConfig)(implicit val clock: Clock) extends JdbcAuthRepository with MySqlSupport with TimeSupport {
   val db = {
     val jdbcUrl = s"jdbc:${config.uri.withUserInfo("")}"
     val Array(user, password) = config.uri.getUserInfo.split(':')
@@ -47,8 +21,6 @@ class MySqlAuthRepository(config: DatabaseConfig) extends JdbcAuthRepository wit
 }
 
 trait AuthRepository extends SlickSupport {
-  import com.blinkbox.books.auth.server.DataModel._
-
   def createUser(registration: UserRegistration)(implicit session: Session): User
   def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
@@ -68,8 +40,6 @@ trait AuthRepository extends SlickSupport {
 
 trait JdbcAuthRepository extends AuthRepository with AuthTables {
   this: JdbcSupport with TimeSupport =>
-
-  import com.blinkbox.books.auth.server.DataModel._
   import driver.simple._
 
   val ClientId = """urn:blinkbox:zuul:client:([0-9]+)""".r

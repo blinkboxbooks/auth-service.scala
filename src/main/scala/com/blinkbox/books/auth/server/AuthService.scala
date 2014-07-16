@@ -4,11 +4,12 @@ import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
-import com.blinkbox.books.auth.server.DataModel._
+import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.OAuthClientErrorCode._
 import com.blinkbox.books.auth.server.OAuthClientErrorReason._
 import com.blinkbox.books.auth.server.OAuthServerErrorCode._
 import com.blinkbox.books.auth.server.OAuthServerErrorReason._
+import com.blinkbox.books.auth.server.data.AuthRepository
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
 import com.blinkbox.security.jwt.TokenEncoder
@@ -34,9 +35,6 @@ trait AuthService {
   def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit]
 }
 
-trait Clock { def now() = DateTime.now(DateTimeZone.UTC) }
-object SystemClock extends Clock
-
 trait GeoIP {
   def countryCode(address: RemoteAddress): String
 }
@@ -51,8 +49,7 @@ object FailWith {
   def unverifiedIdentity: Nothing = throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
 }
 
-class DefaultAuthService(config: DatabaseConfig, clock: Clock, repo: AuthRepository, geoIP: GeoIP, notifier: Notifier)(implicit executionContext: ExecutionContext) extends AuthService {
-  import com.blinkbox.books.auth.server.DataModel._
+class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: GeoIP, notifier: Notifier)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
 
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
     if (!registration.acceptedTerms) return Future.failed(new OAuthServerException("You must accept the terms and conditions", InvalidRequest))
