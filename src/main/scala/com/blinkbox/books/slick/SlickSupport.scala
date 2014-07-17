@@ -2,8 +2,8 @@ package com.blinkbox.books.slick
 
 import org.joda.time.DateTime
 
-import scala.slick.driver.{H2Driver, MySQLDriver, JdbcDriver}
-import scala.slick.profile.BasicDriver
+import scala.slick.driver.{H2Driver, JdbcDriver, MySQLDriver}
+import scala.slick.profile.{BasicDriver, RelationalDriver, SqlDriver}
 
 trait SlickSupport {
   protected val driverName: String
@@ -12,10 +12,18 @@ trait SlickSupport {
   val db: driver.backend.Database
 }
 
-trait JdbcSupport extends SlickSupport {
+trait RelationalSupport extends SlickSupport {
+  protected val driver: RelationalDriver
+}
+
+trait SqlSupport extends RelationalSupport {
+  protected val driver: SqlDriver
+}
+
+trait JdbcSupport extends SqlSupport {
   protected val driver: JdbcDriver
   import driver.simple._
-  protected implicit def dateTimeColumn = MappedColumnType.base[DateTime, java.sql.Timestamp](
+  protected implicit def jodaDateTimeColumnType = MappedColumnType.base[DateTime, java.sql.Timestamp](
     dt => new java.sql.Timestamp(dt.getMillis),
     ts => new DateTime(ts.getTime))
 }
