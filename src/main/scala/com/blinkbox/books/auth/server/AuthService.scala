@@ -74,10 +74,11 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
     }
     notifier.notifyUserCreated(user, client)
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
-  } recoverWith {
-    case e: MysqlDataTruncation => Future.failed(new OAuthServerException(e.getMessage, InvalidRequest))
-    case e: MySQLIntegrityConstraintViolationException => Future.failed(new UserAlreadyExists(e.getMessage))
-  }
+  }.transform(identity, _ match {
+    case e: MysqlDataTruncation => new OAuthServerException(e.getMessage, InvalidRequest)
+    case e: MySQLIntegrityConstraintViolationException => new UserAlreadyExists(e.getMessage)
+    case e => e
+  })
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     val (user, client, token) = repo.db.withTransaction { implicit transaction =>
@@ -131,9 +132,10 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       repo.createClient(user.id, registration)
     }
     clientInfo(client, includeClientSecret = true)
-  } recoverWith {
-    case e: MysqlDataTruncation => Future.failed(new OAuthServerException(e.getMessage, InvalidRequest))
-  }
+  } transform(identity, _ match {
+    case e: MysqlDataTruncation => new OAuthServerException(e.getMessage, InvalidRequest)
+    case e => e
+  })
 
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
     val clientList = repo.db.withSession(implicit session => repo.activeClients)
