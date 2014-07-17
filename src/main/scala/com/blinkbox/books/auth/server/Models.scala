@@ -105,7 +105,13 @@ case class ClientRegistration(
   name: String,
   brand: String,
   model: String,
-  os: String)
+  os: String) {
+
+  require(!name.isEmpty, "Name must not be empty if provided")
+  require(!brand.isEmpty, "Brand must not be empty if provided")
+  require(!model.isEmpty, "Model must not be empty if provided")
+  require(!os.isEmpty, "OS must not be empty if provided")
+}
 
 case class TokenInfo(
   access_token: String,

@@ -124,11 +124,6 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
   }
 
   def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
-    if (registration.brand.isEmpty) throw new InvalidClientDetailsException("Brand cannot be empty")
-    if (registration.model.isEmpty) throw new InvalidClientDetailsException("Model cannot be empty")
-    if (registration.name.isEmpty) throw new InvalidClientDetailsException("Name cannot be empty")
-    if (registration.os.isEmpty) throw new InvalidClientDetailsException("OS cannot be empty")
-
     val client = repo.db.withTransaction { implicit transaction =>
       if (repo.activeClientCount >= MaxClients) {
         throw new OAuthServerException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
