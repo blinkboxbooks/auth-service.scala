@@ -5,6 +5,8 @@
 # use a real proxy. We use X-Forwarded-For where possible to keep things fast.
 
 Given(/^my IP address would geolocate me in ([A-Z]{2})$/) do |country_code|
+  pending "GeoIP cannot be tested out-of-proc" unless TEST_CONFIG[:in_proc]
+
   if TEST_CONFIG[:local_network]
     # these IP addresses are taken from the largest allocated block for each country as this is 
     # assumed to be the least likely to change. however, this step may need to be updated if
