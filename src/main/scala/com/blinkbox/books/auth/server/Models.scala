@@ -92,6 +92,14 @@ case class RefreshTokenCredentials(token: String, clientId: Option[String], clie
   if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthServerException("Both client id and client secret are required.", InvalidClient)
 }
 
+sealed trait ClientRegistrationException extends Throwable
+case class InvalidClientDetailsException(message: String) extends ClientRegistrationException
+case object TooManyClientsException extends ClientRegistrationException
+
+case class ClientRegistrationError(error: OAuthServerErrorCode)
+object ClientRegistrationError {
+  def apply(e: ClientRegistrationException): ClientRegistrationError = ClientRegistrationError(OAuthServerErrorCode.InvalidRequest)
+}
 
 case class ClientRegistration(
   name: String,
