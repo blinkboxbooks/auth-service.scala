@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.13.0 ([#103](https://git.mobcastdev.com/Zuul/zuul-server/pull/103) 2014-07-18 15:06:38)
+
+Prepare for RPM building
+
+### New Feature
+
+- Allows building RPMs!
+
+![Everything is awesome](http://media.giphy.com/media/Z6f7vzq3iP6Mw/giphy.gif)
+
 ## 0.12.1 ([#99](https://git.mobcastdev.com/Zuul/zuul-server/pull/99) 2014-07-03 10:44:16)
 
 Updated README
