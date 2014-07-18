@@ -44,11 +44,12 @@ trait Notifier {
 }
 
 object FailWith {
-  def invalidRefreshToken: Nothing = throw new OAuthServerException("The refresh token is invalid.", InvalidGrant)
-  def unverifiedIdentity: Nothing = throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
-  def termsAndConditionsNotAccepted: Nothing = throw new OAuthServerException("You must accept the terms and conditions", InvalidRequest)
-  def passwordTooShort: Nothing = throw new OAuthServerException("Password must be at least 6 characters", InvalidRequest)
-  def notInTheUK: Nothing = throw new OAuthServerException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
+  def invalidRefreshToken = throw new OAuthServerException("The refresh token is invalid.", InvalidGrant)
+  def refreshTokenNotAuthorized = throw new OAuthServerException("Your client is not authorised to use this refresh token", InvalidClient)
+  def unverifiedIdentity = throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
+  def termsAndConditionsNotAccepted = throw new OAuthServerException("You must accept the terms and conditions", InvalidRequest)
+  def passwordTooShort = throw new OAuthServerException("Password must be at least 6 characters", InvalidRequest)
+  def notInTheUK = throw new OAuthServerException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
   def invalidUsernamePassword = throw new OAuthServerException("The username and/or password is incorrect.", InvalidGrant)
   def invalidClientCredentials = throw new OAuthServerException("Invalid client credentials.", InvalidClient)
 }
@@ -97,13 +98,11 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       val u = repo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
       val c = authenticateClient(credentials, u)
 
-      lazy val oauthError = throw new OAuthServerException("Your client is not authorised to use this refresh token", InvalidClient)
-
       (t.clientId, c) match {
         case (None, Some(client)) => repo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
         case (None, None) => // Do nothing: token isn't associated with a client and there is no client
         case (Some(tId), Some(cId)) if (tId == cId) => // Do nothing: token is associated with the right client
-        case _ => oauthError
+        case _ => FailWith.refreshTokenNotAuthorized
       }
 
       repo.extendRefreshTokenLifetime(t)

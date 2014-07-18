@@ -289,7 +289,6 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
 
   def exceptionHandler = ExceptionHandler {
     case e: OAuthServerException => complete(BadRequest, OAuthServerError(e))
-    case e: InvalidClientDetailsException => complete(BadRequest, ClientRegistrationError(e))
     case e: OAuthClientException => complete(Unauthorized, "TODO: This should have a WWW-Authenticate header")
 //    case x =>
 //      log.error("hello", x)
