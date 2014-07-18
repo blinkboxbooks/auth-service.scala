@@ -50,7 +50,7 @@ val publishSettings = Seq(
       case x => old(x)
     }
   },
-  artifact in (Compile, assembly) ~= { art => art.copy(`classifier` = Some("assembly")) }   
+  artifact in (Compile, assembly) ~= { art => art.copy(`classifier` = Some("assembly")) }
 ) ++ addArtifact(artifact in (Compile, assembly), assembly).settings
 
 val root = (project in file(".")).

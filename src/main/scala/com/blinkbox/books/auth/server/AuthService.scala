@@ -22,7 +22,6 @@ import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
-//import scala.slick.driver.MySQLDriver.simple._
 
 trait AuthService {
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
@@ -46,33 +45,42 @@ trait Notifier {
 }
 
 object FailWith {
-  def invalidRefreshToken: Nothing = throw new OAuthServerException("The refresh token is invalid.", InvalidGrant)
-  def unverifiedIdentity: Nothing = throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
+  def invalidRefreshToken = throw new OAuthServerException("The refresh token is invalid.", InvalidGrant)
+  def refreshTokenNotAuthorized = throw new OAuthServerException("Your client is not authorised to use this refresh token", InvalidClient)
+  def unverifiedIdentity = throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
+  def termsAndConditionsNotAccepted = throw new OAuthServerException("You must accept the terms and conditions", InvalidRequest)
+  def passwordTooShort = throw new OAuthServerException("Password must be at least 6 characters", InvalidRequest)
+  def notInTheUK = throw new OAuthServerException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
+  def invalidUsernamePassword = throw new OAuthServerException("The username and/or password is incorrect.", InvalidGrant)
+  def invalidClientCredentials = throw new OAuthServerException("Invalid client credentials.", InvalidClient)
 }
 
 class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: GeoIP, notifier: Notifier)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
+  val MaxClients = 12// TODO: Make max number of clients configurable
 
-  def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
-    if (!registration.acceptedTerms) return Future.failed(new OAuthServerException("You must accept the terms and conditions", InvalidRequest))
-    if (registration.password.length < 6) return Future.failed(new OAuthServerException("password must be at least 6 characters", InvalidRequest))
-    Future {
-      if (clientIP.isDefined && clientIP.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty) {
-        throw new OAuthServerException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
-      }
+  def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
+    if (!registration.acceptedTerms)
+      FailWith.termsAndConditionsNotAccepted
 
-      val (user, client, token) = repo.db.withTransaction { implicit transaction =>
-        val u = repo.createUser(registration)
-        val c = registration.client.map(repo.createClient(u.id, _))
-        val t = repo.createRefreshToken(u.id, c.map(_.id))
-        (u, c, t)
-      }
-      notifier.notifyUserCreated(user, client)
-      issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
-    } recoverWith {
-      case e: MysqlDataTruncation => Future.failed(new OAuthServerException(e.getMessage, InvalidRequest))
-      case e: MySQLIntegrityConstraintViolationException => Future.failed(new UserAlreadyExists(e.getMessage))
+    if (registration.password.length < 6)
+      FailWith.passwordTooShort
+
+    if (clientIP.isDefined && clientIP.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
+      FailWith.notInTheUK
+
+    val (user, client, token) = repo.db.withTransaction { implicit transaction =>
+      val u = repo.createUser(registration)
+      val c = registration.client.map(repo.createClient(u.id, _))
+      val t = repo.createRefreshToken(u.id, c.map(_.id))
+      (u, c, t)
     }
-  }
+    notifier.notifyUserCreated(user, client)
+    issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
+  }.transform(identity, _ match {
+    case e: MysqlDataTruncation => new OAuthServerException(e.getMessage, InvalidRequest)
+    case e: MySQLIntegrityConstraintViolationException => new UserAlreadyExists(e.getMessage)
+    case e => e
+  })
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     val (user, client, token) = repo.db.withTransaction { implicit transaction =>
@@ -90,11 +98,14 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       val t = repo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
       val u = repo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
       val c = authenticateClient(credentials, u)
-      if (t.clientId.isEmpty) {
-        if (c.isDefined) repo.associateRefreshTokenWithClient(t, c.get)
-      } else if (c.isEmpty || t.clientId.get != c.get.id) {
-        throw new OAuthServerException("Your client is not authorised to use this refresh token", InvalidClient)
+
+      (t.clientId, c) match {
+        case (None, Some(client)) => repo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
+        case (None, None) => // Do nothing: token isn't associated with a client and there is no client
+        case (Some(tId), Some(cId)) if (tId == cId) => // Do nothing: token is associated with the right client
+        case _ => FailWith.refreshTokenNotAuthorized
       }
+
       repo.extendRefreshTokenLifetime(t)
       (u, c, t)
     }
@@ -115,16 +126,16 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
 
   def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
     val client = repo.db.withTransaction { implicit transaction =>
-      val MaxClients = 12// TODO: Make max number of clients configurable
-      if (repo.activeClientCount > MaxClients) {
+      if (repo.activeClientCount >= MaxClients) {
         throw new OAuthServerException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
       }
       repo.createClient(user.id, registration)
     }
     clientInfo(client, includeClientSecret = true)
-  } recoverWith {
-    case e: MysqlDataTruncation => Future.failed(new OAuthServerException(e.getMessage, InvalidRequest))
-  }
+  } transform(identity, _ match {
+    case e: MysqlDataTruncation => new OAuthServerException(e.getMessage, InvalidRequest)
+    case e => e
+  })
 
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
     val clientList = repo.db.withSession(implicit session => repo.activeClients)
@@ -138,27 +149,28 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
 
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val client = repo.db.withTransaction { implicit transaction =>
-      val c = repo.clientWithId(id)
-      c.map { c2 =>
-        val c3 = c2.copy(
+
+      val updatedClient = repo.clientWithId(id) map { oldClient =>
+        oldClient.copy(
           updatedAt = clock.now(),
-          name = patch.client_name.getOrElse(c2.name),
-          brand = patch.client_brand.getOrElse(c2.brand),
-          model = patch.client_model.getOrElse(c2.model),
-          os = patch.client_os.getOrElse(c2.os))
-        repo.updateClient(c3)
-        c3
+          name = patch.client_name.getOrElse(oldClient.name),
+          brand = patch.client_brand.getOrElse(oldClient.brand),
+          model = patch.client_model.getOrElse(oldClient.model),
+          os = patch.client_os.getOrElse(oldClient.os))
       }
+
+      updatedClient foreach repo.updateClient
+
+      updatedClient
     }
+
     client.map(clientInfo(_))
   }
 
   def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit] = Future {
     repo.db.withSession { implicit session =>
-      val c = repo.clientWithId(id)
-      c.foreach { c2 =>
-        val c3 = c2.copy(updatedAt = clock.now(), isDeregistered = true)
-        repo.updateClient(c3)
+      repo.clientWithId(id) foreach { client =>
+        repo.updateClient(client.copy(updatedAt = clock.now(), isDeregistered = true))
       }
     }
   }
@@ -166,17 +178,17 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {
     val user = repo.authenticateUser(credentials.username, credentials.password)
     repo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
-    if (user.isEmpty) throw new OAuthServerException("The username and/or password is incorrect.", InvalidGrant)
-    user.get
+
+    user.getOrElse(FailWith.invalidUsernamePassword)
   }
 
-  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: repo.Session): Option[Client] = {
-    if (credentials.clientId.isDefined && credentials.clientSecret.isDefined) {
-      val client = repo.authenticateClient(credentials.clientId.get, credentials.clientSecret.get, user.id)
-      if (client.isEmpty) throw new OAuthServerException("Invalid client credentials.", InvalidClient)
-      client
-    } else None
-  }
+  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: repo.Session): Option[Client] =
+    for {
+      clientId <- credentials.clientId
+      clientSecret <- credentials.clientSecret
+    } yield repo.
+      authenticateClient(clientId, clientSecret, user.id).
+      getOrElse(FailWith.invalidClientCredentials)
 
   private def clientInfo(client: Client, includeClientSecret: Boolean = false) = ClientInfo(
     client_id = s"urn:blinkbox:zuul:client:${client.id}",
@@ -243,6 +255,4 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       client_secret = if (includeClientSecret) client.map(_.secret) else None,
       last_used_date = client.map(_.updatedAt))
   }
-  
-
 }
