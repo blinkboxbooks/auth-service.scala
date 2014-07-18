@@ -31,7 +31,7 @@ val dependencySettings = Seq(
       "com.lambdaworks"       %   "scrypt"                % "1.4.0",
       "com.blinkbox.books"    %%  "common-config"         % "0.7.0",
       "com.blinkbox.books"    %%  "common-spray"          % "0.12.0",
-      "com.blinkbox.books"    %%  "common-spray-auth"     % "0.5.0-SNAPSHOT",
+      "com.blinkbox.books"    %%  "common-spray-auth"     % "0.5.0",
       "mysql"                 %   "mysql-connector-java"  % "5.1.31",
       "io.spray"              %   "spray-testkit"         % sprayV    % "test",
       "com.typesafe.akka"     %%  "akka-testkit"          % akkaV     % "test",
@@ -50,7 +50,7 @@ val publishSettings = Seq(
       case x => old(x)
     }
   },
-  artifact in (Compile, assembly) ~= { art => art.copy(`classifier` = Some("assembly")) }   
+  artifact in (Compile, assembly) ~= { art => art.copy(`classifier` = Some("assembly")) }
 ) ++ addArtifact(artifact in (Compile, assembly), assembly).settings
 
 val root = (project in file(".")).
