@@ -1,2 +1,2 @@
-%define app_name        authserver
+%define app_name        auth-server
 %define app_ver         $(cat VERSION)
