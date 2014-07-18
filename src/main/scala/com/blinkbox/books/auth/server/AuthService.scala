@@ -12,6 +12,7 @@ import com.blinkbox.books.auth.server.OAuthServerErrorReason._
 import com.blinkbox.books.auth.server.data.AuthRepository
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
+import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256

@@ -1,8 +1,9 @@
 package com.blinkbox.books.auth.server.data
 
 import com.blinkbox.books.auth.Elevation
-import com.blinkbox.books.auth.server.{Clock, RefreshTokenStatus}
+import com.blinkbox.books.auth.server.RefreshTokenStatus
 import java.util.concurrent.TimeUnit
+import com.blinkbox.books.time.Clock
 import org.joda.time.DateTime
 import scala.concurrent.duration.FiniteDuration
 
@@ -11,7 +12,6 @@ case class User(id: Int, createdAt: DateTime, updatedAt: DateTime, username: Str
 case class Client(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
 
 case class RefreshToken(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, clientId: Option[Int], token: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime) {
-  // TODO: Many of these use the system clock, but should use a provided clock for testing purposes
   def isExpired(implicit clock: Clock) = expiresAt.isBefore(clock.now())
   def isValid(implicit clock: Clock) = !isExpired && !isRevoked
   def status(implicit clock: Clock) = if (isValid) RefreshTokenStatus.Valid else RefreshTokenStatus.Invalid

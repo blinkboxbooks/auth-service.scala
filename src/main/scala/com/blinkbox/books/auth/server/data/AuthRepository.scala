@@ -2,11 +2,12 @@ package com.blinkbox.books.auth.server.data
 
 import java.security.SecureRandom
 
-import com.blinkbox.books.auth.server.{Clock, ClientRegistration, TimeSupport, UserRegistration}
+import com.blinkbox.books.auth.server.{ClientRegistration, UserRegistration}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
 import com.blinkbox.books.slick.{JdbcSupport, MySqlSupport, SlickSupport}
 import com.blinkbox.books.spray.uri2uri
+import com.blinkbox.books.time.{TimeSupport, Clock}
 import com.blinkbox.security.jwt.util.Base64
 import com.lambdaworks.crypto.SCryptUtil
 import spray.http.RemoteAddress
