@@ -2,24 +2,22 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
+import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 
 import org.json4s.ext.EnumNameSerializer
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
 import com.blinkbox.books.spray.Directives
-import com.blinkbox.books.spray.v1._
 import com.wordnik.swagger.annotations._
 import org.slf4j.LoggerFactory
-import shapeless.HNil
 import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http.StatusCodes._
-import spray.http.{HttpChallenge, HttpCharsets}
+import spray.http.{HttpChallenge}
 import spray.routing._
 import org.json4s._
 import spray.httpx.unmarshalling.FormDataUnmarshallers
 import com.blinkbox.books.auth.User
-import java.lang.reflect.InvocationTargetException
 import spray.httpx.Json4sJacksonSupport
 import spray.routing.authentication.ContextAuthenticator
 
@@ -89,23 +87,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
   implicit val executionContext = DiagnosticExecutionContext(actorRefFactory.dispatcher)
   implicit val timeout: Timeout = config.timeout
 
-  implicit def json4sJacksonFormats: Formats = DefaultFormats + new EnumNameSerializer(OAuthServerErrorCode) + new EnumNameSerializer(OAuthServerErrorReason)
-
-//  implicit def version1JsonUnmarshaller[T: Manifest]: Unmarshaller[T] =
-//    Unmarshaller[T](`application/vnd.blinkboxbooks.data.v1+json`) {
-//      case x: HttpEntity.NonEmpty =>
-//        try Serialization.read[T](x.asString(defaultCharset = HttpCharsets.`UTF-8`))
-//        catch {
-//          case MappingException("unknown error", ite: InvocationTargetException) => throw ite.getCause
-//        }
-//    }
-
-
-
-  //implicit def version1JsonMarshaller[T <: AnyRef]: Marshaller[T] = Marshaller.delegate[T, String](`application/json`)(Serialization.write(_))
-
-//  implicit def formats: Formats = DefaultFormats
-//  implicit def marshaller[T <: AnyRef] = Marshaller.delegate[T, String](`application/json`)
+  implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer + new EnumNameSerializer(RefreshTokenStatus)
 
 //  first_name (required)
 //  last_name (required)
@@ -285,22 +267,23 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
     }
   }
 
-  import OAuthServerErrorCode._
-
   def exceptionHandler = ExceptionHandler {
-    case e: OAuthServerException => complete(BadRequest, OAuthServerError(e))
-    case e: OAuthClientException => complete(Unauthorized, "TODO: This should have a WWW-Authenticate header")
-//    case x =>
-//      log.error("hello", x)
-//      complete(InternalServerError)
+    case e: ZuulRequestException => complete(BadRequest, e)
+    case e: ZuulAuthorizationException =>
+      val commonChallenges = HttpChallenge("Bearer realm", "blinkbox.com") ::
+        HttpChallenge("error", ZuulAuthorizationErrorCode.toString(e.code)) ::
+        HttpChallenge("error_description", e.message) :: Nil
+
+      val challenges = e.reason.fold(commonChallenges) {
+        r => HttpChallenge("error_reason", ZuulAuthorizationErrorReason.toString(r)) :: commonChallenges
+      }
+
+      respondWithHeader(`WWW-Authenticate`.apply(challenges)) { complete(Unauthorized, "") }
   }
 
   def rejectionHandler = RejectionHandler {
-    case MissingFormFieldRejection(field) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, s"Missing field: $field"))
-    case MalformedFormFieldRejection(field, message, _) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, s"$field: $message"))
-    case ValidationRejection(message, _) :: _ => complete(BadRequest, OAuthServerError(InvalidRequest, None, message))
-//    case x =>
-//      log.error("hello", x)
-//      complete(InternalServerError)
+    case MissingFormFieldRejection(field) :: _ => complete(BadRequest, ZuulRequestException(s"Missing field: $field", InvalidRequest, None))
+    case MalformedFormFieldRejection(field, message, _) :: _ => complete(BadRequest, ZuulRequestException(s"$field: $message", InvalidRequest, None))
+    case ValidationRejection(message, _) :: _ => complete(BadRequest, ZuulRequestException(message, InvalidRequest, None))
   }
 }
