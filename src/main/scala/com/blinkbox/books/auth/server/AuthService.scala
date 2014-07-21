@@ -23,6 +23,8 @@ import spray.http.RemoteAddress
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthService {
+  def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]]
+  def revokeRefreshToken(token: String): Future[Unit]
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
@@ -39,7 +41,9 @@ trait GeoIP {
 }
 
 class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: GeoIP, events: Publisher)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
-  val MaxClients = 12// TODO: Make max number of clients configurable
+  // TODO: Make these configurable
+  val MaxClients = 12
+  val PrivateKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
 
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     if (!registration.acceptedTerms)
@@ -85,7 +89,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       (t.clientId, c) match {
         case (None, Some(client)) => repo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
         case (None, None) => // Do nothing: token isn't associated with a client and there is no client
-        case (Some(tId), Some(cId)) if (tId == cId) => // Do nothing: token is associated with the right client
+        case (Some(tId), Some(client)) if (tId == client.id) => // Do nothing: token is associated with the right client
         case _ => FailWith.refreshTokenNotAuthorized
       }
 
@@ -195,7 +199,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
     // TODO: Roles
     claims.put("zl/rti", Int.box(token.id))
 
-    val signingKeyData = Files.readAllBytes(Paths.get("/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"))
+    val signingKeyData = Files.readAllBytes(Paths.get(PrivateKeyPath))
     val signingKeySpec = new PKCS8EncodedKeySpec(signingKeyData)
     val signingKey = KeyFactory.getInstance("EC").generatePrivate(signingKeySpec)
     val signer = new ES256(signingKey)
@@ -238,5 +242,27 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       client_os = client.map(_.os),
       client_secret = if (includeClientSecret) client.map(_.secret) else None,
       last_used_date = client.map(_.updatedAt))
+  }
+
+  override def revokeRefreshToken(token: String): Future[Unit] = Future {
+    repo.db.withSession { implicit session =>
+      val retrievedToken = repo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
+      repo.revokeRefreshToken(retrievedToken)
+    }
+  }
+
+  override def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = Future {
+    repo.db.withSession { implicit session =>
+      repo.userWithId(user.id).map { user =>
+        UserInfo(
+          user_id = s"urn:blinkbox:zuul:user:${user.id}",
+          user_uri = s"/users/${user.id}",
+          user_username = user.username,
+          user_first_name = user.firstName,
+          user_last_name = user.lastName,
+          user_allow_marketing_communications = user.allowMarketing
+        )
+      }
+    }
   }
 }
