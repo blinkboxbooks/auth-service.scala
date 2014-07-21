@@ -92,7 +92,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       (t.clientId, c) match {
         case (None, Some(client)) => repo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
         case (None, None) => // Do nothing: token isn't associated with a client and there is no client
-        case (Some(tId), Some(cId)) if (tId == cId) => // Do nothing: token is associated with the right client
+        case (Some(tId), Some(client)) if (tId == client.id) => // Do nothing: token is associated with the right client
         case _ => FailWith.refreshTokenNotAuthorized
       }
 
