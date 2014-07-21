@@ -4,11 +4,9 @@ import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
+import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
+import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.OAuthClientErrorCode._
-import com.blinkbox.books.auth.server.OAuthClientErrorReason._
-import com.blinkbox.books.auth.server.OAuthServerErrorCode._
-import com.blinkbox.books.auth.server.OAuthServerErrorReason._
 import com.blinkbox.books.auth.server.data.AuthRepository
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
@@ -44,17 +42,6 @@ trait Notifier {
   def notifyUserAuthenticated(user: User, client: Option[Client]): Future[Unit]
 }
 
-object FailWith {
-  def invalidRefreshToken = throw new OAuthServerException("The refresh token is invalid.", InvalidGrant)
-  def refreshTokenNotAuthorized = throw new OAuthServerException("Your client is not authorised to use this refresh token", InvalidClient)
-  def unverifiedIdentity = throw new OAuthClientException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
-  def termsAndConditionsNotAccepted = throw new OAuthServerException("You must accept the terms and conditions", InvalidRequest)
-  def passwordTooShort = throw new OAuthServerException("Password must be at least 6 characters", InvalidRequest)
-  def notInTheUK = throw new OAuthServerException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
-  def invalidUsernamePassword = throw new OAuthServerException("The username and/or password is incorrect.", InvalidGrant)
-  def invalidClientCredentials = throw new OAuthServerException("Invalid client credentials.", InvalidClient)
-}
-
 class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: GeoIP, notifier: Notifier)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
   val MaxClients = 12// TODO: Make max number of clients configurable
 
@@ -77,8 +64,8 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
     notifier.notifyUserCreated(user, client)
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
-    case e: MysqlDataTruncation => new OAuthServerException(e.getMessage, InvalidRequest)
-    case e: MySQLIntegrityConstraintViolationException => new UserAlreadyExists(e.getMessage)
+    case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
+    case e: MySQLIntegrityConstraintViolationException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
     case e => e
   })
 
@@ -127,13 +114,13 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
   def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
     val client = repo.db.withTransaction { implicit transaction =>
       if (repo.activeClientCount >= MaxClients) {
-        throw new OAuthServerException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
+        FailWith.clientLimitReached
       }
       repo.createClient(user.id, registration)
     }
     clientInfo(client, includeClientSecret = true)
   } transform(identity, _ match {
-    case e: MysqlDataTruncation => new OAuthServerException(e.getMessage, InvalidRequest)
+    case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
     case e => e
   })
 
