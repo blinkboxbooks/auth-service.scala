@@ -114,9 +114,20 @@ case class SessionInfo(
   token_elevation_expires_in: Option[Long],
   user_roles: Option[List[String]] = None)
 
-// TODO: Add user patch properties
-@ApiModel(description = "Updates to a user")
 case class UserPatch(
-  @(ApiModelProperty @field)(position = 0, value = "The name") name: String) {
-  require(name.length > 0)
+  first_name: Option[String],
+  last_name: Option[String],
+  username: Option[String],
+  allow_marketing_communications: Option[Boolean],
+  accepted_terms_and_conditions: Option[Boolean]) {
+
+  require(first_name.isDefined || last_name.isDefined || username.isDefined || allow_marketing_communications.isDefined)
+  require(accepted_terms_and_conditions.getOrElse(true))
 }
+
+// TODO: Create API doc as follows
+//@ApiModel(description = "Updates to a user")
+//case class UserPatch(
+//  @(ApiModelProperty @field)(position = 0, value = "The name") name: String) {
+//  require(name.length > 0)
+//}
