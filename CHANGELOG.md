@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.13.1 ([#105](https://git.mobcastdev.com/Zuul/zuul-server/pull/105) 2014-07-21 08:25:22)
+
+Use percent
+
+### Bug fix
+
+- Use percent instead of dollar in spec files!
+
 ## 0.13.0 ([#103](https://git.mobcastdev.com/Zuul/zuul-server/pull/103) 2014-07-18 15:06:38)
 
 Prepare for RPM building
