@@ -62,6 +62,15 @@ case class ClientRegistration(
   require(!os.isEmpty, "OS must not be empty if provided")
 }
 
+case class UserInfo(
+  user_id: String,
+  user_uri: String,
+  user_username: String,
+  user_first_name: String,
+  user_last_name: String,
+  user_allow_marketing_communications: Boolean
+)
+
 case class TokenInfo(
   access_token: String,
   token_type: String,

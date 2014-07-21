@@ -224,6 +224,19 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
     }
   }
 
+  val getUserInfo: Route = get {
+    path("users" / IntNumber) { userId =>
+      authenticate(authenticator) { implicit user =>
+        if (user.id != userId)
+          complete(NotFound, None)
+        else
+          onSuccess(userService.getUserInfo) { info =>
+            info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
+          }
+      }
+    }
+  }
+
 //
 //  val list: Route = get {
 //    pathEnd {
@@ -277,7 +290,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
         //rawPathPrefix(PathMatcher[HNil](config.externalUrl.path, HNil)) {
         //respondWithHeader(RawHeader("Vary", "Accept, Accept-Encoding")) {
         querySession ~ refreshAccessToken ~ authenticate ~ registerUser ~ registerClient ~ listClients ~ getClientById ~
-          updateClient ~ deleteClient ~ revokeRefreshToken
+          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo
         //}
         //}
       }

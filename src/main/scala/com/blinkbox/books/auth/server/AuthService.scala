@@ -22,6 +22,7 @@ import spray.http.RemoteAddress
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthService {
+  def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]]
   def revokeRefreshToken(s: String): Future[Unit]
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
@@ -250,6 +251,21 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
     repo.db.withSession { implicit session =>
       val token = repo.refreshTokenWithToken(s).getOrElse(FailWith.invalidRefreshToken)
       repo.revokeRefreshToken(token)
+    }
+  }
+
+  override def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = Future {
+    repo.db.withSession { implicit session =>
+      repo.userWithId(user.id).map { user =>
+        UserInfo(
+          user_id = s"urn:blinkbox:zuul:user:${user.id}",
+          user_uri = s"/users/${user.id}",
+          user_username = user.username,
+          user_first_name = user.firstName,
+          user_last_name = user.lastName,
+          user_allow_marketing_communications = user.allowMarketing
+        )
+      }
     }
   }
 }
