@@ -2,27 +2,21 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
-import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.data.MySqlAuthRepository
+import com.blinkbox.books.auth.server.messaging.{LegacyRabbitMqNotifier, MultiNotifier, RabbitMqNotifier}
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time.SystemTimeSupport
-import org.slf4j.LoggerFactory
 import spray.can.Http
-import spray.http.{RemoteAddress, AllOrigins}
 import spray.http.HttpHeaders.`Access-Control-Allow-Origin`
+import spray.http.{AllOrigins, RemoteAddress}
 import spray.routing._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class DummyNotifier(implicit ec: ExecutionContext) extends Notifier {
-  val log = LoggerFactory.getLogger(classOf[Notifier])
-  override def notifyUserCreated(user: User, client: Option[Client]) = Future { log.info(s"User created: $user, $client") }
-  override def notifyUserAuthenticated(user: User, client: Option[Client]) = Future { log.info(s"User authenticated: $user, $client") }
-}
-
+// TODO: Real GeoIP checking
 object DummyGeoIP extends GeoIP {
   override def countryCode(address: RemoteAddress): String = "GB"
 }
@@ -32,7 +26,8 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
   val authenticator = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
-  val service = new DefaultAuthService(config.db, new MySqlAuthRepository(config.db), DummyGeoIP, new DummyNotifier)
+  val notifier = new MultiNotifier(new RabbitMqNotifier, new LegacyRabbitMqNotifier)
+  val service = new DefaultAuthService(config.db, new MySqlAuthRepository(config.db), DummyGeoIP, notifier)
   val users = new AuthApi(config.service, service, authenticator)
   val swagger = new SwaggerApi(config.swagger)
   val route = users.routes ~ respondWithHeader(`Access-Control-Allow-Origin`(AllOrigins)) { swagger.routes }

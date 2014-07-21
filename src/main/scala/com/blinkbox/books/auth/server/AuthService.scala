@@ -4,12 +4,12 @@ import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
-import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.OAuthClientErrorCode._
 import com.blinkbox.books.auth.server.OAuthClientErrorReason._
 import com.blinkbox.books.auth.server.OAuthServerErrorCode._
 import com.blinkbox.books.auth.server.OAuthServerErrorReason._
-import com.blinkbox.books.auth.server.data.AuthRepository
+import com.blinkbox.books.auth.server.data.{AuthRepository, _}
+import com.blinkbox.books.auth.server.messaging.Notifier
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.config.DatabaseConfig
 import com.blinkbox.books.time.Clock
@@ -37,11 +37,6 @@ trait AuthService {
 
 trait GeoIP {
   def countryCode(address: RemoteAddress): String
-}
-
-trait Notifier {
-  def notifyUserCreated(user: User, client: Option[Client]): Future[Unit]
-  def notifyUserAuthenticated(user: User, client: Option[Client]): Future[Unit]
 }
 
 object FailWith {
@@ -74,7 +69,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       val t = repo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
-    notifier.notifyUserCreated(user, client)
+    notifier.userRegistered(user, client)
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
     case e: MysqlDataTruncation => new OAuthServerException(e.getMessage, InvalidRequest)
@@ -89,7 +84,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       val t = repo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
-    notifier.notifyUserAuthenticated(user, client)
+    notifier.userAuthenticated(user, client)
     issueAccessToken(user, client, token, includeRefreshToken = true)
   }
 
@@ -109,7 +104,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       repo.extendRefreshTokenLifetime(t)
       (u, c, t)
     }
-    notifier.notifyUserAuthenticated(user1, client1)
+    notifier.userAuthenticated(user1, client1)
     issueAccessToken(user1, client1, token1)
   }
 

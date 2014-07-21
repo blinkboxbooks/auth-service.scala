@@ -11,7 +11,7 @@ val buildSettings = Seq(
 // TODO: Check that the dependency versions are up-to-date
 val dependencySettings = Seq(
   libraryDependencies ++= {
-    val akkaV = "2.3.3"
+    val akkaV = "2.3.4"
     val sprayV = "1.3.1"
     val json4sV = "3.2.10"
     Seq(
@@ -38,7 +38,8 @@ val dependencySettings = Seq(
       "org.scalatest"         %%  "scalatest"             % "2.2.0"   % "test",
       "junit"                 %   "junit"                 % "4.11"    % "test",
       "com.novocode"          %   "junit-interface"       % "0.10"    % "test",
-      "org.mockito"           %   "mockito-all"           % "1.9.5"   % "test"
+      "org.mockito"           %   "mockito-all"           % "1.9.5"   % "test",
+      "xmlunit"               %   "xmlunit"               % "1.5"     % "test"
     )
   }
 )
