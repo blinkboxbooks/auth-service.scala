@@ -23,7 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthService {
   def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]]
-  def revokeRefreshToken(s: String): Future[Unit]
+  def revokeRefreshToken(token: String): Future[Unit]
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
@@ -247,10 +247,10 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       last_used_date = client.map(_.updatedAt))
   }
 
-  override def revokeRefreshToken(s: String): Future[Unit] = Future {
+  override def revokeRefreshToken(token: String): Future[Unit] = Future {
     repo.db.withSession { implicit session =>
-      val token = repo.refreshTokenWithToken(s).getOrElse(FailWith.invalidRefreshToken)
-      repo.revokeRefreshToken(token)
+      val retrievedToken = repo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
+      repo.revokeRefreshToken(retrievedToken)
     }
   }
 
