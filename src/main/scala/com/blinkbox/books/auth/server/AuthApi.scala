@@ -278,7 +278,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
         r => HttpChallenge("error_reason", ZuulAuthorizationErrorReason.toString(r)) :: commonChallenges
       }
 
-      respondWithHeader(`WWW-Authenticate`.apply(challenges)) { complete(Unauthorized, "") }
+      respondWithHeader(`WWW-Authenticate`.apply(challenges)) { complete(Unauthorized, None) }
   }
 
   def rejectionHandler = RejectionHandler {
