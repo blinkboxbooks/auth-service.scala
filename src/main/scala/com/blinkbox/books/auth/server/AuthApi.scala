@@ -3,8 +3,9 @@ package com.blinkbox.books.auth.server
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
+import org.joda.time.DateTime
 
-import org.json4s.ext.EnumNameSerializer
+import org.json4s.ext.{JodaTimeSerializers, EnumNameSerializer}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
@@ -87,7 +88,14 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
   implicit val executionContext = DiagnosticExecutionContext(actorRefFactory.dispatcher)
   implicit val timeout: Timeout = config.timeout
 
-  implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer + new EnumNameSerializer(RefreshTokenStatus)
+  val clientInfoSerializer = FieldSerializer[ClientInfo](
+    serializer = {
+      case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("Y-m-d"))
+    }
+  )
+
+  implicit def json4sJacksonFormats: Formats = (DefaultFormats + ZuulRequestExceptionSerializer +
+    new EnumNameSerializer(RefreshTokenStatus) + clientInfoSerializer) ++ JodaTimeSerializers.all
 
 //  first_name (required)
 //  last_name (required)
@@ -210,7 +218,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
     path("tokens" / "revoke") {
       formFields('refresh_token) { token =>
         onSuccess(userService.revokeRefreshToken(token)) { _ =>
-          complete("")
+          complete(OK, None)
         }
       }
     }
