@@ -1,9 +1,9 @@
-package com.blinkbox.books.auth.server.messaging
+package com.blinkbox.books.auth.server.events
 
 import com.blinkbox.books.auth.server.data.{Client, User}
 import com.blinkbox.books.time.Clock
 
-object XmlMessages {
+private[events] object XmlMessages {
   private val UsersNamespace = "http://schemas.blinkboxbooks.com/events/users/v1"
   private val ClientsNamespace = "http://schemas.blinkboxbooks.com/events/clients/v1"
   private val RoutingNamespace = "http://schemas.blinkboxbooks.com/messaging/routing/v1"

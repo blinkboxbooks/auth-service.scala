@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
 import com.blinkbox.books.auth.server.data.MySqlAuthRepository
-import com.blinkbox.books.auth.server.messaging.{LegacyRabbitMqNotifier, MultiNotifier, RabbitMqNotifier}
+import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers
@@ -26,7 +26,7 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
   val authenticator = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
-  val notifier = new MultiNotifier(new RabbitMqNotifier, new LegacyRabbitMqNotifier)
+  val notifier = new RabbitMqPublisher ~ new LegacyRabbitMqPublisher
   val service = new DefaultAuthService(config.db, new MySqlAuthRepository(config.db), DummyGeoIP, notifier)
   val users = new AuthApi(config.service, service, authenticator)
   val swagger = new SwaggerApi(config.swagger)

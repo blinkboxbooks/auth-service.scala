@@ -1,4 +1,3 @@
-import AssemblyKeys._
 
 val buildSettings = Seq(
   name := "auth-server",
@@ -8,7 +7,6 @@ val buildSettings = Seq(
   scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.7")
 )
 
-// TODO: Check that the dependency versions are up-to-date
 val dependencySettings = Seq(
   libraryDependencies ++= {
     val akkaV = "2.3.4"
@@ -44,18 +42,7 @@ val dependencySettings = Seq(
   }
 )
 
-val publishSettings = Seq(
-  mergeStrategy in assembly <<= (mergeStrategy in assembly) { old =>
-    {
-      case "application.conf" => MergeStrategy.discard
-      case x => old(x)
-    }
-  },
-  artifact in (Compile, assembly) ~= { art => art.copy(`classifier` = Some("assembly")) }
-) ++ addArtifact(artifact in (Compile, assembly), assembly).settings
-
 val root = (project in file(".")).
   settings(rpmPrepSettings: _*).
-  settings(publishSettings: _*).
   settings(buildSettings: _*).
   settings(dependencySettings: _*)

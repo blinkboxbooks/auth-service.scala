@@ -1,4 +1,4 @@
-package com.blinkbox.books.auth.server.messaging
+package com.blinkbox.books.auth.server.events
 
 import com.blinkbox.books.auth.server.data.{Client, User}
 import com.blinkbox.books.time.StoppedClock
