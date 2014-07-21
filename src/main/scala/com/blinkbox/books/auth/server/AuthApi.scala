@@ -206,7 +206,15 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
     }
   }
 
-
+  val revokeRefreshToken: Route = post {
+    path("tokens" / "revoke") {
+      formFields('refresh_token) { token =>
+        onSuccess(userService.revokeRefreshToken(token)) { _ =>
+          complete("")
+        }
+      }
+    }
+  }
 
 //
 //  val list: Route = get {
@@ -260,7 +268,8 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
       handleRejections(rejectionHandler) {
         //rawPathPrefix(PathMatcher[HNil](config.externalUrl.path, HNil)) {
         //respondWithHeader(RawHeader("Vary", "Accept, Accept-Encoding")) {
-        querySession ~ refreshAccessToken ~ authenticate ~ registerUser ~ registerClient ~ listClients ~ getClientById ~ updateClient ~ deleteClient
+        querySession ~ refreshAccessToken ~ authenticate ~ registerUser ~ registerClient ~ listClients ~ getClientById ~
+          updateClient ~ deleteClient ~ revokeRefreshToken
         //}
         //}
       }

@@ -37,6 +37,7 @@ trait AuthRepository extends SlickSupport {
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
   def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session)
   def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session): Unit
+  def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
 }
 
 trait JdbcAuthRepository extends AuthRepository with AuthTables {
@@ -134,6 +135,9 @@ trait JdbcAuthRepository extends AuthRepository with AuthTables {
   def updateClient(client: Client)(implicit session: Session, user: AuthenticatedUser) = {
     clients.where(c => c.id === client.id && c.userId === user.id).update(client)
   }
+
+  def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
+    refreshTokens.where(_.id === t.id).map(_.isRevoked).update(true)
 
   private def newUser(r: UserRegistration) = {
     val now = clock.now()

@@ -26,7 +26,3 @@ case class RefreshToken(id: Int, createdAt: DateTime, updatedAt: DateTime, userI
 }
 
 case class LoginAttempt(createdAt: DateTime, username: String, successful: Boolean, clientIP: String)
-
-
-
-
