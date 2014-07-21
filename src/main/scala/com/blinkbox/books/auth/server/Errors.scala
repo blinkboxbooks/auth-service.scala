@@ -11,7 +11,7 @@ sealed trait ZuulAuthorizationErrorReason extends ZuulErrorReason
 trait EnumContainer[T] {
   val reprs: Map[T, String]
 
-  val inverseReprs = reprs.map({ case (k, v) => (v, k) }).toMap
+  lazy val inverseReprs = reprs.map({ case (k, v) => (v, k) }).toMap
 
   def fromString(s: String): T = inverseReprs(s)
   def toString(c: T): String = reprs(c)
