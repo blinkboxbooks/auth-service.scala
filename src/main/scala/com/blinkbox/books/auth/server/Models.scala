@@ -1,45 +1,10 @@
 package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.auth.Elevation.Elevation
+import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidClient
 import com.wordnik.swagger.annotations.{ApiModel, ApiModelProperty}
 import scala.annotation.meta.field
 import org.joda.time.DateTime
-
-
-object OAuthServerErrorCode extends Enumeration {
-  type OAuthServerErrorCode = Value
-  val InvalidClient = Value("invalid_client")
-  val InvalidGrant = Value("invalid_grant")
-  val InvalidRequest = Value("invalid_request")
-}
-
-object OAuthServerErrorReason extends Enumeration {
-  type OAuthServerErrorReason = Value
-  val CountryGeoBlocked = Value("country_geoblocked")
-  val UsernameAlreadyTaken = Value("username_already_taken")
-  val ClientLimitReached = Value("client_limit_reached")
-}
-
-import OAuthServerErrorCode._
-import OAuthServerErrorReason._
-
-class OAuthServerException(message: String, val code: OAuthServerErrorCode, val reason: Option[OAuthServerErrorReason] = None) extends Exception(message)
-class UserAlreadyExists(message: String) extends OAuthServerException(message, InvalidRequest, Some(UsernameAlreadyTaken))
-
-object OAuthClientErrorCode extends Enumeration {
-  type OAuthClientErrorCode = Value
-  val InvalidToken = Value("invalid_token")
-}
-
-object OAuthClientErrorReason extends Enumeration {
-  type OAuthClientErrorReason = Value
-  val UnverifiedIdentity = Value("unverified_identity")
-}
-
-import OAuthClientErrorCode._
-import OAuthClientErrorReason._
-
-class OAuthClientException(message: String, val code: OAuthClientErrorCode, val reason: Option[OAuthClientErrorReason] = None) extends Exception(message)
 
 object RefreshTokenStatus extends Enumeration {
   type RefreshTokenStatus = Value
@@ -48,15 +13,6 @@ object RefreshTokenStatus extends Enumeration {
 }
 
 import RefreshTokenStatus._
-
-case class OAuthServerError(
-  error: OAuthServerErrorCode,
-  error_reason: Option[OAuthServerErrorReason],
-  error_description: String)
-
-object OAuthServerError {
-  def apply(e: OAuthServerException): OAuthServerError = OAuthServerError(e.code, e.reason, e.getMessage)
-}
 
 case class UserRegistration(
   firstName: String,
@@ -70,11 +26,13 @@ case class UserRegistration(
   clientModel: Option[String],
   clientOS: Option[String]) {
   val client = {
-    val details = List(clientName, clientBrand, clientModel, clientOS).flatten
+    val details = Seq(clientName, clientBrand, clientModel, clientOS).flatten
+
+    require(details.size == 0 || details.size == 4, "Incomplete client details")
+
     details.size match {
       case 4 => Some(ClientRegistration(details(0), details(1), details(2), details(3)))
       case 0 => None
-      case _ => throw new OAuthServerException("Incomplete client details", InvalidRequest)
     }
   }
 }
@@ -85,11 +43,11 @@ trait ClientCredentials {
 }
 
 case class PasswordCredentials(username: String, password: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
-  if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthServerException("Both client id and client secret are required.", InvalidClient)
+  if (clientId.isDefined ^ clientSecret.isDefined) FailWith.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
 case class RefreshTokenCredentials(token: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
-  if (clientId.isDefined ^ clientSecret.isDefined) throw new OAuthServerException("Both client id and client secret are required.", InvalidClient)
+  if (clientId.isDefined ^ clientSecret.isDefined) FailWith.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
 case class ClientRegistration(
