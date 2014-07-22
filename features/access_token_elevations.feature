@@ -106,6 +106,7 @@ Feature: Access token elevation
     Then the request fails because I am unauthorised
     And the response includes only authentication scheme information
 
+  @exclude
   Scenario: Requesting session information with an empty bearer token
     When I request information about my session, with an empty access token
     Then the request fails because I am unauthorised

@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
+import java.sql.{SQLIntegrityConstraintViolationException, DataTruncation}
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
@@ -13,14 +14,13 @@ import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
-import com.mysql.jdbc.MysqlDataTruncation
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException
 import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthService {
+  def updateUser(id: Int, patch: UserPatch): Future[Option[UserInfo]]
   def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]]
   def revokeRefreshToken(token: String): Future[Unit]
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
@@ -31,7 +31,7 @@ trait AuthService {
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList]
   def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit]
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
 }
 
 trait GeoIP {
@@ -62,8 +62,8 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     events.publish(UserRegistered(user, client))
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
-    case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
-    case e: MySQLIntegrityConstraintViolationException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
+    case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
+    case e: SQLIntegrityConstraintViolationException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
     case e => e
   })
 
@@ -119,7 +119,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     events.publish(ClientRegistered(client))
     clientInfo(client, includeClientSecret = true)
   } transform(identity, _ match {
-    case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
+    case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
     case e => e
   })
 
@@ -152,13 +152,17 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     clients map { case (_, c) => clientInfo(c) }
   }
 
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit] = Future {
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val client = repo.db.withSession { implicit session =>
       val newClient = repo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
-      newClient.foreach(repo.updateClient)
+      newClient.foreach { c =>
+        repo.updateClient(c)
+        repo.refreshTokensByClientId(c.id).foreach(repo.revokeRefreshToken)
+      }
       newClient
     }
     client.foreach(c => events.publish(ClientDeregistered(c)))
+    client.map(clientInfo(_))
   }
 
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {
@@ -249,18 +253,35 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     }
   }
 
+  private def userInfoFromUser(user: User) = UserInfo(
+    user_id = s"urn:blinkbox:zuul:user:${user.id}",
+    user_uri = s"/users/${user.id}",
+    user_username = user.username,
+    user_first_name = user.firstName,
+    user_last_name = user.lastName,
+    user_allow_marketing_communications = user.allowMarketing
+  )
+
   override def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = Future {
     repo.db.withSession { implicit session =>
-      repo.userWithId(user.id).map { user =>
-        UserInfo(
-          user_id = s"urn:blinkbox:zuul:user:${user.id}",
-          user_uri = s"/users/${user.id}",
-          user_username = user.username,
-          user_first_name = user.firstName,
-          user_last_name = user.lastName,
-          user_allow_marketing_communications = user.allowMarketing
+      repo.userWithId(user.id).map(userInfoFromUser)
+    }
+  }
+
+  override def updateUser(id: Int, patch: UserPatch): Future[Option[UserInfo]] = Future {
+    repo.db.withSession { implicit session =>
+      val updatedUser = repo.userWithId(id).map { user =>
+        user.copy(
+          firstName = patch.first_name.getOrElse(user.firstName),
+          lastName = patch.last_name.getOrElse(user.lastName),
+          username = patch.username.getOrElse(user.username),
+          allowMarketing = patch.allow_marketing_communications.getOrElse(user.allowMarketing)
         )
       }
+
+      updatedUser foreach repo.updateUser
+
+      updatedUser map userInfoFromUser
     }
   }
 }

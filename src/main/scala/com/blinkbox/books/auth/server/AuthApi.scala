@@ -90,7 +90,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
 
   val clientInfoSerializer = FieldSerializer[ClientInfo](
     serializer = {
-      case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("Y-m-d"))
+      case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("yyyy-MM-dd"))
     }
   )
 
@@ -207,8 +207,8 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
   val deleteClient: Route = delete {
     path("clients" / IntNumber) { id =>
       authenticate(authenticator) { implicit user =>
-        onSuccess(userService.deleteClient(id)) { _ =>
-          complete(OK, None)
+        onSuccess(userService.deleteClient(id)) { clientOpt =>
+          clientOpt.fold(complete(NotFound, None))(_ => complete(OK, None))
         }
       }
     }
@@ -233,6 +233,21 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
           onSuccess(userService.getUserInfo) { info =>
             info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
           }
+      }
+    }
+  }
+
+  val updateUserInfo: Route = patch {
+    path("users" / IntNumber) { userId =>
+      authenticate(authenticator) { implicit user =>
+        if (user.id != userId)
+          complete(NotFound, None)
+        else
+          formFields('first_name.?, 'last_name.?, 'username.?, 'allow_marketing_communications.?, 'accepted_terms_and_conditions.?).as(UserPatch) { patch =>
+            onSuccess(userService.updateUser(userId, patch)) { info =>
+              info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
+            }
+        }
       }
     }
   }
@@ -290,7 +305,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
         //rawPathPrefix(PathMatcher[HNil](config.externalUrl.path, HNil)) {
         //respondWithHeader(RawHeader("Vary", "Accept, Accept-Encoding")) {
         querySession ~ refreshAccessToken ~ authenticate ~ registerUser ~ registerClient ~ listClients ~ getClientById ~
-          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo
+          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo
         //}
         //}
       }

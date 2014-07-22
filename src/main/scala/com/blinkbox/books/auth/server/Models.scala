@@ -104,7 +104,11 @@ case class ClientPatch(
   client_name: Option[String] = None,
   client_brand: Option[String] = None,
   client_model: Option[String] = None,
-  client_os: Option[String] = None)
+  client_os: Option[String] = None) {
+
+  require(client_brand.isDefined || client_name.isDefined || client_model.isDefined || client_os.isDefined,
+    "Invalid client update (no information provided)")
+}
 
 case class ClientList(clients: List[ClientInfo])
 
@@ -114,9 +118,22 @@ case class SessionInfo(
   token_elevation_expires_in: Option[Long],
   user_roles: Option[List[String]] = None)
 
-// TODO: Add user patch properties
-@ApiModel(description = "Updates to a user")
 case class UserPatch(
-  @(ApiModelProperty @field)(position = 0, value = "The name") name: String) {
-  require(name.length > 0)
+  first_name: Option[String],
+  last_name: Option[String],
+  username: Option[String],
+  allow_marketing_communications: Option[Boolean],
+  accepted_terms_and_conditions: Option[Boolean]) {
+
+  require(first_name.isDefined || last_name.isDefined || username.isDefined || allow_marketing_communications.isDefined,
+    "Invalid user update (no information provided)")
+
+  require(accepted_terms_and_conditions.getOrElse(true), "Cannot change terms & conditions acceptance")
 }
+
+// TODO: Create API doc as follows
+//@ApiModel(description = "Updates to a user")
+//case class UserPatch(
+//  @(ApiModelProperty @field)(position = 0, value = "The name") name: String) {
+//  require(name.length > 0)
+//}

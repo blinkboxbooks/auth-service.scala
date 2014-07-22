@@ -94,7 +94,9 @@ When(/^(?:I request my|they request their)( other)? client's information be upda
 end
 
 When(/^I request the other user's client's information be updated$/) do
-  $zuul.update_client(@your_client, @me.access_token)
+  @your_client_update = @your_client.clone
+  @your_client_update.name += ' Updated'
+  $zuul.update_client(@your_client_update, @me.access_token)
 end
 
 Then(/^(?:the response|it) contains client information, (including a|excluding the) client secret$/) do |including|
