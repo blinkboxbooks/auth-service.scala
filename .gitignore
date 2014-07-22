@@ -13,3 +13,9 @@ migration.sql
 .bundle/
 vendor/
 results/
+
+project/project/
+project/target/
+target/
+
+*.rpmmacros
