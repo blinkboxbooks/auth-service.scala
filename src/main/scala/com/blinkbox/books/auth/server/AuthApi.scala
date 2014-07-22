@@ -207,8 +207,8 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
   val deleteClient: Route = delete {
     path("clients" / IntNumber) { id =>
       authenticate(authenticator) { implicit user =>
-        onSuccess(userService.deleteClient(id)) { _ =>
-          complete(OK, None)
+        onSuccess(userService.deleteClient(id)) { clientOpt =>
+          clientOpt.fold(complete(NotFound, None))(_ => complete(OK, None))
         }
       }
     }

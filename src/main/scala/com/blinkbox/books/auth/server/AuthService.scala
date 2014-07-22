@@ -32,7 +32,7 @@ trait AuthService {
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList]
   def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit]
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
 }
 
 trait GeoIP {
@@ -153,13 +153,17 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     clients map { case (_, c) => clientInfo(c) }
   }
 
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit] = Future {
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val client = repo.db.withSession { implicit session =>
       val newClient = repo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
-      newClient.foreach(repo.updateClient)
+      newClient.foreach { c =>
+        repo.updateClient(c)
+        repo.refreshTokensByClientId(c.id).foreach(repo.revokeRefreshToken)
+      }
       newClient
     }
     client.foreach(events.clientDeregistered)
+    client.map(clientInfo(_))
   }
 
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {
