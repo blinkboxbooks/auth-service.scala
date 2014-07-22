@@ -83,6 +83,7 @@ When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now(?: mi
 end
 
 When(/^the (critical )?elevation got extended$/) do |elevation|
+  pending "Token elevation is not part of Zuul any more as it belongs to SSO now" unless TEST_CONFIG[:in_proc]
   elev = elevation.include?('critical') ? 'CRITICAL' : 'ELEVATED'
   time_period = elev == 'CRITICAL' ? ELEVATION_CONFIG[:critical_timespan] : ELEVATION_CONFIG[:elevated_timespan]
 
