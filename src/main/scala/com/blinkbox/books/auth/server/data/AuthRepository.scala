@@ -36,6 +36,7 @@ trait AuthRepository extends SlickSupport {
   def createRefreshToken(userId: Int, clientId: Option[Int])(implicit session: Session): RefreshToken
   def refreshTokenWithId(id: Int)(implicit session: Session): Option[RefreshToken]
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
+  def refreshTokensByClientId(clientId: Int)(implicit session: Session): List[RefreshToken]
   def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session)
   def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session): Unit
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
@@ -84,7 +85,7 @@ trait JdbcAuthRepository extends AuthRepository with AuthTables {
       case _ => None
     }
 
-    val client = numericId.flatMap(nid => clients.where(c => c.id === nid && c.secret === secret && c.userId === userId).firstOption)
+    val client = numericId.flatMap(nid => clients.where(c => c.id === nid && c.secret === secret && c.userId === userId && c.isDeregistered === false).firstOption)
     if (client.isDefined) {
       clients.where(_.id === client.get.id).map(_.updatedAt).update(clock.now())
     }
@@ -109,6 +110,10 @@ trait JdbcAuthRepository extends AuthRepository with AuthTables {
   def refreshTokenWithToken(token: String)(implicit session: Session) = {
     val refreshToken = refreshTokens.where(rt => rt.token === token && !rt.isRevoked).list.headOption
     refreshToken.filter(_.isValid)
+  }
+
+  def refreshTokensByClientId(clientId: Int)(implicit session: Session): List[RefreshToken] = {
+    refreshTokens.where(_.clientId === clientId).list
   }
 
   def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session) = {

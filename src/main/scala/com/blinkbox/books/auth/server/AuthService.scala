@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
+import java.sql.{SQLIntegrityConstraintViolationException, DataTruncation}
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
@@ -13,8 +14,6 @@ import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
-import com.mysql.jdbc.MysqlDataTruncation
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException
 import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
 
@@ -32,7 +31,7 @@ trait AuthService {
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList]
   def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit]
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
 }
 
 trait GeoIP {
@@ -63,8 +62,8 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     events.userRegistered(user, client)
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
-    case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
-    case e: MySQLIntegrityConstraintViolationException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
+    case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
+    case e: SQLIntegrityConstraintViolationException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
     case e => e
   })
 
@@ -120,7 +119,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     events.clientRegistered(client)
     clientInfo(client, includeClientSecret = true)
   } transform(identity, _ match {
-    case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
+    case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
     case e => e
   })
 
@@ -153,13 +152,17 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     clients map { case (_, c) => clientInfo(c) }
   }
 
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit] = Future {
+  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val client = repo.db.withSession { implicit session =>
       val newClient = repo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
-      newClient.foreach(repo.updateClient)
+      newClient.foreach { c =>
+        repo.updateClient(c)
+        repo.refreshTokensByClientId(c.id).foreach(repo.revokeRefreshToken)
+      }
       newClient
     }
     client.foreach(events.clientDeregistered)
+    client.map(clientInfo(_))
   }
 
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {
