@@ -90,7 +90,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
 
   val clientInfoSerializer = FieldSerializer[ClientInfo](
     serializer = {
-      case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("Y-m-d"))
+      case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("yyyy-MM-dd"))
     }
   )
 
