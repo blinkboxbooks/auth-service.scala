@@ -104,7 +104,11 @@ case class ClientPatch(
   client_name: Option[String] = None,
   client_brand: Option[String] = None,
   client_model: Option[String] = None,
-  client_os: Option[String] = None)
+  client_os: Option[String] = None) {
+
+  require(client_brand.isDefined || client_name.isDefined || client_model.isDefined || client_os.isDefined,
+    "Invalid client update (no information provided)")
+}
 
 case class ClientList(clients: List[ClientInfo])
 
@@ -121,8 +125,10 @@ case class UserPatch(
   allow_marketing_communications: Option[Boolean],
   accepted_terms_and_conditions: Option[Boolean]) {
 
-  require(first_name.isDefined || last_name.isDefined || username.isDefined || allow_marketing_communications.isDefined)
-  require(accepted_terms_and_conditions.getOrElse(true))
+  require(first_name.isDefined || last_name.isDefined || username.isDefined || allow_marketing_communications.isDefined,
+    "Invalid user update (no information provided)")
+
+  require(accepted_terms_and_conditions.getOrElse(true), "Cannot change terms & conditions acceptance")
 }
 
 // TODO: Create API doc as follows
