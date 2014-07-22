@@ -26,7 +26,7 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
   val authenticator = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
-  val notifier = new RabbitMqPublisher ~ new LegacyRabbitMqPublisher
+  val notifier = new RabbitMqPublisher ~ new LegacyRabbitMqPublisher(config.rabbit)
   val service = new DefaultAuthService(new MySqlAuthRepository(config.db), DummyGeoIP, notifier)
   val users = new AuthApi(config.service, service, authenticator)
   val swagger = new SwaggerApi(config.swagger)
