@@ -12,10 +12,15 @@ trait Publisher {
   def clientRegistered(client: Client): Future[Unit]
   def clientUpdated(oldClient: Client, newClient: Client): Future[Unit]
   def clientDeregistered(client: Client): Future[Unit]
-  def ~(other: Publisher)(implicit executionContext: ExecutionContext): Publisher = (this, other) match {
-    case (mp: MultiPublisher, p) => new MultiPublisher(p :: mp.publishers)
-    case (p, mp: MultiPublisher) => new MultiPublisher(p :: mp.publishers)
-    case (p1, p2) => new MultiPublisher(p1 :: p2 :: Nil)
+}
+
+object Publisher {
+  implicit class PublisherComposition(publisher: Publisher) {
+    def ~(other: Publisher)(implicit executionContext: ExecutionContext): Publisher = (publisher, other) match {
+      case (mp: MultiPublisher, p) => new MultiPublisher(p :: mp.publishers)
+      case (p, mp: MultiPublisher) => new MultiPublisher(p :: mp.publishers)
+      case (p1, p2) => new MultiPublisher(p1 :: p2 :: Nil)
+    }
   }
 }
 

@@ -37,7 +37,8 @@ val dependencySettings = Seq(
       "junit"                 %   "junit"                 % "4.11"    % "test",
       "com.novocode"          %   "junit-interface"       % "0.10"    % "test",
       "org.mockito"           %   "mockito-all"           % "1.9.5"   % "test",
-      "xmlunit"               %   "xmlunit"               % "1.5"     % "test"
+      "xmlunit"               %   "xmlunit"               % "1.5"     % "test",
+      "com.h2database"        %   "h2"                    % "1.4.180" % "test"
     )
   }
 )

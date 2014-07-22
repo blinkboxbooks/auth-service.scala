@@ -4,13 +4,11 @@ import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
-import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.data.AuthRepository
+import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.config.DatabaseConfig
 import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
@@ -40,7 +38,7 @@ trait GeoIP {
   def countryCode(address: RemoteAddress): String
 }
 
-class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: GeoIP, events: Publisher)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
+class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
   // TODO: Make these configurable
   val MaxClients = 12
   val PrivateKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
