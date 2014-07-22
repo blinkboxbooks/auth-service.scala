@@ -22,6 +22,7 @@ class MySqlAuthRepository(config: DatabaseConfig)(implicit val clock: Clock) ext
 }
 
 trait AuthRepository extends SlickSupport {
+  def updateUser(user: User)(implicit session: Session): Unit
   def createUser(registration: UserRegistration)(implicit session: Session): User
   def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
@@ -138,6 +139,9 @@ trait JdbcAuthRepository extends AuthRepository with AuthTables {
 
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
     refreshTokens.where(_.id === t.id).map(_.isRevoked).update(true)
+
+  override def updateUser(user: User)(implicit session: Session): Unit =
+    users.where(_.id === user.id).update(user)
 
   private def newUser(r: UserRegistration) = {
     val now = clock.now()

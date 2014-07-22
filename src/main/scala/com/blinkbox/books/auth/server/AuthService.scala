@@ -21,6 +21,7 @@ import spray.http.RemoteAddress
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthService {
+  def updateUser(id: Int, patch: UserPatch): Future[Option[UserInfo]]
   def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]]
   def revokeRefreshToken(token: String): Future[Unit]
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
@@ -249,18 +250,35 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     }
   }
 
+  private def userInfoFromUser(user: User) = UserInfo(
+    user_id = s"urn:blinkbox:zuul:user:${user.id}",
+    user_uri = s"/users/${user.id}",
+    user_username = user.username,
+    user_first_name = user.firstName,
+    user_last_name = user.lastName,
+    user_allow_marketing_communications = user.allowMarketing
+  )
+
   override def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = Future {
     repo.db.withSession { implicit session =>
-      repo.userWithId(user.id).map { user =>
-        UserInfo(
-          user_id = s"urn:blinkbox:zuul:user:${user.id}",
-          user_uri = s"/users/${user.id}",
-          user_username = user.username,
-          user_first_name = user.firstName,
-          user_last_name = user.lastName,
-          user_allow_marketing_communications = user.allowMarketing
+      repo.userWithId(user.id).map(userInfoFromUser)
+    }
+  }
+
+  override def updateUser(id: Int, patch: UserPatch): Future[Option[UserInfo]] = Future {
+    repo.db.withSession { implicit session =>
+      val updatedUser = repo.userWithId(id).map { user =>
+        user.copy(
+          firstName = patch.first_name.getOrElse(user.firstName),
+          lastName = patch.last_name.getOrElse(user.lastName),
+          username = patch.username.getOrElse(user.username),
+          allowMarketing = patch.allow_marketing_communications.getOrElse(user.allowMarketing)
         )
       }
+
+      updatedUser foreach repo.updateUser
+
+      updatedUser map userInfoFromUser
     }
   }
 }
