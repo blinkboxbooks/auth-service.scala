@@ -1,4 +1,3 @@
-import AssemblyKeys._
 
 val buildSettings = Seq(
   name := "auth-server",
@@ -8,10 +7,9 @@ val buildSettings = Seq(
   scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.7")
 )
 
-// TODO: Check that the dependency versions are up-to-date
 val dependencySettings = Seq(
   libraryDependencies ++= {
-    val akkaV = "2.3.3"
+    val akkaV = "2.3.4"
     val sprayV = "1.3.1"
     val json4sV = "3.2.10"
     Seq(
@@ -38,23 +36,14 @@ val dependencySettings = Seq(
       "org.scalatest"         %%  "scalatest"             % "2.2.0"   % "test",
       "junit"                 %   "junit"                 % "4.11"    % "test",
       "com.novocode"          %   "junit-interface"       % "0.10"    % "test",
-      "org.mockito"           %   "mockito-all"           % "1.9.5"   % "test"
+      "org.mockito"           %   "mockito-all"           % "1.9.5"   % "test",
+      "xmlunit"               %   "xmlunit"               % "1.5"     % "test",
+      "com.h2database"        %   "h2"                    % "1.4.180" % "test"
     )
   }
 )
 
-val publishSettings = Seq(
-  mergeStrategy in assembly <<= (mergeStrategy in assembly) { old =>
-    {
-      case "application.conf" => MergeStrategy.discard
-      case x => old(x)
-    }
-  },
-  artifact in (Compile, assembly) ~= { art => art.copy(`classifier` = Some("assembly")) }
-) ++ addArtifact(artifact in (Compile, assembly), assembly).settings
-
 val root = (project in file(".")).
   settings(rpmPrepSettings: _*).
-  settings(publishSettings: _*).
   settings(buildSettings: _*).
   settings(dependencySettings: _*)

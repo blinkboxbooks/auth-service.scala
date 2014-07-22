@@ -7,9 +7,8 @@ import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.data.AuthRepository
+import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.config.DatabaseConfig
 import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
@@ -39,12 +38,7 @@ trait GeoIP {
   def countryCode(address: RemoteAddress): String
 }
 
-trait Notifier {
-  def notifyUserCreated(user: User, client: Option[Client]): Future[Unit]
-  def notifyUserAuthenticated(user: User, client: Option[Client]): Future[Unit]
-}
-
-class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: GeoIP, notifier: Notifier)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
+class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
   // TODO: Make these configurable
   val MaxClients = 12
   val PrivateKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
@@ -65,7 +59,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       val t = repo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
-    notifier.notifyUserCreated(user, client)
+    events.userRegistered(user, client)
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
     case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
@@ -80,7 +74,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       val t = repo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
-    notifier.notifyUserAuthenticated(user, client)
+    events.userAuthenticated(user, client)
     issueAccessToken(user, client, token, includeRefreshToken = true)
   }
 
@@ -100,7 +94,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       repo.extendRefreshTokenLifetime(t)
       (u, c, t)
     }
-    notifier.notifyUserAuthenticated(user1, client1)
+    events.userAuthenticated(user1, client1)
     issueAccessToken(user1, client1, token1)
   }
 
@@ -122,6 +116,7 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
       }
       repo.createClient(user.id, registration)
     }
+    events.clientRegistered(client)
     clientInfo(client, includeClientSecret = true)
   } transform(identity, _ match {
     case e: MysqlDataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
@@ -139,31 +134,31 @@ class DefaultAuthService(config: DatabaseConfig, repo: AuthRepository, geoIP: Ge
   }
 
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = repo.db.withTransaction { implicit transaction =>
-
-      val updatedClient = repo.clientWithId(id) map { oldClient =>
-        oldClient.copy(
+    val clients = repo.db.withTransaction { implicit transaction =>
+      val clientPair = repo.clientWithId(id) map { oldClient =>
+        val newClient = oldClient.copy(
           updatedAt = clock.now(),
           name = patch.client_name.getOrElse(oldClient.name),
           brand = patch.client_brand.getOrElse(oldClient.brand),
           model = patch.client_model.getOrElse(oldClient.model),
           os = patch.client_os.getOrElse(oldClient.os))
+        (oldClient, newClient)
       }
-
-      updatedClient foreach repo.updateClient
-
-      updatedClient
+      clientPair foreach { case (_, c) => repo.updateClient(c) }
+      clientPair
     }
 
-    client.map(clientInfo(_))
+    clients foreach { case (o, n) => events.clientUpdated(o, n) }
+    clients map { case (_, c) => clientInfo(c) }
   }
 
   def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Unit] = Future {
-    repo.db.withSession { implicit session =>
-      repo.clientWithId(id) foreach { client =>
-        repo.updateClient(client.copy(updatedAt = clock.now(), isDeregistered = true))
-      }
+    val client = repo.db.withSession { implicit session =>
+      val newClient = repo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
+      newClient.foreach(repo.updateClient)
+      newClient
     }
+    client.foreach(events.clientDeregistered)
   }
 
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {

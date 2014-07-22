@@ -28,7 +28,7 @@ case class StoppedClock(stoppedAt: DateTime) extends Clock {
  * Provides methods to construct stopped clocks.
  */
 object StoppedClock {
-  def apply: StoppedClock = StoppedClock(SystemClock.now())
+  def apply(): StoppedClock = StoppedClock(SystemClock.now())
 }
 
 /**

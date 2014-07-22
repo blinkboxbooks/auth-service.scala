@@ -38,7 +38,7 @@ trait AuthTables {
     def secret = column[String]("client_secret", O.NotNull)
     def isDeregistered = column[Boolean]("deregistered", O.NotNull)
     def * = (id, createdAt, updatedAt, userId, name, brand, model, os, secret, isDeregistered) <> (Client.tupled, Client.unapply)
-    def indexOnUserId = index("index_users_on_username", userId)
+    def indexOnUserId = index("index_clients_on_user_id", userId)
   }
 
   class RefreshTokens(tag: Tag) extends Table[RefreshToken](tag, "refresh_tokens") {
@@ -63,5 +63,6 @@ trait AuthTables {
     def successful = column[Boolean]("successful", O.NotNull)
     def clientIP = column[String]("client_ip", O.NotNull)
     def * = (createdAt, username, successful, clientIP) <> (LoginAttempt.tupled, LoginAttempt.unapply)
+    def indexOnUsernameAndCreatedAt = index("index_login_attempts_on_username_and_created_at", (username, createdAt))
   }
 }

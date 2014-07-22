@@ -17,3 +17,5 @@ results/
 project/project/
 project/target/
 target/
+
+*.rpmmacros
