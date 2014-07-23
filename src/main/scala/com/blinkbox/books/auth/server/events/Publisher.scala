@@ -35,7 +35,7 @@ object Publisher {
     }
   }
 
-  private sealed class MultiPublisher(val publishers: List[Publisher])(implicit executionContext: ExecutionContext) extends Publisher {
+  private class MultiPublisher(val publishers: List[Publisher])(implicit executionContext: ExecutionContext) extends Publisher {
     def publish(event: Event): Future[Unit] = Future { publishers.foreach(_.publish(event)) }
   }
 }
