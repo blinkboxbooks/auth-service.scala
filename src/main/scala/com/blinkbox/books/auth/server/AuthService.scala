@@ -16,10 +16,9 @@ import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
 import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
-import scala.slick.driver.JdbcProfile
-import scala.slick.jdbc.JdbcBackend.Database
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.slick.profile.BasicProfile
 
 trait AuthService {
   def revokeRefreshToken(token: String): Future[Unit]
@@ -39,8 +38,10 @@ trait GeoIP {
   def countryCode(address: RemoteAddress): String
 }
 
-class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP: GeoIP, events: Publisher)
-                        (implicit executionContext: ExecutionContext, clock: Clock) extends AuthService with UserInfoFactory {
+class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
+  (db: Database, authRepo: AuthRepository[Profile], userRepo: UserRepository[Profile], geoIP: GeoIP, events: Publisher)
+  (implicit executionContext: ExecutionContext, clock: Clock) extends AuthService with UserInfoFactory {
+
   // TODO: Make these configurable
   val MaxClients = 12
   val PrivateKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
@@ -56,9 +57,9 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
       FailWith.notInTheUK
 
     val (user, client, token) = db.withTransaction { implicit transaction =>
-      val u = repo.createUser(registration)
-      val c = registration.client.map(repo.createClient(u.id, _))
-      val t = repo.createRefreshToken(u.id, c.map(_.id))
+      val u = userRepo.createUser(registration)
+      val c = registration.client.map(authRepo.createClient(u.id, _))
+      val t = authRepo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
     events.publish(UserRegistered(user, client))
@@ -73,7 +74,7 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
     val (user, client, token) = db.withTransaction { implicit transaction =>
       val u = authenticateUser(credentials, clientIP)
       val c = authenticateClient(credentials, u)
-      val t = repo.createRefreshToken(u.id, c.map(_.id))
+      val t = authRepo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
     events.publish(UserAuthenticated(user, client))
@@ -82,18 +83,18 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
 
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
     val (user1, client1, token1) = db.withTransaction { implicit transaction =>
-      val t = repo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
-      val u = repo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
+      val t = authRepo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
+      val u = userRepo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
       val c = authenticateClient(credentials, u)
 
       (t.clientId, c) match {
-        case (None, Some(client)) => repo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
+        case (None, Some(client)) => authRepo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
         case (None, None) => // Do nothing: token isn't associated with a client and there is no client
         case (Some(tId), Some(client)) if (tId == client.id) => // Do nothing: token is associated with the right client
         case _ => FailWith.refreshTokenNotAuthorized
       }
 
-      repo.extendRefreshTokenLifetime(t)
+      authRepo.extendRefreshTokenLifetime(t)
       (u, c, t)
     }
     events.publish(UserAuthenticated(user1, client1))
@@ -102,7 +103,7 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
 
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {
     val tokenId = user.claims.get("zl/rti").get.asInstanceOf[Int]
-    val token = db.withSession(implicit session => repo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
+    val token = db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
     SessionInfo(
       token_status = token.status,
       token_elevation = if (token.isValid) Some(token.elevation) else None,
@@ -113,10 +114,10 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
 
   def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
     val client = db.withTransaction { implicit transaction =>
-      if (repo.activeClientCount >= MaxClients) {
+      if (authRepo.activeClientCount >= MaxClients) {
         FailWith.clientLimitReached
       }
-      repo.createClient(user.id, registration)
+      authRepo.createClient(user.id, registration)
     }
     events.publish(ClientRegistered(client))
     clientInfo(client, includeClientSecret = true)
@@ -126,18 +127,18 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
   })
 
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
-    val clientList = db.withSession(implicit session => repo.activeClients)
+    val clientList = db.withSession(implicit session => authRepo.activeClients)
     ClientList(clientList.map(clientInfo(_)))
   }
 
   def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = db.withSession(implicit session => repo.clientWithId(id))
+    val client = db.withSession(implicit session => authRepo.clientWithId(id))
     client.map(clientInfo(_))
   }
 
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val clients = db.withTransaction { implicit transaction =>
-      val clientPair = repo.clientWithId(id) map { oldClient =>
+      val clientPair = authRepo.clientWithId(id) map { oldClient =>
         val newClient = oldClient.copy(
           updatedAt = clock.now(),
           name = patch.client_name.getOrElse(oldClient.name),
@@ -146,7 +147,7 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
           os = patch.client_os.getOrElse(oldClient.os))
         (oldClient, newClient)
       }
-      clientPair foreach { case (_, c) => repo.updateClient(c) }
+      clientPair foreach { case (_, c) => authRepo.updateClient(c) }
       clientPair
     }
 
@@ -156,10 +157,10 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
 
   def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val client = db.withSession { implicit session =>
-      val newClient = repo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
+      val newClient = authRepo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
       newClient.foreach { c =>
-        repo.updateClient(c)
-        repo.refreshTokensByClientId(c.id).foreach(repo.revokeRefreshToken)
+        authRepo.updateClient(c)
+        authRepo.refreshTokensByClientId(c.id).foreach(authRepo.revokeRefreshToken)
       }
       newClient
     }
@@ -167,18 +168,18 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
     client.map(clientInfo(_))
   }
 
-  private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {
-    val user = repo.authenticateUser(credentials.username, credentials.password)
-    repo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
+  private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: authRepo.Session): User = {
+    val user = authRepo.authenticateUser(credentials.username, credentials.password)
+    authRepo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
 
     user.getOrElse(FailWith.invalidUsernamePassword)
   }
 
-  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: repo.Session): Option[Client] =
+  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: authRepo.Session): Option[Client] =
     for {
       clientId <- credentials.clientId
       clientSecret <- credentials.clientSecret
-    } yield repo.
+    } yield authRepo.
       authenticateClient(clientId, clientSecret, user.id).
       getOrElse(FailWith.invalidClientCredentials)
 
@@ -250,8 +251,8 @@ class DefaultAuthService(db: Database, repo: AuthRepository[JdbcProfile], geoIP:
 
   override def revokeRefreshToken(token: String): Future[Unit] = Future {
     db.withSession { implicit session =>
-      val retrievedToken = repo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
-      repo.revokeRefreshToken(retrievedToken)
+      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
+      authRepo.revokeRefreshToken(retrievedToken)
     }
   }
 }

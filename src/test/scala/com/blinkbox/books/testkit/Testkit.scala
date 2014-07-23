@@ -57,6 +57,15 @@ trait ExtraMockitoSugar extends MockitoSugar {
   }
 }
 
+class PublisherSpy extends Publisher {
+  var events = List.empty[Event]
+
+  override def publish(event: Event): Future[Unit] = {
+    events ::= event
+    Future.successful()
+  }
+}
+
 object PublisherDummy extends Publisher {
   override def publish(event: Event): Future[Unit] = Future.successful()
 }

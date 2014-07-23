@@ -44,8 +44,11 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
 
   val passwordHasher = PasswordHasher.default
 
-  val authService = new DefaultAuthService(db, new DefaultAuthRepository(dbDriver), geoIp, notifier)
-  val userService = new DefaultUserService(db, new DefaultUserRepository(dbDriver, passwordHasher), geoIp, notifier)
+  val authRepository = new DefaultAuthRepository(dbDriver)
+  val userRepository = new DefaultUserRepository(dbDriver, passwordHasher)
+
+  val authService = new DefaultAuthService(db, authRepository, userRepository, geoIp, notifier)
+  val userService = new DefaultUserService(db, userRepository, geoIp, notifier)
 
   val users = new AuthApi(config.service, userService, authService, authenticator)
   val swagger = new SwaggerApi(config.swagger)

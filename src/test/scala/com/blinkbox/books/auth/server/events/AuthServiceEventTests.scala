@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.events
 
-import com.blinkbox.books.auth.server.data.{DefaultAuthRepository, Client, User}
-import com.blinkbox.books.auth.server.{DefaultAuthService, UserRegistration}
+import com.blinkbox.books.auth.server.data.{DefaultUserRepository, DefaultAuthRepository, Client, User}
+import com.blinkbox.books.auth.server.{PasswordHasher, DefaultAuthService, UserRegistration}
 import com.blinkbox.books.testkit._
 import com.blinkbox.books.test.MockitoSyrup
 import com.blinkbox.books.time.StoppedClock
@@ -27,7 +27,7 @@ class AuthServiceEventTests extends FunSuite with ScalatestRouteTest with AsyncA
 
     val db = H2.db
     val reg = UserRegistration("John", "Doe", "johndoe@example.org", "password", acceptedTerms = true, allowMarketing = true, None, None, None, None)
-    val authService = new DefaultAuthService(db, new DefaultAuthRepository(H2Driver), TestGeoIP.geoIpStub(), publisher)
+    val authService = new DefaultAuthService(db, new DefaultAuthRepository(H2Driver), new DefaultUserRepository(H2Driver, PasswordHasher(identity)), TestGeoIP.geoIpStub(), publisher)
     authService.registerUser(reg, None)
     w.await()
 

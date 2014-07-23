@@ -14,11 +14,8 @@ import scala.slick.driver.JdbcProfile
 import scala.slick.profile.BasicProfile
 
 trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
-  def updateUser(user: User)(implicit session: Session): Unit
-  def createUser(registration: UserRegistration)(implicit session: Session): User
   def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
-  def userWithId(id: Int)(implicit session: Session): Option[User]
   def createClient(userId: Int, registration: ClientRegistration)(implicit session: Session): Client
   def authenticateClient(id: String, secret: String, userId: Int)(implicit session: Session): Option[Client]
   def activeClients(implicit session: Session, user: AuthenticatedUser): List[Client]
@@ -39,12 +36,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with AuthTables {
   import driver.simple._
 
   val ClientId = """urn:blinkbox:zuul:client:([0-9]+)""".r
-
-  def createUser(registration: UserRegistration)(implicit session: Session): User = {
-    val user = newUser(registration)
-    val id = (users returning users.map(_.id)) += user
-    user.copy(id = id)
-  }
 
   def authenticateUser(username: String, password: String)(implicit session: Session): Option[User] = {
     val user = users.where(_.username === username).firstOption
@@ -91,9 +82,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with AuthTables {
     token.copy(id = id)
   }
 
-  def userWithId(id: Int)(implicit session: Session) = users.where(_.id === id).list.headOption
-
-
   def refreshTokenWithId(id: Int)(implicit session: Session) = {
     val refreshToken = refreshTokens.where(rt => rt.id === id && !rt.isRevoked).list.headOption
     refreshToken.filter(_.isValid)
@@ -136,9 +124,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with AuthTables {
 
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
     refreshTokens.where(_.id === t.id).map(_.isRevoked).update(true)
-
-  override def updateUser(user: User)(implicit session: Session): Unit =
-    users.where(_.id === user.id).update(user)
 
   private def newUser(r: UserRegistration) = {
     val now = clock.now()

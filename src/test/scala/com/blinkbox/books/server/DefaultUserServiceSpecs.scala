@@ -1,8 +1,9 @@
 package com.blinkbox.books.server
 
 import com.blinkbox.books.auth.server.data.{DefaultUserRepository, User}
+import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.auth.server.{UserPatch, UserRegistration, DefaultUserService, PasswordHasher}
-import com.blinkbox.books.testkit.{H2, PublisherDummy, TestGeoIP}
+import com.blinkbox.books.testkit.{PublisherSpy, H2, PublisherDummy, TestGeoIP}
 import com.blinkbox.books.time.StoppedClock
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
@@ -20,8 +21,9 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
 
   trait TestEnv {
     val db = H2.db
+    val publisherSpy = new PublisherSpy
     val userRepository = new DefaultUserRepository(H2Driver, PasswordHasher(identity))
-    val userService = new DefaultUserService(H2.db, userRepository, TestGeoIP.geoIpStub(), PublisherDummy)
+    val userService = new DefaultUserService(H2.db, userRepository, TestGeoIP.geoIpStub(), publisherSpy)
 
     val dummyUser = User(1, cl.now(), cl.now(), "dummy@dummy.dm", "Dummy", "Dummy", "dummypwd", true)
     val dummyUserPatch = UserPatch(Some("Updated Dummy"), Some("Updated Dummy"), Some("dummy+updated@dummy.dm"), Some(false), None)
@@ -72,8 +74,12 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
         H2.tables.users.where(_.id === 1).firstOption
       }
 
+      val expectedUpdatedUser = User(1, cl.now, cl.now, "dummy+updated@dummy.dm", "Updated Dummy", "Updated Dummy", "dummypwd", false)
+
       updated shouldBe defined
-      updated foreach { _ shouldEqual User(1, cl.now, cl.now, "dummy+updated@dummy.dm", "Updated Dummy", "Updated Dummy", "dummypwd", false)}
+      updated foreach { _ shouldEqual expectedUpdatedUser}
+      
+      publisherSpy.events shouldEqual(UserUpdated(dummyUser, expectedUpdatedUser) :: Nil)
     }
   }
 }
