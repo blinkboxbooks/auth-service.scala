@@ -81,7 +81,7 @@ trait AuthRoutes extends HttpService {
 //  def deleteById: Route
 }
 
-class AuthApi(config: ApiConfig, userService: AuthService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
+class AuthApi(config: ApiConfig, userService: UserService, authService: AuthService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends AuthRoutes with Directives with FormDataUnmarshallers with Json4sJacksonSupport {
 
   implicit val log = LoggerFactory.getLogger(classOf[AuthApi])
@@ -113,112 +113,10 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
       formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
         formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>
           extract(_.request.clientIP) { clientIP =>
-            onSuccess(userService.registerUser(registration, clientIP)) { tokenInfo =>
+            onSuccess(authService.registerUser(registration, clientIP)) { tokenInfo =>
               uncacheable(OK, tokenInfo)
             }
           }
-        }
-      }
-    }
-  }
-
-  val authenticate: Route = post {
-    path("oauth2" / "token") {
-      formField('grant_type ! "password") {
-        formFields('username, 'password, 'client_id.?, 'client_secret.?).as(PasswordCredentials) { credentials =>
-          extract(_.request.clientIP) { clientIP =>
-            onSuccess(userService.authenticate(credentials, clientIP)) { tokenInfo =>
-              uncacheable(OK, tokenInfo)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  val refreshAccessToken: Route = post {
-    path("oauth2" / "token") {
-      formField('grant_type ! "refresh_token") {
-        formFields('refresh_token, 'client_id.?, 'client_secret.?).as(RefreshTokenCredentials) { credentials =>
-          onSuccess(userService.refreshAccessToken(credentials)) { tokenInfo =>
-            uncacheable(OK, tokenInfo)
-          }
-        }
-      }
-    }
-  }
-
-  val querySession: Route = get {
-    path("session") {
-      authenticate(authenticator) { implicit user =>
-        onSuccess(userService.querySession) { sessionInfo =>
-          uncacheable(OK, sessionInfo)
-        }
-      }
-    }
-  }
-
-  val registerClient: Route = post {
-    path("clients") {
-      authenticate(authenticator) { implicit user =>
-        formFields('client_name, 'client_brand, 'client_model, 'client_os).as(ClientRegistration) { registration =>
-          onSuccess(userService.registerClient(registration)) { client =>
-            uncacheable(OK, client)
-          }
-        }
-      }
-    }
-  }
-
-  val listClients: Route = get {
-    path("clients") {
-      authenticate(authenticator) { implicit user =>
-        onSuccess(userService.listClients) { clients =>
-          uncacheable(OK, clients)
-        }
-      }
-    }
-  }
-
-  val getClientById: Route = get {
-    path("clients" / IntNumber) { id =>
-      authenticate(authenticator) { implicit user =>
-        onSuccess(userService.getClientById(id)) {
-          case Some(client) => uncacheable(OK, client)
-          case None => complete(NotFound, None)
-        }
-      }
-    }
-  }
-
-  val updateClient: Route = patch {
-    path("clients" / IntNumber) { id =>
-      authenticate(authenticator) { implicit user =>
-        formFields('client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(ClientPatch) { patch =>
-          onSuccess(userService.updateClient(id, patch)) {
-            case Some(client) => uncacheable(OK, client)
-            case None => complete(NotFound, None)
-          }
-        }
-      }
-    }
-  }
-
-  val deleteClient: Route = delete {
-    path("clients" / IntNumber) { id =>
-      authenticate(authenticator) { implicit user =>
-        onSuccess(userService.deleteClient(id)) { clientOpt =>
-          clientOpt.fold(complete(NotFound, None))(_ => complete(OK, None))
-        }
-      }
-    }
-  }
-
-  val revokeRefreshToken: Route = post {
-    path("tokens" / "revoke") {
-      formFields('refresh_token) { token =>
-        onSuccess(userService.revokeRefreshToken(token)) { _ =>
-          complete(OK, None)
         }
       }
     }
@@ -230,7 +128,7 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
         if (user.id != userId)
           complete(NotFound, None)
         else
-          onSuccess(userService.getUserInfo) { info =>
+          onSuccess(userService.getUserInfo(user.id)) { info =>
             info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
           }
       }
@@ -247,6 +145,108 @@ class AuthApi(config: ApiConfig, userService: AuthService, authenticator: Contex
             onSuccess(userService.updateUser(userId, patch)) { info =>
               info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
             }
+          }
+      }
+    }
+  }
+
+  val authenticate: Route = post {
+    path("oauth2" / "token") {
+      formField('grant_type ! "password") {
+        formFields('username, 'password, 'client_id.?, 'client_secret.?).as(PasswordCredentials) { credentials =>
+          extract(_.request.clientIP) { clientIP =>
+            onSuccess(authService.authenticate(credentials, clientIP)) { tokenInfo =>
+              uncacheable(OK, tokenInfo)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  val refreshAccessToken: Route = post {
+    path("oauth2" / "token") {
+      formField('grant_type ! "refresh_token") {
+        formFields('refresh_token, 'client_id.?, 'client_secret.?).as(RefreshTokenCredentials) { credentials =>
+          onSuccess(authService.refreshAccessToken(credentials)) { tokenInfo =>
+            uncacheable(OK, tokenInfo)
+          }
+        }
+      }
+    }
+  }
+
+  val querySession: Route = get {
+    path("session") {
+      authenticate(authenticator) { implicit user =>
+        onSuccess(authService.querySession) { sessionInfo =>
+          uncacheable(OK, sessionInfo)
+        }
+      }
+    }
+  }
+
+  val registerClient: Route = post {
+    path("clients") {
+      authenticate(authenticator) { implicit user =>
+        formFields('client_name, 'client_brand, 'client_model, 'client_os).as(ClientRegistration) { registration =>
+          onSuccess(authService.registerClient(registration)) { client =>
+            uncacheable(OK, client)
+          }
+        }
+      }
+    }
+  }
+
+  val listClients: Route = get {
+    path("clients") {
+      authenticate(authenticator) { implicit user =>
+        onSuccess(authService.listClients) { clients =>
+          uncacheable(OK, clients)
+        }
+      }
+    }
+  }
+
+  val getClientById: Route = get {
+    path("clients" / IntNumber) { id =>
+      authenticate(authenticator) { implicit user =>
+        onSuccess(authService.getClientById(id)) {
+          case Some(client) => uncacheable(OK, client)
+          case None => complete(NotFound, None)
+        }
+      }
+    }
+  }
+
+  val updateClient: Route = patch {
+    path("clients" / IntNumber) { id =>
+      authenticate(authenticator) { implicit user =>
+        formFields('client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(ClientPatch) { patch =>
+          onSuccess(authService.updateClient(id, patch)) {
+            case Some(client) => uncacheable(OK, client)
+            case None => complete(NotFound, None)
+          }
+        }
+      }
+    }
+  }
+
+  val deleteClient: Route = delete {
+    path("clients" / IntNumber) { id =>
+      authenticate(authenticator) { implicit user =>
+        onSuccess(authService.deleteClient(id)) { clientOpt =>
+          clientOpt.fold(complete(NotFound, None))(_ => complete(OK, None))
+        }
+      }
+    }
+  }
+
+  val revokeRefreshToken: Route = post {
+    path("tokens" / "revoke") {
+      formFields('refresh_token) { token =>
+        onSuccess(authService.revokeRefreshToken(token)) { _ =>
+          complete(OK, None)
         }
       }
     }

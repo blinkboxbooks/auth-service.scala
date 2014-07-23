@@ -4,24 +4,16 @@ import java.security.SecureRandom
 
 import com.blinkbox.books.auth.server.{ClientRegistration, UserRegistration}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.config.DatabaseConfig
-import com.blinkbox.books.slick.{JdbcSupport, MySqlSupport, SlickSupport}
-import com.blinkbox.books.spray.uri2uri
+import com.blinkbox.books.slick.{JdbcSupport, SlickSupport}
 import com.blinkbox.books.time.{TimeSupport, Clock}
 import com.blinkbox.security.jwt.util.Base64
 import com.lambdaworks.crypto.SCryptUtil
 import spray.http.RemoteAddress
 
+import scala.slick.driver.JdbcProfile
+import scala.slick.profile.BasicProfile
 
-class MySqlAuthRepository(config: DatabaseConfig)(implicit val clock: Clock) extends JdbcAuthRepository with MySqlSupport with TimeSupport {
-  val db = {
-    val jdbcUrl = s"jdbc:${config.uri.withUserInfo("")}"
-    val Array(user, password) = config.uri.getUserInfo.split(':')
-    driver.backend.Database.forURL(jdbcUrl, driver = driverName, user = user, password = password)
-  }
-}
-
-trait AuthRepository extends SlickSupport {
+trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
   def updateUser(user: User)(implicit session: Session): Unit
   def createUser(registration: UserRegistration)(implicit session: Session): User
   def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
@@ -42,7 +34,7 @@ trait AuthRepository extends SlickSupport {
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
 }
 
-trait JdbcAuthRepository extends AuthRepository with AuthTables {
+trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with AuthTables {
   this: JdbcSupport with TimeSupport =>
   import driver.simple._
 
@@ -172,3 +164,6 @@ trait JdbcAuthRepository extends AuthRepository with AuthTables {
 
   private def hashPassword(password: String) = SCryptUtil.scrypt(password, 16384, 8, 1)
 }
+
+class DefaultAuthRepository(val driver: JdbcProfile)(implicit val clock: Clock)
+  extends TimeSupport with JdbcSupport with JdbcAuthRepository
