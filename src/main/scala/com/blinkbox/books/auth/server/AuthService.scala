@@ -8,7 +8,7 @@ import java.sql.{SQLIntegrityConstraintViolationException, DataTruncation}
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.events.Publisher
+import com.blinkbox.books.auth.server.events._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
@@ -59,7 +59,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
       val t = repo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
-    events.userRegistered(user, client)
+    events.publish(UserRegistered(user, client))
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
     case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
@@ -74,7 +74,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
       val t = repo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
-    events.userAuthenticated(user, client)
+    events.publish(UserAuthenticated(user, client))
     issueAccessToken(user, client, token, includeRefreshToken = true)
   }
 
@@ -94,7 +94,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
       repo.extendRefreshTokenLifetime(t)
       (u, c, t)
     }
-    events.userAuthenticated(user1, client1)
+    events.publish(UserAuthenticated(user1, client1))
     issueAccessToken(user1, client1, token1)
   }
 
@@ -116,7 +116,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
       }
       repo.createClient(user.id, registration)
     }
-    events.clientRegistered(client)
+    events.publish(ClientRegistered(client))
     clientInfo(client, includeClientSecret = true)
   } transform(identity, _ match {
     case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
@@ -148,7 +148,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
       clientPair
     }
 
-    clients foreach { case (o, n) => events.clientUpdated(o, n) }
+    clients foreach { case (o, n) => events.publish(ClientUpdated(o, n)) }
     clients map { case (_, c) => clientInfo(c) }
   }
 
@@ -161,7 +161,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
       }
       newClient
     }
-    client.foreach(events.clientDeregistered)
+    client.foreach(c => events.publish(ClientDeregistered(c)))
     client.map(clientInfo(_))
   }
 
