@@ -8,10 +8,13 @@ import org.joda.time.DateTime
 import scala.concurrent.duration.FiniteDuration
 
 case class UserId(value: Int) extends AnyVal
+object UserId { val Invalid = UserId(-1) }
 
 case class ClientId(value: Int) extends AnyVal
+object ClientId { val Invalid = ClientId(-1) }
 
 case class RefreshTokenId(value: Int) extends AnyVal
+object RefreshTokenId { val Invalid = RefreshTokenId(-1) }
 
 case class User(id: UserId, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)
 

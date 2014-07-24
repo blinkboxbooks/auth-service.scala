@@ -128,7 +128,7 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
   private def newUser(r: UserRegistration) = {
     val now = clock.now()
     val passwordHash = hashPassword(r.password)
-    User(UserId(-1), now, now, r.username, r.firstName, r.lastName, passwordHash, r.allowMarketing)
+    User(UserId.Invalid, now, now, r.username, r.firstName, r.lastName, passwordHash, r.allowMarketing)
   }
 
   private def newClient(userId: UserId, r: ClientRegistration) = {
@@ -136,7 +136,7 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
     val buf = new Array[Byte](32)
     new SecureRandom().nextBytes(buf)
     val secret = Base64.encode(buf)
-    Client(ClientId(-1), now, now, userId, r.name, r.brand, r.model, r.os, secret, false)
+    Client(ClientId.Invalid, now, now, userId, r.name, r.brand, r.model, r.os, secret, false)
   }
 
   private def newRefreshToken(userId: UserId, clientId: Option[ClientId]) = {
@@ -144,7 +144,7 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
     val buf = new Array[Byte](32)
     new SecureRandom().nextBytes(buf)
     val token = Base64.encode(buf)
-    RefreshToken(RefreshTokenId(-1), now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
+    RefreshToken(RefreshTokenId.Invalid, now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
   }
 
   private def hashPassword(password: String) = SCryptUtil.scrypt(password, 16384, 8, 1)

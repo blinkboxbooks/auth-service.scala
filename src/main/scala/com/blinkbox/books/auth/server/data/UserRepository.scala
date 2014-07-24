@@ -22,7 +22,7 @@ trait JdbcUserRepository extends UserRepository[JdbcProfile] with ZuulTables {
   override def createUser(reg: UserRegistration)(implicit session: Session): User = {
     val now = clock.now()
     val passwordHash = passwordHasher.hash(reg.password)
-    val user = User(UserId(-1), now, now, reg.username, reg.firstName, reg.lastName, passwordHash, reg.allowMarketing)
+    val user = User(UserId.Invalid, now, now, reg.username, reg.firstName, reg.lastName, passwordHash, reg.allowMarketing)
 
     val id = (users returning users.map(_.id)) += user
 
