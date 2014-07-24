@@ -1,12 +1,13 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.services
 
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.sql.{SQLIntegrityConstraintViolationException, DataTruncation}
+import java.sql.{DataTruncation, SQLIntegrityConstraintViolationException}
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}

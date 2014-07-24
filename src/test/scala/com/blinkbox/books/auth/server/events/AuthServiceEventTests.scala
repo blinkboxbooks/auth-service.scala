@@ -1,7 +1,8 @@
 package com.blinkbox.books.auth.server.events
 
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.{PasswordHasher, DefaultAuthService, UserRegistration}
+import com.blinkbox.books.auth.server.services.DefaultAuthService
+import com.blinkbox.books.auth.server.{PasswordHasher, UserRegistration}
 import com.blinkbox.books.testkit._
 import com.blinkbox.books.test.MockitoSyrup
 import com.blinkbox.books.time.StoppedClock

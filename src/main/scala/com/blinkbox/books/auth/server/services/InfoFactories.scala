@@ -1,5 +1,6 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.services
 
+import com.blinkbox.books.auth.server.UserInfo
 import com.blinkbox.books.auth.server.data.User
 
 trait UserInfoFactory {

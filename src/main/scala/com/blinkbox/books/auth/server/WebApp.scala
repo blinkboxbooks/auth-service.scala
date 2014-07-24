@@ -4,6 +4,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.io.IO
 import com.blinkbox.books.auth.server.data.{ZuulTables, DefaultUserRepository, DefaultAuthRepository}
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, RabbitMqPublisher}
+import com.blinkbox.books.auth.server.services.{DefaultUserService, DefaultAuthService, GeoIP}
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers

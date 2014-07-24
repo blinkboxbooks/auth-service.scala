@@ -2,7 +2,8 @@ package com.blinkbox.books.server
 
 import com.blinkbox.books.auth.server.data.{UserId, ZuulTables, DefaultUserRepository, User}
 import com.blinkbox.books.auth.server.events.UserUpdated
-import com.blinkbox.books.auth.server.{UserPatch, UserRegistration, DefaultUserService, PasswordHasher}
+import com.blinkbox.books.auth.server.services.DefaultUserService
+import com.blinkbox.books.auth.server.{UserPatch, UserRegistration, PasswordHasher}
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2, PublisherDummy, TestGeoIP}
 import com.blinkbox.books.time.StoppedClock
 import org.scalatest.concurrent.ScalaFutures
@@ -59,6 +60,12 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
         info.user_id should equal("urn:blinkbox:zuul:user:1")
         info.user_allow_marketing_communications should equal(true)
       }
+    }
+  }
+
+  it should "return a None when looking up non-existing ids" in new TestEnv {
+    whenReady(userService.getUserInfo(UserId(100))) { infoOpt =>
+      infoOpt shouldBe empty
     }
   }
 

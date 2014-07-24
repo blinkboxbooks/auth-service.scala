@@ -1,8 +1,9 @@
 package com.blinkbox.books.testkit
 
 import com.blinkbox.books.auth.server.events.{Event, Publisher}
-import com.blinkbox.books.auth.server.{PasswordHasher, GeoIP}
+import com.blinkbox.books.auth.server.PasswordHasher
 import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.services.GeoIP
 import com.blinkbox.books.slick.JdbcSupport
 import org.h2.jdbc.JdbcSQLException
 import org.hamcrest.{BaseMatcher, Description, Matcher}

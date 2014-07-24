@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
+import com.blinkbox.books.auth.server.services.{UserService, AuthService}
 import org.joda.time.DateTime
 
 import org.json4s.ext.{JodaTimeSerializers, EnumNameSerializer}
