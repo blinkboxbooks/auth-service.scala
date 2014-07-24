@@ -16,12 +16,7 @@ import scala.slick.profile.BasicProfile
 trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
   def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
-  def createClient(userId: UserId, registration: ClientRegistration)(implicit session: Session): Client
   def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client]
-  def activeClients(implicit session: Session, user: AuthenticatedUser): List[Client]
-  def activeClientCount(implicit session: Session, user: AuthenticatedUser): Int
-  def clientWithId(id: ClientId)(implicit session: Session, user: AuthenticatedUser): Option[Client]
-  def updateClient(client: Client)(implicit session: Session, user: AuthenticatedUser): Unit
   def createRefreshToken(userId: UserId, clientId: Option[ClientId])(implicit session: Session): RefreshToken
   def refreshTokenWithId(id: RefreshTokenId)(implicit session: Session): Option[RefreshToken]
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
@@ -32,7 +27,7 @@ trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
 }
 
 trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
-  this: JdbcSupport with TimeSupport =>
+  this: TimeSupport =>
   import driver.simple._
 
   val ClientIdExpr = """urn:blinkbox:zuul:client:([0-9]+)""".r
@@ -52,12 +47,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
 
   override def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit = {
     loginAttempts += LoginAttempt(clock.now(), username, succeeded, clientIP.fold("unknown")(_.toString()))
-  }
-
-  override def createClient(userId: UserId, registration: ClientRegistration)(implicit session: Session): Client = {
-    val client = newClient(userId, registration)
-    val id = (clients returning clients.map(_.id)) += client
-    client.copy(id = id)
   }
 
   override def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client] = {
@@ -104,22 +93,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
     // TODO: Make lifetime extension configurable
     val now = clock.now()
     refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.expiresAt)).update(now, now.plusDays(90))
-  }
-
-  override def activeClients(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.userId === UserId(user.id) && !c.isDeregistered).list
-  }
-
-  override def activeClientCount(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.userId === UserId(user.id) && !c.isDeregistered).length.run
-  }
-
-  override def clientWithId(id: ClientId)(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.id === id && c.userId === UserId(user.id) && !c.isDeregistered).list.headOption
-  }
-
-  override def updateClient(client: Client)(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.id === client.id && c.userId === UserId(user.id)).update(client)
   }
 
   override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =

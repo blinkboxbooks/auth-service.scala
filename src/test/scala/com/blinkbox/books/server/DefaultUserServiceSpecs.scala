@@ -25,7 +25,7 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
     val db = TestH2.db
     val publisherSpy = new PublisherSpy
     val userRepository = new DefaultUserRepository(tables, PasswordHasher(identity))
-    val userService = new DefaultUserService(TestH2.db, userRepository, TestGeoIP.geoIpStub(), publisherSpy)
+    val userService = new DefaultUserService(TestH2.db, userRepository, publisherSpy)
 
     val dummyUser = User(UserId(1), cl.now(), cl.now(), "dummy@dummy.dm", "Dummy", "Dummy", "dummypwd", true)
     val dummyUserPatch = UserPatch(Some("Updated Dummy"), Some("Updated Dummy"), Some("dummy+updated@dummy.dm"), Some(false), None)
@@ -35,19 +35,6 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
     db.withSession { implicit session =>
       tables.users += dummyUser
     }
-
-    val foobarWithoutClient = UserRegistration(
-      firstName = "Foo",
-      lastName = "Bar",
-      username = "foobar@baz.com",
-      password = "pazzword",
-      acceptedTerms = true,
-      allowMarketing = true,
-      clientName = None,
-      clientBrand = None,
-      clientModel = None,
-      clientOS = None
-    )
   }
 
   "The user service" should "retrieve the dummy user" in new TestEnv {

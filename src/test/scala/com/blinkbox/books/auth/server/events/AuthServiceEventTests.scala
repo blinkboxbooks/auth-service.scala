@@ -29,7 +29,10 @@ class AuthServiceEventTests extends FunSuite with ScalatestRouteTest with AsyncA
     val db = TestH2.db
     val reg = UserRegistration("John", "Doe", "johndoe@example.org", "password", acceptedTerms = true, allowMarketing = true, None, None, None, None)
     val tables = ZuulTables(H2Driver)
-    val authService = new DefaultAuthService(db, new DefaultAuthRepository(tables), new DefaultUserRepository(tables, PasswordHasher(identity)), TestGeoIP.geoIpStub(), publisher)
+    val authService = new DefaultAuthService(db, new DefaultAuthRepository(tables),
+      new DefaultUserRepository(tables, PasswordHasher(identity)), new DefaultClientRepository(tables),
+      TestGeoIP.geoIpStub(), publisher)
+
     authService.registerUser(reg, None)
     w.await()
 

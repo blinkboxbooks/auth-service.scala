@@ -14,7 +14,7 @@ trait UserService {
 }
 
 class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-  (db: Database, repo: UserRepository[Profile], geoIP: GeoIP, events: Publisher)
+  (db: Database, repo: UserRepository[Profile], events: Publisher)
   (implicit ec: ExecutionContext, clock: Clock) extends UserService with UserInfoFactory {
 
   override def updateUser(id: UserId, patch: UserPatch): Future[Option[UserInfo]] = Future {
