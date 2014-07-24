@@ -3,9 +3,9 @@ package com.blinkbox.books.auth.server.data
 import com.blinkbox.books.slick.JdbcSupport
 import org.joda.time.DateTime
 
-trait AuthTables {
-  this: JdbcSupport =>
+import scala.slick.driver.JdbcProfile
 
+trait ZuulTables extends JdbcSupport {
   import driver.simple._
 
   lazy val users = TableQuery[Users]
@@ -13,8 +13,12 @@ trait AuthTables {
   lazy val refreshTokens = TableQuery[RefreshTokens]
   lazy val loginAttempts = TableQuery[LoginAttempts]
 
+  implicit lazy val userIdColumnType = MappedColumnType.base[UserId, Int](_.value, UserId(_))
+  implicit lazy val clientIdColumnType = MappedColumnType.base[ClientId, Int](_.value, ClientId(_))
+  implicit lazy val refreshTokenIdColumnType = MappedColumnType.base[RefreshTokenId, Int](_.value, RefreshTokenId(_))
+
   class Users(tag: Tag) extends Table[User](tag, "users") {
-    def id = column[Int]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
+    def id = column[UserId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
     def createdAt = column[DateTime]("created_at", O.NotNull)
     def updatedAt = column[DateTime]("updated_at", O.NotNull)
     def username = column[String]("username", O.NotNull)
@@ -27,10 +31,10 @@ trait AuthTables {
   }
 
   class Clients(tag: Tag) extends Table[Client](tag, "clients") {
-    def id = column[Int]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
+    def id = column[ClientId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
     def createdAt = column[DateTime]("created_at", O.NotNull)
     def updatedAt = column[DateTime]("updated_at", O.NotNull)
-    def userId = column[Int]("user_id", O.NotNull)
+    def userId = column[UserId]("user_id", O.NotNull)
     def name = column[String]("name", O.NotNull)
     def brand = column[String]("brand", O.NotNull)
     def model = column[String]("model", O.NotNull)
@@ -42,11 +46,11 @@ trait AuthTables {
   }
 
   class RefreshTokens(tag: Tag) extends Table[RefreshToken](tag, "refresh_tokens") {
-    def id = column[Int]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
+    def id = column[RefreshTokenId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
     def createdAt = column[DateTime]("created_at", O.NotNull)
     def updatedAt = column[DateTime]("updated_at", O.NotNull)
-    def userId = column[Int]("user_id", O.NotNull)
-    def clientId = column[Option[Int]]("client_id")
+    def userId = column[UserId]("user_id", O.NotNull)
+    def clientId = column[Option[ClientId]]("client_id")
     def token = column[String]("token", O.NotNull)
     def isRevoked = column[Boolean]("revoked", O.NotNull)
     def expiresAt = column[DateTime]("expires_at", O.NotNull)
@@ -65,4 +69,15 @@ trait AuthTables {
     def * = (createdAt, username, successful, clientIP) <> (LoginAttempt.tupled, LoginAttempt.unapply)
     def indexOnUsernameAndCreatedAt = index("index_login_attempts_on_username_and_created_at", (username, createdAt))
   }
+}
+
+object ZuulTables {
+  def apply[Profile <: JdbcProfile](_driver: Profile) = new ZuulTables {
+    override val driver: JdbcProfile = _driver
+  }
+}
+
+trait ZuulTablesSupport extends JdbcSupport {
+  val tables: ZuulTables
+  val driver = tables.driver
 }

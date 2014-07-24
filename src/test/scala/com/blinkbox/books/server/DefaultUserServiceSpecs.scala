@@ -1,15 +1,13 @@
 package com.blinkbox.books.server
 
-import com.blinkbox.books.auth.server.data.{DefaultUserRepository, User}
+import com.blinkbox.books.auth.server.data.{UserId, ZuulTables, DefaultUserRepository, User}
 import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.auth.server.{UserPatch, UserRegistration, DefaultUserService, PasswordHasher}
-import com.blinkbox.books.testkit.{PublisherSpy, H2, PublisherDummy, TestGeoIP}
+import com.blinkbox.books.testkit.{PublisherSpy, TestH2, PublisherDummy, TestGeoIP}
 import com.blinkbox.books.time.StoppedClock
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}
-
-import scala.slick.driver.H2Driver
 
 class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
 
@@ -17,19 +15,24 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
   implicit val cl = StoppedClock()
   implicit override val patienceConfig = PatienceConfig(timeout = Span(500, Millis), interval = Span(20, Millis))
 
-  import H2Driver.simple._
+  val tables = TestH2.tables
+
+  import tables._
+  import driver.simple._
 
   trait TestEnv {
-    val db = H2.db
+    val db = TestH2.db
     val publisherSpy = new PublisherSpy
-    val userRepository = new DefaultUserRepository(H2Driver, PasswordHasher(identity))
-    val userService = new DefaultUserService(H2.db, userRepository, TestGeoIP.geoIpStub(), publisherSpy)
+    val userRepository = new DefaultUserRepository(tables, PasswordHasher(identity))
+    val userService = new DefaultUserService(TestH2.db, userRepository, TestGeoIP.geoIpStub(), publisherSpy)
 
-    val dummyUser = User(1, cl.now(), cl.now(), "dummy@dummy.dm", "Dummy", "Dummy", "dummypwd", true)
+    val dummyUser = User(UserId(1), cl.now(), cl.now(), "dummy@dummy.dm", "Dummy", "Dummy", "dummypwd", true)
     val dummyUserPatch = UserPatch(Some("Updated Dummy"), Some("Updated Dummy"), Some("dummy+updated@dummy.dm"), Some(false), None)
 
+    import tables.driver.simple._
+
     db.withSession { implicit session =>
-      userRepository.users += dummyUser
+      tables.users += dummyUser
     }
 
     val foobarWithoutClient = UserRegistration(
@@ -60,7 +63,7 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
   }
 
   it should "update an user given new details" in new TestEnv {
-    whenReady(userService.updateUser(1, dummyUserPatch)) { infoOpt =>
+    whenReady(userService.updateUser(UserId(1), dummyUserPatch)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt foreach { info =>
         info.user_first_name should equal("Updated Dummy")
@@ -71,10 +74,10 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
       }
 
       val updated = db.withSession { implicit session =>
-        H2.tables.users.where(_.id === 1).firstOption
+        tables.users.where(_.id === UserId(1)).firstOption
       }
 
-      val expectedUpdatedUser = User(1, cl.now, cl.now, "dummy+updated@dummy.dm", "Updated Dummy", "Updated Dummy", "dummypwd", false)
+      val expectedUpdatedUser = User(UserId(1), cl.now, cl.now, "dummy+updated@dummy.dm", "Updated Dummy", "Updated Dummy", "dummypwd", false)
 
       updated shouldBe defined
       updated foreach { _ shouldEqual expectedUpdatedUser}

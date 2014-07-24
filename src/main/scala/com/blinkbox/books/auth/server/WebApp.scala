@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
-import com.blinkbox.books.auth.server.data.{DefaultUserRepository, DefaultAuthRepository}
+import com.blinkbox.books.auth.server.data.{ZuulTables, DefaultUserRepository, DefaultAuthRepository}
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
@@ -15,7 +15,7 @@ import spray.http.{AllOrigins, RemoteAddress}
 import spray.routing._
 
 import scala.concurrent.Future
-import scala.slick.driver.{JdbcProfile, MySQLDriver}
+import scala.slick.driver.MySQLDriver
 import scala.slick.jdbc.JdbcBackend.Database
 
 // TODO: Real GeoIP checking
@@ -44,8 +44,10 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
 
   val passwordHasher = PasswordHasher.default
 
-  val authRepository = new DefaultAuthRepository(dbDriver)
-  val userRepository = new DefaultUserRepository(dbDriver, passwordHasher)
+  val tables = ZuulTables(dbDriver)
+
+  val authRepository = new DefaultAuthRepository(tables)
+  val userRepository = new DefaultUserRepository(tables, passwordHasher)
 
   val authService = new DefaultAuthService(db, authRepository, userRepository, geoIp, notifier)
   val userService = new DefaultUserService(db, userRepository, geoIp, notifier)

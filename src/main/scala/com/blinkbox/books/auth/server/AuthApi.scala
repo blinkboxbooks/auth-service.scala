@@ -94,6 +94,10 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
     }
   )
 
+  val UserId = IntNumber.map(data.UserId(_))
+  val ClientId = IntNumber.map(data.ClientId(_))
+  val RefreshTokenId = IntNumber.map(data.RefreshTokenId(_))
+
   implicit def json4sJacksonFormats: Formats = (DefaultFormats + ZuulRequestExceptionSerializer +
     new EnumNameSerializer(RefreshTokenStatus) + clientInfoSerializer) ++ JodaTimeSerializers.all
 
@@ -123,12 +127,12 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   }
 
   val getUserInfo: Route = get {
-    path("users" / IntNumber) { userId =>
+    path("users" / UserId) { userId =>
       authenticate(authenticator) { implicit user =>
-        if (user.id != userId)
+        if (user.id != userId.value)
           complete(NotFound, None)
         else
-          onSuccess(userService.getUserInfo(user.id)) { info =>
+          onSuccess(userService.getUserInfo(userId)) { info =>
             info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
           }
       }
@@ -136,9 +140,9 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   }
 
   val updateUserInfo: Route = patch {
-    path("users" / IntNumber) { userId =>
+    path("users" / UserId) { userId =>
       authenticate(authenticator) { implicit user =>
-        if (user.id != userId)
+        if (user.id != userId.value)
           complete(NotFound, None)
         else
           formFields('first_name.?, 'last_name.?, 'username.?, 'allow_marketing_communications.?, 'accepted_terms_and_conditions.?).as(UserPatch) { patch =>
@@ -209,7 +213,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   }
 
   val getClientById: Route = get {
-    path("clients" / IntNumber) { id =>
+    path("clients" / ClientId) { id =>
       authenticate(authenticator) { implicit user =>
         onSuccess(authService.getClientById(id)) {
           case Some(client) => uncacheable(OK, client)
@@ -220,7 +224,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   }
 
   val updateClient: Route = patch {
-    path("clients" / IntNumber) { id =>
+    path("clients" / ClientId) { id =>
       authenticate(authenticator) { implicit user =>
         formFields('client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(ClientPatch) { patch =>
           onSuccess(authService.updateClient(id, patch)) {
@@ -233,7 +237,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   }
 
   val deleteClient: Route = delete {
-    path("clients" / IntNumber) { id =>
+    path("clients" / ClientId) { id =>
       authenticate(authenticator) { implicit user =>
         onSuccess(authService.deleteClient(id)) { clientOpt =>
           clientOpt.fold(complete(NotFound, None))(_ => complete(OK, None))
