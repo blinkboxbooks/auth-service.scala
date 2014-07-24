@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
-import com.blinkbox.books.auth.server.data.MySqlAuthRepository
+import com.blinkbox.books.auth.server.data.{DefaultUserRepository, DefaultAuthRepository}
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
@@ -15,6 +15,8 @@ import spray.http.{AllOrigins, RemoteAddress}
 import spray.routing._
 
 import scala.concurrent.Future
+import scala.slick.driver.{JdbcProfile, MySQLDriver}
+import scala.slick.jdbc.JdbcBackend.Database
 
 // TODO: Real GeoIP checking
 object DummyGeoIP extends GeoIP {
@@ -23,14 +25,36 @@ object DummyGeoIP extends GeoIP {
 
 class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupport {
   implicit val executionContext = actorRefFactory.dispatcher
+
   val authenticator = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
+
   val notifier = new RabbitMqPublisher ~ new LegacyRabbitMqPublisher(config.rabbit)
-  val service = new DefaultAuthService(new MySqlAuthRepository(config.db), DummyGeoIP, notifier)
-  val users = new AuthApi(config.service, service, authenticator)
+
+  val db = {
+    val jdbcUrl = s"jdbc:${config.db.uri.withUserInfo("")}"
+    val Array(user, password) = config.db.uri.getUserInfo.split(':')
+    Database.forURL(jdbcUrl, driver = "com.mysql.jdbc.Driver", user = user, password = password)
+  }
+
+  val dbDriver = MySQLDriver
+
+  val geoIp = DummyGeoIP
+
+  val passwordHasher = PasswordHasher.default
+
+  val authRepository = new DefaultAuthRepository(dbDriver)
+  val userRepository = new DefaultUserRepository(dbDriver, passwordHasher)
+
+  val authService = new DefaultAuthService(db, authRepository, userRepository, geoIp, notifier)
+  val userService = new DefaultUserService(db, userRepository, geoIp, notifier)
+
+  val users = new AuthApi(config.service, userService, authService, authenticator)
   val swagger = new SwaggerApi(config.swagger)
+
   val route = users.routes ~ respondWithHeader(`Access-Control-Allow-Origin`(AllOrigins)) { swagger.routes }
+
   def receive = runRoute(route)
 }
 

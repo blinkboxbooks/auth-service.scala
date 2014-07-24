@@ -18,11 +18,11 @@ import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.slick.profile.BasicProfile
 
 trait AuthService {
-  def updateUser(id: Int, patch: UserPatch): Future[Option[UserInfo]]
-  def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]]
   def revokeRefreshToken(token: String): Future[Unit]
+  // TODO: Ideally user registration should be broken in pieces and factored out (e.g. user registration, client creation, token issue)
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
@@ -38,7 +38,10 @@ trait GeoIP {
   def countryCode(address: RemoteAddress): String
 }
 
-class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(implicit executionContext: ExecutionContext, clock: Clock) extends AuthService {
+class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
+  (db: Database, authRepo: AuthRepository[Profile], userRepo: UserRepository[Profile], geoIP: GeoIP, events: Publisher)
+  (implicit executionContext: ExecutionContext, clock: Clock) extends AuthService with UserInfoFactory {
+
   // TODO: Make these configurable
   val MaxClients = 12
   val PrivateKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
@@ -53,10 +56,10 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     if (clientIP.isDefined && clientIP.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
       FailWith.notInTheUK
 
-    val (user, client, token) = repo.db.withTransaction { implicit transaction =>
-      val u = repo.createUser(registration)
-      val c = registration.client.map(repo.createClient(u.id, _))
-      val t = repo.createRefreshToken(u.id, c.map(_.id))
+    val (user, client, token) = db.withTransaction { implicit transaction =>
+      val u = userRepo.createUser(registration)
+      val c = registration.client.map(authRepo.createClient(u.id, _))
+      val t = authRepo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
     events.publish(UserRegistered(user, client))
@@ -68,10 +71,10 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
   })
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
-    val (user, client, token) = repo.db.withTransaction { implicit transaction =>
+    val (user, client, token) = db.withTransaction { implicit transaction =>
       val u = authenticateUser(credentials, clientIP)
       val c = authenticateClient(credentials, u)
-      val t = repo.createRefreshToken(u.id, c.map(_.id))
+      val t = authRepo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
     events.publish(UserAuthenticated(user, client))
@@ -79,19 +82,19 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
   }
 
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
-    val (user1, client1, token1) = repo.db.withTransaction { implicit transaction =>
-      val t = repo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
-      val u = repo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
+    val (user1, client1, token1) = db.withTransaction { implicit transaction =>
+      val t = authRepo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
+      val u = userRepo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
       val c = authenticateClient(credentials, u)
 
       (t.clientId, c) match {
-        case (None, Some(client)) => repo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
+        case (None, Some(client)) => authRepo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
         case (None, None) => // Do nothing: token isn't associated with a client and there is no client
         case (Some(tId), Some(client)) if (tId == client.id) => // Do nothing: token is associated with the right client
         case _ => FailWith.refreshTokenNotAuthorized
       }
 
-      repo.extendRefreshTokenLifetime(t)
+      authRepo.extendRefreshTokenLifetime(t)
       (u, c, t)
     }
     events.publish(UserAuthenticated(user1, client1))
@@ -100,7 +103,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
 
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {
     val tokenId = user.claims.get("zl/rti").get.asInstanceOf[Int]
-    val token = repo.db.withSession(implicit session => repo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
+    val token = db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
     SessionInfo(
       token_status = token.status,
       token_elevation = if (token.isValid) Some(token.elevation) else None,
@@ -110,11 +113,11 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
   }
 
   def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
-    val client = repo.db.withTransaction { implicit transaction =>
-      if (repo.activeClientCount >= MaxClients) {
+    val client = db.withTransaction { implicit transaction =>
+      if (authRepo.activeClientCount >= MaxClients) {
         FailWith.clientLimitReached
       }
-      repo.createClient(user.id, registration)
+      authRepo.createClient(user.id, registration)
     }
     events.publish(ClientRegistered(client))
     clientInfo(client, includeClientSecret = true)
@@ -124,18 +127,18 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
   })
 
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
-    val clientList = repo.db.withSession(implicit session => repo.activeClients)
+    val clientList = db.withSession(implicit session => authRepo.activeClients)
     ClientList(clientList.map(clientInfo(_)))
   }
 
   def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = repo.db.withSession(implicit session => repo.clientWithId(id))
+    val client = db.withSession(implicit session => authRepo.clientWithId(id))
     client.map(clientInfo(_))
   }
 
   def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val clients = repo.db.withTransaction { implicit transaction =>
-      val clientPair = repo.clientWithId(id) map { oldClient =>
+    val clients = db.withTransaction { implicit transaction =>
+      val clientPair = authRepo.clientWithId(id) map { oldClient =>
         val newClient = oldClient.copy(
           updatedAt = clock.now(),
           name = patch.client_name.getOrElse(oldClient.name),
@@ -144,7 +147,7 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
           os = patch.client_os.getOrElse(oldClient.os))
         (oldClient, newClient)
       }
-      clientPair foreach { case (_, c) => repo.updateClient(c) }
+      clientPair foreach { case (_, c) => authRepo.updateClient(c) }
       clientPair
     }
 
@@ -153,11 +156,11 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
   }
 
   def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = repo.db.withSession { implicit session =>
-      val newClient = repo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
+    val client = db.withSession { implicit session =>
+      val newClient = authRepo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
       newClient.foreach { c =>
-        repo.updateClient(c)
-        repo.refreshTokensByClientId(c.id).foreach(repo.revokeRefreshToken)
+        authRepo.updateClient(c)
+        authRepo.refreshTokensByClientId(c.id).foreach(authRepo.revokeRefreshToken)
       }
       newClient
     }
@@ -165,18 +168,18 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
     client.map(clientInfo(_))
   }
 
-  private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: repo.Session): User = {
-    val user = repo.authenticateUser(credentials.username, credentials.password)
-    repo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
+  private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: authRepo.Session): User = {
+    val user = authRepo.authenticateUser(credentials.username, credentials.password)
+    authRepo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
 
     user.getOrElse(FailWith.invalidUsernamePassword)
   }
 
-  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: repo.Session): Option[Client] =
+  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: authRepo.Session): Option[Client] =
     for {
       clientId <- credentials.clientId
       clientSecret <- credentials.clientSecret
-    } yield repo.
+    } yield authRepo.
       authenticateClient(clientId, clientSecret, user.id).
       getOrElse(FailWith.invalidClientCredentials)
 
@@ -247,41 +250,9 @@ class DefaultAuthService(repo: AuthRepository, geoIP: GeoIP, events: Publisher)(
   }
 
   override def revokeRefreshToken(token: String): Future[Unit] = Future {
-    repo.db.withSession { implicit session =>
-      val retrievedToken = repo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
-      repo.revokeRefreshToken(retrievedToken)
-    }
-  }
-
-  private def userInfoFromUser(user: User) = UserInfo(
-    user_id = s"urn:blinkbox:zuul:user:${user.id}",
-    user_uri = s"/users/${user.id}",
-    user_username = user.username,
-    user_first_name = user.firstName,
-    user_last_name = user.lastName,
-    user_allow_marketing_communications = user.allowMarketing
-  )
-
-  override def getUserInfo(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = Future {
-    repo.db.withSession { implicit session =>
-      repo.userWithId(user.id).map(userInfoFromUser)
-    }
-  }
-
-  override def updateUser(id: Int, patch: UserPatch): Future[Option[UserInfo]] = Future {
-    repo.db.withSession { implicit session =>
-      val updatedUser = repo.userWithId(id).map { user =>
-        user.copy(
-          firstName = patch.first_name.getOrElse(user.firstName),
-          lastName = patch.last_name.getOrElse(user.lastName),
-          username = patch.username.getOrElse(user.username),
-          allowMarketing = patch.allow_marketing_communications.getOrElse(user.allowMarketing)
-        )
-      }
-
-      updatedUser foreach repo.updateUser
-
-      updatedUser map userInfoFromUser
+    db.withSession { implicit session =>
+      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
+      authRepo.revokeRefreshToken(retrievedToken)
     }
   }
 }

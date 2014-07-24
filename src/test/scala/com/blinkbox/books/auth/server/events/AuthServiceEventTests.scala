@@ -1,7 +1,8 @@
 package com.blinkbox.books.auth.server.events
 
-import com.blinkbox.books.auth.server.test.H2AuthRepository
-import com.blinkbox.books.auth.server.{DefaultAuthService, GeoIP, UserRegistration}
+import com.blinkbox.books.auth.server.data.{DefaultUserRepository, DefaultAuthRepository, Client, User}
+import com.blinkbox.books.auth.server.{PasswordHasher, DefaultAuthService, UserRegistration}
+import com.blinkbox.books.testkit._
 import com.blinkbox.books.test.MockitoSyrup
 import com.blinkbox.books.time.StoppedClock
 import org.mockito.Matchers._
@@ -9,16 +10,12 @@ import org.mockito.Mockito._
 import org.scalatest.FunSuite
 import org.scalatest.concurrent.AsyncAssertions
 import org.scalatest.time.{Millis, Span}
-import spray.http.RemoteAddress
 import spray.testkit.ScalatestRouteTest
 
 import scala.concurrent.Future
+import scala.slick.driver.H2Driver
 
-private object TestGeoIP extends GeoIP {
-  override def countryCode(address: RemoteAddress): String = "GB"
-}
-
-class AuthServiceEventTests extends FunSuite with ScalatestRouteTest with AsyncAssertions with MockitoSyrup {
+class AuthServiceEventTests extends FunSuite with ScalatestRouteTest with AsyncAssertions with ExtraMockitoSugar {
 
   implicit val clock = StoppedClock()
   implicit val patience = PatienceConfig(scaled(Span(500, Millis))) // the h2 tests can take a little while
@@ -28,8 +25,9 @@ class AuthServiceEventTests extends FunSuite with ScalatestRouteTest with AsyncA
     val publisher = mock[Publisher]
     when(publisher.publish(any[Event])).thenAnswer(Future.successful(w.dismiss()))
 
+    val db = H2.db
     val reg = UserRegistration("John", "Doe", "johndoe@example.org", "password", acceptedTerms = true, allowMarketing = true, None, None, None, None)
-    val authService = new DefaultAuthService(new H2AuthRepository, TestGeoIP, publisher)
+    val authService = new DefaultAuthService(db, new DefaultAuthRepository(H2Driver), new DefaultUserRepository(H2Driver, PasswordHasher(identity)), TestGeoIP.geoIpStub(), publisher)
     authService.registerUser(reg, None)
     w.await()
 
