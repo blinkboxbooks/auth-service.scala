@@ -16,28 +16,28 @@ import scala.slick.profile.BasicProfile
 trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
   def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
-  def createClient(userId: Int, registration: ClientRegistration)(implicit session: Session): Client
-  def authenticateClient(id: String, secret: String, userId: Int)(implicit session: Session): Option[Client]
+  def createClient(userId: UserId, registration: ClientRegistration)(implicit session: Session): Client
+  def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client]
   def activeClients(implicit session: Session, user: AuthenticatedUser): List[Client]
   def activeClientCount(implicit session: Session, user: AuthenticatedUser): Int
-  def clientWithId(id: Int)(implicit session: Session, user: AuthenticatedUser): Option[Client]
+  def clientWithId(id: ClientId)(implicit session: Session, user: AuthenticatedUser): Option[Client]
   def updateClient(client: Client)(implicit session: Session, user: AuthenticatedUser): Unit
-  def createRefreshToken(userId: Int, clientId: Option[Int])(implicit session: Session): RefreshToken
-  def refreshTokenWithId(id: Int)(implicit session: Session): Option[RefreshToken]
+  def createRefreshToken(userId: UserId, clientId: Option[ClientId])(implicit session: Session): RefreshToken
+  def refreshTokenWithId(id: RefreshTokenId)(implicit session: Session): Option[RefreshToken]
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
-  def refreshTokensByClientId(clientId: Int)(implicit session: Session): List[RefreshToken]
+  def refreshTokensByClientId(clientId: ClientId)(implicit session: Session): List[RefreshToken]
   def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session)
   def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session): Unit
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
 }
 
-trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with AuthTables {
+trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
   this: JdbcSupport with TimeSupport =>
   import driver.simple._
 
-  val ClientId = """urn:blinkbox:zuul:client:([0-9]+)""".r
+  val ClientIdExpr = """urn:blinkbox:zuul:client:([0-9]+)""".r
 
-  def authenticateUser(username: String, password: String)(implicit session: Session): Option[User] = {
+  override def authenticateUser(username: String, password: String)(implicit session: Session): Option[User] = {
     val user = users.where(_.username === username).firstOption
     val passwordValid = if (user.isDefined) {
       SCryptUtil.check(password, user.get.passwordHash)
@@ -50,21 +50,21 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with AuthTables {
     if (passwordValid) user else None
   }
 
-  def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit = {
+  override def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit = {
     loginAttempts += LoginAttempt(clock.now(), username, succeeded, clientIP.fold("unknown")(_.toString()))
   }
 
-  def createClient(userId: Int, registration: ClientRegistration)(implicit session: Session): Client = {
+  override def createClient(userId: UserId, registration: ClientRegistration)(implicit session: Session): Client = {
     val client = newClient(userId, registration)
     val id = (clients returning clients.map(_.id)) += client
     client.copy(id = id)
   }
 
-  def authenticateClient(id: String, secret: String, userId: Int)(implicit session: Session): Option[Client] = {
+  override def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client] = {
     if (id.isEmpty || secret.isEmpty) return None
 
     val numericId = id match {
-      case ClientId(n) => try Some(n.toInt) catch { case _: NumberFormatException => None }
+      case ClientIdExpr(n) => try Some(ClientId(n.toInt)) catch { case _: NumberFormatException => None }
       case _ => None
     }
 
@@ -76,79 +76,79 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with AuthTables {
     client
   }
 
-  def createRefreshToken(userId: Int, clientId: Option[Int])(implicit session: Session): RefreshToken = {
+  override def createRefreshToken(userId: UserId, clientId: Option[ClientId])(implicit session: Session): RefreshToken = {
     val token = newRefreshToken(userId, clientId)
     val id = (refreshTokens returning refreshTokens.map(_.id)) += token
     token.copy(id = id)
   }
 
-  def refreshTokenWithId(id: Int)(implicit session: Session) = {
+  override def refreshTokenWithId(id: RefreshTokenId)(implicit session: Session) = {
     val refreshToken = refreshTokens.where(rt => rt.id === id && !rt.isRevoked).list.headOption
     refreshToken.filter(_.isValid)
   }
 
-  def refreshTokenWithToken(token: String)(implicit session: Session) = {
+  override def refreshTokenWithToken(token: String)(implicit session: Session) = {
     val refreshToken = refreshTokens.where(rt => rt.token === token && !rt.isRevoked).list.headOption
     refreshToken.filter(_.isValid)
   }
 
-  def refreshTokensByClientId(clientId: Int)(implicit session: Session): List[RefreshToken] = {
+  override def refreshTokensByClientId(clientId: ClientId)(implicit session: Session): List[RefreshToken] = {
     refreshTokens.where(_.clientId === clientId).list
   }
 
-  def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session) = {
+  override def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session) = {
     refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.clientId)).update(clock.now(), Some(c.id))
   }
 
-  def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session) = {
+  override def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session) = {
     // TODO: Make lifetime extension configurable
     val now = clock.now()
     refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.expiresAt)).update(now, now.plusDays(90))
   }
 
-  def activeClients(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.userId === user.id && !c.isDeregistered).list
+  override def activeClients(implicit session: Session, user: AuthenticatedUser) = {
+    clients.where(c => c.userId === UserId(user.id) && !c.isDeregistered).list
   }
 
-  def activeClientCount(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.userId === user.id && !c.isDeregistered).length.run
+  override def activeClientCount(implicit session: Session, user: AuthenticatedUser) = {
+    clients.where(c => c.userId === UserId(user.id) && !c.isDeregistered).length.run
   }
 
-  def clientWithId(id: Int)(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.id === id && c.userId === user.id && !c.isDeregistered).list.headOption
-  }
-  
-  def updateClient(client: Client)(implicit session: Session, user: AuthenticatedUser) = {
-    clients.where(c => c.id === client.id && c.userId === user.id).update(client)
+  override def clientWithId(id: ClientId)(implicit session: Session, user: AuthenticatedUser) = {
+    clients.where(c => c.id === id && c.userId === UserId(user.id) && !c.isDeregistered).list.headOption
   }
 
-  def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
+  override def updateClient(client: Client)(implicit session: Session, user: AuthenticatedUser) = {
+    clients.where(c => c.id === client.id && c.userId === UserId(user.id)).update(client)
+  }
+
+  override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
     refreshTokens.where(_.id === t.id).map(_.isRevoked).update(true)
 
   private def newUser(r: UserRegistration) = {
     val now = clock.now()
     val passwordHash = hashPassword(r.password)
-    User(-1, now, now, r.username, r.firstName, r.lastName, passwordHash, r.allowMarketing)
+    User(UserId(-1), now, now, r.username, r.firstName, r.lastName, passwordHash, r.allowMarketing)
   }
 
-  private def newClient(userId: Int, r: ClientRegistration) = {
+  private def newClient(userId: UserId, r: ClientRegistration) = {
     val now = clock.now()
     val buf = new Array[Byte](32)
     new SecureRandom().nextBytes(buf)
     val secret = Base64.encode(buf)
-    Client(-1, now, now, userId, r.name, r.brand, r.model, r.os, secret, false)
+    Client(ClientId(-1), now, now, userId, r.name, r.brand, r.model, r.os, secret, false)
   }
 
-  private def newRefreshToken(userId: Int, clientId: Option[Int]) = {
+  private def newRefreshToken(userId: UserId, clientId: Option[ClientId]) = {
     val now = clock.now()
     val buf = new Array[Byte](32)
     new SecureRandom().nextBytes(buf)
     val token = Base64.encode(buf)
-    RefreshToken(-1, now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
+    RefreshToken(RefreshTokenId(-1), now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
   }
 
   private def hashPassword(password: String) = SCryptUtil.scrypt(password, 16384, 8, 1)
 }
 
-class DefaultAuthRepository(val driver: JdbcProfile)(implicit val clock: Clock)
-  extends TimeSupport with JdbcSupport with JdbcAuthRepository
+class DefaultAuthRepository(val tables: ZuulTables)(implicit val clock: Clock)
+  extends TimeSupport with ZuulTablesSupport with JdbcAuthRepository

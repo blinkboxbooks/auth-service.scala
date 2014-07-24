@@ -12,27 +12,26 @@ trait UserRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
 
   def updateUser(user: User)(implicit session: Session): Unit
   def createUser(registration: UserRegistration)(implicit session: Session): User
-  def userWithId(id: Int)(implicit session: Session): Option[User]
+  def userWithId(id: UserId)(implicit session: Session): Option[User]
 }
 
-trait JdbcUserRepository extends UserRepository[JdbcProfile] with AuthTables {
+trait JdbcUserRepository extends UserRepository[JdbcProfile] with ZuulTables {
   this: JdbcSupport with TimeSupport =>
   import driver.simple._
 
   override def createUser(reg: UserRegistration)(implicit session: Session): User = {
     val now = clock.now()
     val passwordHash = passwordHasher.hash(reg.password)
-    val user = User(-1, now, now, reg.username, reg.firstName, reg.lastName, passwordHash, reg.allowMarketing)
+    val user = User(UserId(-1), now, now, reg.username, reg.firstName, reg.lastName, passwordHash, reg.allowMarketing)
 
     val id = (users returning users.map(_.id)) += user
 
     user.copy(id = id)
   }
 
-  override def userWithId(id: Int)(implicit session: Session) = users.where(_.id === id).list.headOption
-
+  override def userWithId(id: UserId)(implicit session: Session) = users.where(_.id === id).list.headOption
   override def updateUser(user: User)(implicit session: Session): Unit = users.where(_.id === user.id).update(user)
 }
 
-class DefaultUserRepository(val driver: JdbcProfile, val passwordHasher: PasswordHasher)(implicit val clock: Clock)
-  extends TimeSupport with JdbcSupport with JdbcUserRepository
+class DefaultUserRepository(val tables: ZuulTables, val passwordHasher: PasswordHasher)(implicit val clock: Clock)
+  extends TimeSupport with ZuulTablesSupport with JdbcUserRepository

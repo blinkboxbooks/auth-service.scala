@@ -15,16 +15,16 @@ import scala.concurrent.Future
 import scala.slick.driver.H2Driver
 import scala.slick.jdbc.JdbcBackend.Database
 
-object H2 {
-  val tables = new AuthTables with JdbcSupport { val driver = H2Driver }
+object TestH2 {
+  val tables = ZuulTables(H2Driver)
 
   def db = {
     val threadId = Thread.currentThread().getId()
     val database = Database.forURL(s"jdbc:h2:mem:auth$threadId;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
 
-    database.withSession { implicit session =>
-      import tables.driver.simple._
+    import tables.driver.simple._
 
+    database.withSession { implicit session =>
       val ddl = (tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl)
 
       try {

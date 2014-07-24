@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.events
 
-import com.blinkbox.books.auth.server.data.{Client, User}
+import com.blinkbox.books.auth.server.data.{ClientId, UserId, Client, User}
 import com.blinkbox.books.time.StoppedClock
 import org.custommonkey.xmlunit.{Diff, XMLUnit}
 import org.joda.time.{DateTime, DateTimeZone}
@@ -13,7 +13,7 @@ class XmlMessagesTests extends FunSuite {
   XMLUnit.setIgnoreComments(true)
 
   test("The user registered XML message is correct") {
-    val user = User(123, clock.now(), clock.now(), "newuser@example.org", "John", "Doe", "hash", allowMarketing = true)
+    val user = User(UserId(123), clock.now(), clock.now(), "newuser@example.org", "John", "Doe", "hash", allowMarketing = true)
     val message = XmlMessages.userRegistered(user)
     val expected =
       <registered
@@ -35,8 +35,8 @@ class XmlMessagesTests extends FunSuite {
   }
 
   test("The user updated XML message is correct") {
-    val oldUser = User(123, clock.now(), clock.now(), "olduser@example.org", "John1", "Doe1", "hash", allowMarketing = true)
-    val newUser = User(123, clock.now(), clock.now(), "newuser@example.org", "John2", "Doe2", "hash", allowMarketing = false)
+    val oldUser = User(UserId(123), clock.now(), clock.now(), "olduser@example.org", "John1", "Doe1", "hash", allowMarketing = true)
+    val newUser = User(UserId(123), clock.now(), clock.now(), "newuser@example.org", "John2", "Doe2", "hash", allowMarketing = false)
     val message = XmlMessages.userUpdated(oldUser, newUser)
     val expected =
       <updated
@@ -64,7 +64,7 @@ class XmlMessagesTests extends FunSuite {
   }
 
   test("The user authenticated XML message without a client is correct") {
-    val user = User(123, clock.now(), clock.now(), "newuser@example.org", "John", "Doe", "hash", allowMarketing = true)
+    val user = User(UserId(123), clock.now(), clock.now(), "newuser@example.org", "John", "Doe", "hash", allowMarketing = true)
     val message = XmlMessages.userAuthenticated(user, None)
     val expected =
       <authenticated
@@ -86,8 +86,8 @@ class XmlMessagesTests extends FunSuite {
   }
 
   test("The user authenticated XML message with a client is correct") {
-    val user = User(123, clock.now(), clock.now(), "newuser@example.org", "John", "Doe", "hash", allowMarketing = true)
-    val client = Client(456, clock.now(), clock.now(), 123, "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = false)
+    val user = User(UserId(123), clock.now(), clock.now(), "newuser@example.org", "John", "Doe", "hash", allowMarketing = true)
+    val client = Client(ClientId(456), clock.now(), clock.now(), UserId(123), "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = false)
     val message = XmlMessages.userAuthenticated(user, Some(client))
     val expected =
       <authenticated
@@ -116,7 +116,7 @@ class XmlMessagesTests extends FunSuite {
   }
 
   test("The client registered XML message is correct") {
-    val client = Client(456, clock.now(), clock.now(), 123, "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = false)
+    val client = Client(ClientId(456), clock.now(), clock.now(), UserId(123), "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = false)
     val message = XmlMessages.clientRegistered(client)
     val expected =
       <registered
@@ -139,8 +139,8 @@ class XmlMessagesTests extends FunSuite {
   }
 
   test("The client updated XML message is correct") {
-    val oldClient = Client(456, clock.now(), clock.now(), 123, "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = false)
-    val newClient = Client(456, clock.now(), clock.now(), 123, "My Client", "Samsung", "Galaxy S4", "Android 4.2", "still secret", isDeregistered = false)
+    val oldClient = Client(ClientId(456), clock.now(), clock.now(), UserId(123), "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = false)
+    val newClient = Client(ClientId(456), clock.now(), clock.now(), UserId(123), "My Client", "Samsung", "Galaxy S4", "Android 4.2", "still secret", isDeregistered = false)
     val message = XmlMessages.clientUpdated(oldClient, newClient)
     val expected =
       <updated
@@ -169,7 +169,7 @@ class XmlMessagesTests extends FunSuite {
   }
 
   test("The client deregistered XML message is correct") {
-    val client = Client(456, clock.now(), clock.now(), 123, "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = true)
+    val client = Client(ClientId(456), clock.now(), clock.now(), UserId(123), "test client", "Apple", "iPhone 5S", "iOS 7.1.2", "very secret", isDeregistered = true)
     val message = XmlMessages.clientDeregistered(client)
     val expected =
       <deregistered

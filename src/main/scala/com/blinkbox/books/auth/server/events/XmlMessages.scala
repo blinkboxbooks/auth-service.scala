@@ -17,7 +17,7 @@ private[events] object XmlMessages {
 
   def userUpdated(oldUser: User, newUser: User)(implicit clock: Clock) =
     <updated xmlns={UsersNamespace} xmlns:r={RoutingNamespace} xmlns:v={VersionNamespace} r:originator="zuul" v:version="1.0">
-      <userId>{oldUser.id}</userId>
+      <userId>{oldUser.id.value}</userId>
       {timestampXml}
       {userXml(oldUser, elementName = "old")}
       {userXml(newUser, elementName = "new")}
@@ -32,15 +32,15 @@ private[events] object XmlMessages {
 
   def clientRegistered(client: Client)(implicit clock: Clock) =
     <registered xmlns={ClientsNamespace} xmlns:r={RoutingNamespace} xmlns:v={VersionNamespace} r:originator="zuul" v:version="1.0">
-      <userId>{client.userId}</userId>
+      <userId>{client.userId.value}</userId>
       {timestampXml}
       {clientXml(client, includeId = true)}
     </registered>
 
   def clientUpdated(oldClient: Client, newClient: Client)(implicit clock: Clock) =
     <updated xmlns={ClientsNamespace} xmlns:r={RoutingNamespace} xmlns:v={VersionNamespace} r:originator="zuul" v:version="1.0">
-      <userId>{oldClient.userId}</userId>
-      <clientId>{oldClient.id}</clientId>
+      <userId>{oldClient.userId.value}</userId>
+      <clientId>{oldClient.id.value}</clientId>
       {timestampXml}
       {clientXml(oldClient, elementName = "old")}
       {clientXml(newClient, elementName = "new")}
@@ -48,7 +48,7 @@ private[events] object XmlMessages {
 
   def clientDeregistered(client: Client)(implicit clock: Clock) =
     <deregistered xmlns={ClientsNamespace} xmlns:r={RoutingNamespace} xmlns:v={VersionNamespace} r:originator="zuul" v:version="1.0">
-      <userId>{client.userId}</userId>
+      <userId>{client.userId.value}</userId>
       {timestampXml}
       {clientXml(client, includeId = true)}
     </deregistered>
@@ -57,7 +57,7 @@ private[events] object XmlMessages {
 
   private def userXml(user: User, elementName: String = "user", includeId: Boolean = false) =
     <user>
-      {if (includeId) <id>{user.id}</id>}
+      {if (includeId) <id>{user.id.value}</id>}
       <username>{user.username}</username>
       <firstName>{user.firstName}</firstName>
       <lastName>{user.lastName}</lastName>
@@ -66,7 +66,7 @@ private[events] object XmlMessages {
 
   private def clientXml(client: Client, elementName: String = "client", includeId: Boolean = false) =
     <client>
-      {if (includeId) <id>{client.id}</id>}
+      {if (includeId) <id>{client.id.value}</id>}
       <name>{client.name}</name>
       <brand>{client.brand}</brand>
       <model>{client.model}</model>

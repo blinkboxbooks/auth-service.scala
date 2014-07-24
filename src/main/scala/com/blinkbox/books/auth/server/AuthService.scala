@@ -29,9 +29,9 @@ trait AuthService {
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
   def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo]
   def listClients()(implicit user: AuthenticatedUser): Future[ClientList]
-  def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
-  def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
+  def getClientById(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
+  def updateClient(id: ClientId, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
+  def deleteClient(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
 }
 
 trait GeoIP {
@@ -46,7 +46,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
   val MaxClients = 12
   val PrivateKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
 
-  def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
+  override def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     if (!registration.acceptedTerms)
       FailWith.termsAndConditionsNotAccepted
 
@@ -70,7 +70,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     case e => e
   })
 
-  def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
+  override def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     val (user, client, token) = db.withTransaction { implicit transaction =>
       val u = authenticateUser(credentials, clientIP)
       val c = authenticateClient(credentials, u)
@@ -81,7 +81,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     issueAccessToken(user, client, token, includeRefreshToken = true)
   }
 
-  def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
+  override def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
     val (user1, client1, token1) = db.withTransaction { implicit transaction =>
       val t = authRepo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
       val u = userRepo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
@@ -101,8 +101,10 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     issueAccessToken(user1, client1, token1)
   }
 
-  def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {
-    val tokenId = user.claims.get("zl/rti").get.asInstanceOf[Int]
+  override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {
+    // TODO: This line should be re-written to avoid the `get` invocation on the option and to account for casting failure
+    val tokenId = RefreshTokenId(user.claims.get("zl/rti").get.asInstanceOf[Int])
+
     val token = db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
     SessionInfo(
       token_status = token.status,
@@ -112,12 +114,12 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     )
   }
 
-  def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
+  override def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
     val client = db.withTransaction { implicit transaction =>
       if (authRepo.activeClientCount >= MaxClients) {
         FailWith.clientLimitReached
       }
-      authRepo.createClient(user.id, registration)
+      authRepo.createClient(UserId(user.id), registration)
     }
     events.publish(ClientRegistered(client))
     clientInfo(client, includeClientSecret = true)
@@ -126,17 +128,17 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     case e => e
   })
 
-  def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
+  override def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
     val clientList = db.withSession(implicit session => authRepo.activeClients)
     ClientList(clientList.map(clientInfo(_)))
   }
 
-  def getClientById(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
+  override def getClientById(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val client = db.withSession(implicit session => authRepo.clientWithId(id))
     client.map(clientInfo(_))
   }
 
-  def updateClient(id: Int, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
+  override def updateClient(id: ClientId, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val clients = db.withTransaction { implicit transaction =>
       val clientPair = authRepo.clientWithId(id) map { oldClient =>
         val newClient = oldClient.copy(
@@ -155,7 +157,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     clients map { case (_, c) => clientInfo(c) }
   }
 
-  def deleteClient(id: Int)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
+  override def deleteClient(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
     val client = db.withSession { implicit session =>
       val newClient = authRepo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
       newClient.foreach { c =>
@@ -166,6 +168,13 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     }
     client.foreach(c => events.publish(ClientDeregistered(c)))
     client.map(clientInfo(_))
+  }
+
+  override def revokeRefreshToken(token: String): Future[Unit] = Future {
+    db.withSession { implicit session =>
+      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
+      authRepo.revokeRefreshToken(retrievedToken)
+    }
   }
 
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: authRepo.Session): User = {
@@ -184,8 +193,8 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       getOrElse(FailWith.invalidClientCredentials)
 
   private def clientInfo(client: Client, includeClientSecret: Boolean = false) = ClientInfo(
-    client_id = s"urn:blinkbox:zuul:client:${client.id}",
-    client_uri = s"/clients/${client.id}",
+    client_id = s"urn:blinkbox:zuul:client:${client.id.value}",
+    client_uri = s"/clients/${client.id.value}",
     client_name = client.name,
     client_brand = client.brand,
     client_model = client.model,
@@ -198,11 +207,11 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     // TODO: Do this properly with configurable keys etc.
 
     val claims = new java.util.LinkedHashMap[String, AnyRef]
-    claims.put("sub", s"urn:blinkbox:zuul:user:${user.id}")
+    claims.put("sub", s"urn:blinkbox:zuul:user:${user.id.value}")
     claims.put("exp", Long.box(expiresAt.getMillis))
-    client.foreach(c => claims.put("bb/cid", s"urn:blinkbox:zuul:client:${c.id}"))
+    client.foreach(c => claims.put("bb/cid", s"urn:blinkbox:zuul:client:${c.id.value}"))
     // TODO: Roles
-    claims.put("zl/rti", Int.box(token.id))
+    claims.put("zl/rti", Int.box(token.id.value))
 
     val signingKeyData = Files.readAllBytes(Paths.get(PrivateKeyPath))
     val signingKeySpec = new PKCS8EncodedKeySpec(signingKeyData)
@@ -234,25 +243,18 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       token_type = "bearer",
       expires_in = 1800,
       refresh_token = if (includeRefreshToken) Some(token.token) else None,
-      user_id = s"urn:blinkbox:zuul:user:${user.id}",
-      user_uri = s"/users/${user.id}",
+      user_id = s"urn:blinkbox:zuul:user:${user.id.value}",
+      user_uri = s"/users/${user.id.value}",
       user_username = user.username,
       user_first_name = user.firstName,
       user_last_name = user.lastName,
-      client_id = client.map(row => s"urn:blinkbox:zuul:client:${row.id}"),
-      client_uri = client.map(row => s"/clients/${row.id}"),
+      client_id = client.map(row => s"urn:blinkbox:zuul:client:${row.id.value}"),
+      client_uri = client.map(row => s"/clients/${row.id.value}"),
       client_name = client.map(_.name),
       client_brand = client.map(_.brand),
       client_model = client.map(_.model),
       client_os = client.map(_.os),
       client_secret = if (includeClientSecret) client.map(_.secret) else None,
       last_used_date = client.map(_.updatedAt))
-  }
-
-  override def revokeRefreshToken(token: String): Future[Unit] = Future {
-    db.withSession { implicit session =>
-      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
-      authRepo.revokeRefreshToken(retrievedToken)
-    }
   }
 }

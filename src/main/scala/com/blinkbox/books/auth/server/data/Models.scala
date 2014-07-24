@@ -7,11 +7,17 @@ import com.blinkbox.books.time.Clock
 import org.joda.time.DateTime
 import scala.concurrent.duration.FiniteDuration
 
-case class User(id: Int, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)
+case class UserId(value: Int) extends AnyVal
 
-case class Client(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
+case class ClientId(value: Int) extends AnyVal
 
-case class RefreshToken(id: Int, createdAt: DateTime, updatedAt: DateTime, userId: Int, clientId: Option[Int], token: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime) {
+case class RefreshTokenId(value: Int) extends AnyVal
+
+case class User(id: UserId, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)
+
+case class Client(id: ClientId, createdAt: DateTime, updatedAt: DateTime, userId: UserId, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
+
+case class RefreshToken(id: RefreshTokenId, createdAt: DateTime, updatedAt: DateTime, userId: UserId, clientId: Option[ClientId], token: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime) {
   def isExpired(implicit clock: Clock) = expiresAt.isBefore(clock.now())
   def isValid(implicit clock: Clock) = !isExpired && !isRevoked
   def status(implicit clock: Clock) = if (isValid) RefreshTokenStatus.Valid else RefreshTokenStatus.Invalid
