@@ -9,6 +9,7 @@ import com.blinkbox.books.auth.server.services.DefaultClientService
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.StoppedClock
+import org.joda.time.Duration
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}
@@ -53,6 +54,10 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     val clientA2 = Client(clientIdA2, cl.now(), cl.now(), userIdA, "Client A2", "Test brand A2", "Test model A2", "Test OS A2", "test-secret-a2", false)
     val clientA3 = Client(clientIdA3, cl.now(), cl.now(), userIdA, "Client A3", "Test brand A3", "Test model A3", "Test OS A3", "test-secret-a3", true)
 
+    val exp = cl.now().withDurationAdded(Duration.standardHours(1), 1)
+    val refreshTokenClientA1 = RefreshToken(RefreshTokenId(1), cl.now, cl.now, userIdA, Some(clientIdA1), "some-token-a1", false, exp, exp, exp)
+    val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), cl.now, cl.now, userIdA, Some(clientIdA2), "some-token-a2", false, exp, exp, exp)
+
     val clientsC =
       for (id <- 4 until 16)
       yield Client(ClientId(id), cl.now(), cl.now(), userIdC, s"Client C$id", s"Test brand C$id", s"Test model C$id", s"Test OS C$id", s"test-secret-c$id", false)
@@ -76,6 +81,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     db.withSession { implicit session =>
       tables.users ++= Seq(userA, userB)
       tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
+      tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2)
     }
   }
 
@@ -108,11 +114,15 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     }
   }
 
-  it should "delete clients by id given they are owned by the user and not already de-registered" in new TestEnv {
+  it should "delete clients and revoke their tokens by id given they are owned by the user and not already de-registered" in new TestEnv {
     whenReady(clientService.deleteClient(clientIdA1)(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt.foreach { _ should equal(clientInfoA1) }
       publisherSpy.events should equal(ClientDeregistered(clientA1.copy(isDeregistered = true)) :: Nil)
+
+      db.withSession { implicit session =>
+        tables.refreshTokens.where(_.clientId === clientIdA1).map(_.isRevoked).foreach(_ shouldBe true)
+      }
     }
 
     whenReady(clientService.deleteClient(clientIdA2)(authenticatedUserA)) { infoOpt =>
@@ -121,6 +131,10 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
       publisherSpy.events should equal(
         ClientDeregistered(clientA2.copy(isDeregistered = true)) ::
         ClientDeregistered(clientA1.copy(isDeregistered = true)) ::Nil)
+
+      db.withSession { implicit session =>
+        tables.refreshTokens.where(_.clientId === clientIdA2).map(_.isRevoked).foreach(_ shouldBe true)
+      }
     }
   }
 
