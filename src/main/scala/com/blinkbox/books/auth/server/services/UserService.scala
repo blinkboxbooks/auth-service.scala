@@ -1,9 +1,8 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.services
 
-import java.sql.{SQLIntegrityConstraintViolationException, DataTruncation}
-
-import com.blinkbox.books.auth.server.data.{UserId, Client, UserRepository, User}
-import com.blinkbox.books.auth.server.events.{UserUpdated, Publisher}
+import com.blinkbox.books.auth.server.data.{UserId, UserRepository}
+import com.blinkbox.books.auth.server.events.{Publisher, UserUpdated}
+import com.blinkbox.books.auth.server.{UserInfo, UserPatch}
 import com.blinkbox.books.time.Clock
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,7 +14,7 @@ trait UserService {
 }
 
 class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-  (db: Database, repo: UserRepository[Profile], geoIP: GeoIP, events: Publisher)
+  (db: Database, repo: UserRepository[Profile], events: Publisher)
   (implicit ec: ExecutionContext, clock: Clock) extends UserService with UserInfoFactory {
 
   override def updateUser(id: UserId, patch: UserPatch): Future[Option[UserInfo]] = Future {

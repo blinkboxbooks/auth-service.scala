@@ -79,5 +79,5 @@ object ZuulTables {
 
 trait ZuulTablesSupport extends JdbcSupport {
   val tables: ZuulTables
-  val driver = tables.driver
+  lazy val driver = tables.driver
 }

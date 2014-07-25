@@ -16,7 +16,7 @@ trait UserRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
 }
 
 trait JdbcUserRepository extends UserRepository[JdbcProfile] with ZuulTables {
-  this: JdbcSupport with TimeSupport =>
+  this: TimeSupport =>
   import driver.simple._
 
   override def createUser(reg: UserRegistration)(implicit session: Session): User = {

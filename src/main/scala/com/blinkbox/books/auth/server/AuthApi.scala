@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
+import com.blinkbox.books.auth.server.services.{ClientService, UserService, AuthService}
 import org.joda.time.DateTime
 
 import org.json4s.ext.{JodaTimeSerializers, EnumNameSerializer}
@@ -81,7 +82,7 @@ trait AuthRoutes extends HttpService {
 //  def deleteById: Route
 }
 
-class AuthApi(config: ApiConfig, userService: UserService, authService: AuthService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
+class AuthApi(config: ApiConfig, userService: UserService, clientService: ClientService, authService: AuthService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends AuthRoutes with Directives with FormDataUnmarshallers with Json4sJacksonSupport {
 
   implicit val log = LoggerFactory.getLogger(classOf[AuthApi])
@@ -194,7 +195,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
     path("clients") {
       authenticate(authenticator) { implicit user =>
         formFields('client_name, 'client_brand, 'client_model, 'client_os).as(ClientRegistration) { registration =>
-          onSuccess(authService.registerClient(registration)) { client =>
+          onSuccess(clientService.registerClient(registration)) { client =>
             uncacheable(OK, client)
           }
         }
@@ -205,7 +206,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   val listClients: Route = get {
     path("clients") {
       authenticate(authenticator) { implicit user =>
-        onSuccess(authService.listClients) { clients =>
+        onSuccess(clientService.listClients) { clients =>
           uncacheable(OK, clients)
         }
       }
@@ -215,7 +216,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   val getClientById: Route = get {
     path("clients" / ClientId) { id =>
       authenticate(authenticator) { implicit user =>
-        onSuccess(authService.getClientById(id)) {
+        onSuccess(clientService.getClientById(id)) {
           case Some(client) => uncacheable(OK, client)
           case None => complete(NotFound, None)
         }
@@ -227,7 +228,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
     path("clients" / ClientId) { id =>
       authenticate(authenticator) { implicit user =>
         formFields('client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(ClientPatch) { patch =>
-          onSuccess(authService.updateClient(id, patch)) {
+          onSuccess(clientService.updateClient(id, patch)) {
             case Some(client) => uncacheable(OK, client)
             case None => complete(NotFound, None)
           }
@@ -239,7 +240,7 @@ class AuthApi(config: ApiConfig, userService: UserService, authService: AuthServ
   val deleteClient: Route = delete {
     path("clients" / ClientId) { id =>
       authenticate(authenticator) { implicit user =>
-        onSuccess(authService.deleteClient(id)) { clientOpt =>
+        onSuccess(clientService.deleteClient(id)) { clientOpt =>
           clientOpt.fold(complete(NotFound, None))(_ => complete(OK, None))
         }
       }

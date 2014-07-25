@@ -2,8 +2,9 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
-import com.blinkbox.books.auth.server.data.{ZuulTables, DefaultUserRepository, DefaultAuthRepository}
+import com.blinkbox.books.auth.server.data.{DefaultClientRepository, ZuulTables, DefaultUserRepository, DefaultAuthRepository}
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, RabbitMqPublisher}
+import com.blinkbox.books.auth.server.services.{DefaultClientService, DefaultUserService, DefaultAuthService, GeoIP}
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers
@@ -48,11 +49,13 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
 
   val authRepository = new DefaultAuthRepository(tables)
   val userRepository = new DefaultUserRepository(tables, passwordHasher)
+  val clientRepository = new DefaultClientRepository(tables)
 
-  val authService = new DefaultAuthService(db, authRepository, userRepository, geoIp, notifier)
-  val userService = new DefaultUserService(db, userRepository, geoIp, notifier)
+  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, notifier)
+  val userService = new DefaultUserService(db, userRepository, notifier)
+  val clientService = new DefaultClientService(db, clientRepository, authRepository, notifier)
 
-  val users = new AuthApi(config.service, userService, authService, authenticator)
+  val users = new AuthApi(config.service, userService, clientService, authService, authenticator)
   val swagger = new SwaggerApi(config.swagger)
 
   val route = users.routes ~ respondWithHeader(`Access-Control-Allow-Origin`(AllOrigins)) { swagger.routes }

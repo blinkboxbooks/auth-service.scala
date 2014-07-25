@@ -1,12 +1,13 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.services
 
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.sql.{SQLIntegrityConstraintViolationException, DataTruncation}
+import java.sql.{DataTruncation, SQLIntegrityConstraintViolationException}
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
@@ -22,16 +23,10 @@ import scala.slick.profile.BasicProfile
 
 trait AuthService {
   def revokeRefreshToken(token: String): Future[Unit]
-  // TODO: Ideally user registration should be broken in pieces and factored out (e.g. user registration, client creation, token issue)
   def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
-  def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo]
-  def listClients()(implicit user: AuthenticatedUser): Future[ClientList]
-  def getClientById(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
-  def updateClient(id: ClientId, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
-  def deleteClient(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
 }
 
 trait GeoIP {
@@ -39,8 +34,9 @@ trait GeoIP {
 }
 
 class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-  (db: Database, authRepo: AuthRepository[Profile], userRepo: UserRepository[Profile], geoIP: GeoIP, events: Publisher)
-  (implicit executionContext: ExecutionContext, clock: Clock) extends AuthService with UserInfoFactory {
+  (db: Database, authRepo: AuthRepository[Profile], userRepo: UserRepository[Profile],
+   clientRepo: ClientRepository[Profile], geoIP: GeoIP, events: Publisher)
+  (implicit executionContext: ExecutionContext, clock: Clock) extends AuthService with UserInfoFactory with ClientInfoFactory {
 
   // TODO: Make these configurable
   val MaxClients = 12
@@ -58,7 +54,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
 
     val (user, client, token) = db.withTransaction { implicit transaction =>
       val u = userRepo.createUser(registration)
-      val c = registration.client.map(authRepo.createClient(u.id, _))
+      val c = registration.client.map(clientRepo.createClient(u.id, _))
       val t = authRepo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
@@ -114,62 +110,6 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     )
   }
 
-  override def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser): Future[ClientInfo] = Future {
-    val client = db.withTransaction { implicit transaction =>
-      if (authRepo.activeClientCount >= MaxClients) {
-        FailWith.clientLimitReached
-      }
-      authRepo.createClient(UserId(user.id), registration)
-    }
-    events.publish(ClientRegistered(client))
-    clientInfo(client, includeClientSecret = true)
-  } transform(identity, _ match {
-    case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
-    case e => e
-  })
-
-  override def listClients()(implicit user: AuthenticatedUser): Future[ClientList] = Future {
-    val clientList = db.withSession(implicit session => authRepo.activeClients)
-    ClientList(clientList.map(clientInfo(_)))
-  }
-
-  override def getClientById(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = db.withSession(implicit session => authRepo.clientWithId(id))
-    client.map(clientInfo(_))
-  }
-
-  override def updateClient(id: ClientId, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val clients = db.withTransaction { implicit transaction =>
-      val clientPair = authRepo.clientWithId(id) map { oldClient =>
-        val newClient = oldClient.copy(
-          updatedAt = clock.now(),
-          name = patch.client_name.getOrElse(oldClient.name),
-          brand = patch.client_brand.getOrElse(oldClient.brand),
-          model = patch.client_model.getOrElse(oldClient.model),
-          os = patch.client_os.getOrElse(oldClient.os))
-        (oldClient, newClient)
-      }
-      clientPair foreach { case (_, c) => authRepo.updateClient(c) }
-      clientPair
-    }
-
-    clients foreach { case (o, n) => events.publish(ClientUpdated(o, n)) }
-    clients map { case (_, c) => clientInfo(c) }
-  }
-
-  override def deleteClient(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = db.withSession { implicit session =>
-      val newClient = authRepo.clientWithId(id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
-      newClient.foreach { c =>
-        authRepo.updateClient(c)
-        authRepo.refreshTokensByClientId(c.id).foreach(authRepo.revokeRefreshToken)
-      }
-      newClient
-    }
-    client.foreach(c => events.publish(ClientDeregistered(c)))
-    client.map(clientInfo(_))
-  }
-
   override def revokeRefreshToken(token: String): Future[Unit] = Future {
     db.withSession { implicit session =>
       val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
@@ -191,16 +131,6 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     } yield authRepo.
       authenticateClient(clientId, clientSecret, user.id).
       getOrElse(FailWith.invalidClientCredentials)
-
-  private def clientInfo(client: Client, includeClientSecret: Boolean = false) = ClientInfo(
-    client_id = s"urn:blinkbox:zuul:client:${client.id.value}",
-    client_uri = s"/clients/${client.id.value}",
-    client_name = client.name,
-    client_brand = client.brand,
-    client_model = client.model,
-    client_os = client.os,
-    client_secret = if (includeClientSecret) Some(client.secret) else None,
-    last_used_date = client.createdAt)
 
   private def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, expiresAt: DateTime) = {
 
