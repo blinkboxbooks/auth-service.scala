@@ -1,4 +1,4 @@
-package com.blinkbox.books.server
+package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.data.{UserId, ZuulTables, DefaultUserRepository, User}
 import com.blinkbox.books.auth.server.events.UserUpdated
