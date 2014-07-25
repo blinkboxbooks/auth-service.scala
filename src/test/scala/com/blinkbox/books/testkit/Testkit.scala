@@ -1,5 +1,7 @@
 package com.blinkbox.books.testkit
 
+import java.util.concurrent.atomic.AtomicReference
+
 import com.blinkbox.books.auth.server.events.{Event, Publisher}
 import com.blinkbox.books.auth.server.PasswordHasher
 import com.blinkbox.books.auth.server.data._
@@ -9,12 +11,15 @@ import org.h2.jdbc.JdbcSQLException
 import org.hamcrest.{BaseMatcher, Description, Matcher}
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.scalatest.Assertions
+import org.scalatest.concurrent.{AsyncAssertions, PatienceConfiguration}
 import org.scalatest.mock.MockitoSugar
 import spray.http.RemoteAddress
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.driver.H2Driver
 import scala.slick.jdbc.JdbcBackend.Database
+import scala.util.{Try, Success, Failure}
 
 object TestH2 {
   val tables = ZuulTables(H2Driver)
@@ -69,4 +74,26 @@ class PublisherSpy extends Publisher {
 
 object PublisherDummy extends Publisher {
   override def publish(event: Event): Future[Unit] = Future.successful()
+}
+
+trait FailHelper extends Assertions with AsyncAssertions with PatienceConfiguration {
+  def failingWith[T <: Throwable : Manifest](f: Future[_])(implicit p: PatienceConfig, ec: ExecutionContext): T = {
+    val at = new AtomicReference[Try[Any]]()
+
+    val w = new Waiter
+    f onComplete {
+      case Success(i) =>
+        at.set(Success(i))
+        w.dismiss()
+      case Failure(e) =>
+        at.set(Failure(e))
+        w.dismiss()
+    }
+    w.await()(p)
+
+    at.get() match {
+      case Success(i) => intercept[T](i)
+      case Failure(e) => intercept[T](throw e)
+    }
+  }
 }

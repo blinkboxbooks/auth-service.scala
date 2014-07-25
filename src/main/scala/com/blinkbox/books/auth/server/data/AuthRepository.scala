@@ -14,7 +14,6 @@ import scala.slick.driver.JdbcProfile
 import scala.slick.profile.BasicProfile
 
 trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
-  def authenticateUser(username: String, password: String)(implicit session: Session): Option[User]
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
   def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client]
   def createRefreshToken(userId: UserId, clientId: Option[ClientId])(implicit session: Session): RefreshToken
@@ -31,19 +30,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
   import driver.simple._
 
   val ClientIdExpr = """urn:blinkbox:zuul:client:([0-9]+)""".r
-
-  override def authenticateUser(username: String, password: String)(implicit session: Session): Option[User] = {
-    val user = users.where(_.username === username).firstOption
-    val passwordValid = if (user.isDefined) {
-      SCryptUtil.check(password, user.get.passwordHash)
-    } else {
-      // even if the user isn't found we still need to perform an scrypt hash of something to help
-      // prevent timing attacks as this hashing process is the bulk of the request time
-      hashPassword("random string")
-      false
-    }
-    if (passwordValid) user else None
-  }
 
   override def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit = {
     loginAttempts += LoginAttempt(clock.now(), username, succeeded, clientIP.fold("unknown")(_.toString()))
@@ -98,20 +84,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
   override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
     refreshTokens.where(_.id === t.id).map(_.isRevoked).update(true)
 
-  private def newUser(r: UserRegistration) = {
-    val now = clock.now()
-    val passwordHash = hashPassword(r.password)
-    User(UserId.Invalid, now, now, r.username, r.firstName, r.lastName, passwordHash, r.allowMarketing)
-  }
-
-  private def newClient(userId: UserId, r: ClientRegistration) = {
-    val now = clock.now()
-    val buf = new Array[Byte](32)
-    new SecureRandom().nextBytes(buf)
-    val secret = Base64.encode(buf)
-    Client(ClientId.Invalid, now, now, userId, r.name, r.brand, r.model, r.os, secret, false)
-  }
-
   private def newRefreshToken(userId: UserId, clientId: Option[ClientId]) = {
     val now = clock.now()
     val buf = new Array[Byte](32)
@@ -119,8 +91,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
     val token = Base64.encode(buf)
     RefreshToken(RefreshTokenId.Invalid, now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
   }
-
-  private def hashPassword(password: String) = SCryptUtil.scrypt(password, 16384, 8, 1)
 }
 
 class DefaultAuthRepository(val tables: ZuulTables)(implicit val clock: Clock)
