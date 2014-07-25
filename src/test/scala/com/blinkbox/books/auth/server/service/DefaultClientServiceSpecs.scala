@@ -5,15 +5,14 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorReason.ClientLimitReached
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientUpdated}
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.testkit.TestH2
+import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.util.{Failure, Success}
 
-class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
+class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(500, Millis), interval = Span(20, Millis))
 
@@ -42,7 +41,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
       infoOpt.foreach { _ should equal(clientInfoA2) }
     }
 
-    forbiddenAccesses foreach { case (c, u) =>
+    forbiddenClientAccesses foreach { case (c, u) =>
       whenReady(clientService.getClientById(c)(u)) { infoOpt =>
         infoOpt shouldBe empty
       }
@@ -74,7 +73,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
   }
 
   it should "not allow deletion of non-owned, non-existing or already-deregistered clients" in new DefaultH2TestEnv {
-    forbiddenAccesses foreach { case (c, u) =>
+    forbiddenClientAccesses foreach { case (c, u) =>
       whenReady(clientService.deleteClient(c)(u)) { infoOpt =>
         infoOpt shouldBe empty
         publisherSpy.events shouldBe empty
@@ -98,7 +97,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
   }
 
   it should "not allow updating non-owned, non-existing or non-deregistered clients" in new DefaultH2TestEnv {
-    forbiddenAccesses foreach { case (c, u) =>
+    forbiddenClientAccesses foreach { case (c, u) =>
       whenReady(clientService.updateClient(c, fullClientPatch)(u)) { infoOpt =>
         infoOpt shouldBe empty
         publisherSpy.events shouldBe empty
@@ -127,20 +126,15 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
   }
 
   it should "respect client limits for an user preventing the creation of more clients" in new DefaultH2TestEnv {
-    clientService.registerClient(clientRegistration)(authenticatedUserC) onComplete {
-      case Success(_) => fail("Client registration should not be allowed if user has already reached limit")
-      case Failure(ex) =>
-        ex should equal(ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached)))
-
-        db.withSession { implicit session =>
-          tables.clients.where(_.id === ClientId(4)).map(_.isDeregistered).update(true)
-        }
-
-        clientService.registerClient(clientRegistration)(authenticatedUserC) onComplete {
-          case Success(_) => // Do nothing
-          case Failure(ex) => fail("Client registration should be allowed if user has de-registerd a client")
-        }
+    failingWith[ZuulRequestException](clientService.registerClient(clientRegistration)(authenticatedUserC)) should matchPattern {
+      case ZuulRequestException(_, InvalidRequest, Some(ClientLimitReached)) =>
     }
+
+    db.withSession { implicit session =>
+      tables.clients.where(_.id === ClientId(4)).map(_.isDeregistered).update(true)
+    }
+
+    whenReady(clientService.registerClient(clientRegistration)(authenticatedUserC)) { _ => }
   }
 }
 

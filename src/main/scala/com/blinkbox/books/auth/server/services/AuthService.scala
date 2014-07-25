@@ -118,7 +118,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
   }
 
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: authRepo.Session): User = {
-    val user = authRepo.authenticateUser(credentials.username, credentials.password)
+    val user = userRepo.userWithUsernameAndPassword(credentials.username, credentials.password)
     authRepo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
 
     user.getOrElse(FailWith.invalidUsernamePassword)

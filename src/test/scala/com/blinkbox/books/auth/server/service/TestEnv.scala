@@ -3,8 +3,8 @@ package com.blinkbox.books.auth.server.service
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.services.{DefaultUserService, DefaultClientService}
-import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
+import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultUserService, DefaultClientService}
+import com.blinkbox.books.testkit.{TestGeoIP, PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, Clock}
 import org.joda.time.Duration
 
@@ -29,14 +29,17 @@ trait TestEnv[Profile <: JdbcProfile] {
   
   def now = clock.now()
 
-  val passwordHasher = PasswordHasher(identity)
+  val passwordHasher = PasswordHasher(identity, (s1, s2) => s1 == s2)
+  val geoIp = TestGeoIP.geoIpStub()
 
   val publisherSpy = new PublisherSpy
   val authRepository = new DefaultAuthRepository(tables)
   val clientRepository = new DefaultClientRepository(tables)
   val userRepository = new DefaultUserRepository(tables, passwordHasher)
-  val clientService = new DefaultClientService(TestH2.db, clientRepository, authRepository, publisherSpy)
-  val userService = new DefaultUserService(TestH2.db, userRepository, publisherSpy)
+
+  val clientService = new DefaultClientService(db, clientRepository, authRepository, publisherSpy)
+  val userService = new DefaultUserService(db, userRepository, publisherSpy)
+  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisherSpy)
 
   val userIdA = UserId(1)
   val userIdB = UserId(2)
@@ -63,6 +66,7 @@ trait TestEnv[Profile <: JdbcProfile] {
   val exp = now.withDurationAdded(Duration.standardHours(1), 1)
   val refreshTokenClientA1 = RefreshToken(RefreshTokenId(1), now, now, userIdA, Some(clientIdA1), "some-token-a1", false, exp, exp, exp)
   val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", false, exp, exp, exp)
+  val refreshTokenClientA3 = RefreshToken(RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", true, now, now, now)
 
   val clientsC =
     for (id <- 4 until 16)
@@ -75,7 +79,7 @@ trait TestEnv[Profile <: JdbcProfile] {
   val fullPatchedClientA1 = clientA1.copy(name = "Patched name", brand = "Patched brand", model = "Patched model", os = "Patched OS")
   val fullPatchedClientInfoA1 = clientInfoA1.copy(client_name = "Patched name", client_brand = "Patched brand", client_model = "Patched model", client_os = "Patched OS")
 
-  val forbiddenAccesses = ((clientIdA3, authenticatedUserA) ::
+  val forbiddenClientAccesses = ((clientIdA3, authenticatedUserA) ::
     (clientIdA1, authenticatedUserB) ::
     (clientIdA2, authenticatedUserB) ::
     (clientIdA3, authenticatedUserB) ::
@@ -85,7 +89,7 @@ trait TestEnv[Profile <: JdbcProfile] {
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
   db.withSession { implicit session =>
-    tables.users ++= Seq(userA, userB)
+    tables.users ++= Seq(userA, userB, userC)
     tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
     tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2)
   }
