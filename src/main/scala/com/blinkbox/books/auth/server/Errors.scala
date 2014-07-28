@@ -82,19 +82,3 @@ object FailWith {
   def requestException(message: String, code: ZuulRequestErrorCode, reason: Option[ZuulRequestErrorReason] = None) =
     throw ZuulRequestException(message, code, reason)
 }
-
-import org.json4s._
-import JsonDSL._
-
-object ZuulRequestExceptionSerializer extends Serializer[ZuulRequestException] {
-  override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), ZuulRequestException] = {
-    case _ => throw new MappingException("Cannot de-serialize ZuulRequestException")
-  }
-
-  override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
-    case e: ZuulRequestException =>
-      ("error" -> ZuulRequestErrorCode.toString(e.code)) ~
-      ("error_reason" -> e.reason.map(ZuulRequestErrorReason.toString)) ~
-      ("error_description" -> e.message)
-  }
-}

@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.sql.{DataTruncation, SQLIntegrityConstraintViolationException}
+import java.sql.{SQLException, DataTruncation, SQLIntegrityConstraintViolationException}
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
@@ -62,7 +62,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
     case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
-    case e: SQLIntegrityConstraintViolationException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
+    case e: SQLException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
     case e => e
   })
 

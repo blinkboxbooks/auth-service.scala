@@ -15,7 +15,7 @@ import com.wordnik.swagger.annotations._
 import org.slf4j.LoggerFactory
 import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http.StatusCodes._
-import spray.http.{HttpChallenge}
+import spray.http.{MediaTypes, HttpChallenge}
 import spray.routing._
 import org.json4s._
 import spray.httpx.unmarshalling.FormDataUnmarshallers
@@ -83,24 +83,17 @@ trait AuthRoutes extends HttpService {
 }
 
 class AuthApi(config: ApiConfig, userService: UserService, clientService: ClientService, authService: AuthService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
-  extends AuthRoutes with Directives with FormDataUnmarshallers with Json4sJacksonSupport {
+  extends AuthRoutes with Directives with FormDataUnmarshallers {
 
   implicit val log = LoggerFactory.getLogger(classOf[AuthApi])
   implicit val executionContext = DiagnosticExecutionContext(actorRefFactory.dispatcher)
   implicit val timeout: Timeout = config.timeout
 
-  val clientInfoSerializer = FieldSerializer[ClientInfo](
-    serializer = {
-      case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("yyyy-MM-dd"))
-    }
-  )
+  import Serialization._
 
   val UserId = IntNumber.map(data.UserId(_))
   val ClientId = IntNumber.map(data.ClientId(_))
   val RefreshTokenId = IntNumber.map(data.RefreshTokenId(_))
-
-  implicit def json4sJacksonFormats: Formats = (DefaultFormats + ZuulRequestExceptionSerializer +
-    new EnumNameSerializer(RefreshTokenStatus) + clientInfoSerializer) ++ JodaTimeSerializers.all
 
 //  first_name (required)
 //  last_name (required)
@@ -113,17 +106,37 @@ class AuthApi(config: ApiConfig, userService: UserService, clientService: Client
 //  client_model (required to register client simultaneously)
 //  client_os(required to register client simultaneously)
 
-  val registerUser: Route = post {
-    path("oauth2" / "token") {
-      formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
-        formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>
-          extract(_.request.clientIP) { clientIP =>
-            onSuccess(authService.registerUser(registration, clientIP)) { tokenInfo =>
-              uncacheable(OK, tokenInfo)
-            }
-          }
+  val registerUser: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
+    formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>
+      extract(_.request.clientIP) { clientIP =>
+        onSuccess(authService.registerUser(registration, clientIP)) { tokenInfo =>
+          uncacheable(OK, tokenInfo)
         }
       }
+    }
+  }
+
+  val authenticate: Route = formField('grant_type ! "password") {
+    formFields('username, 'password, 'client_id.?, 'client_secret.?).as(PasswordCredentials) { credentials =>
+      extract(_.request.clientIP) { clientIP =>
+        onSuccess(authService.authenticate(credentials, clientIP)) { tokenInfo =>
+          uncacheable(OK, tokenInfo)
+        }
+      }
+    }
+  }
+
+  val refreshAccessToken: Route = formField('grant_type ! "refresh_token") {
+    formFields('refresh_token, 'client_id.?, 'client_secret.?).as(RefreshTokenCredentials) { credentials =>
+      onSuccess(authService.refreshAccessToken(credentials)) { tokenInfo =>
+        uncacheable(OK, tokenInfo)
+      }
+    }
+  }
+
+  val oAuthToken: Route = post {
+    path("oauth2" / "token") {
+      registerUser ~ authenticate ~ refreshAccessToken
     }
   }
 
@@ -151,32 +164,6 @@ class AuthApi(config: ApiConfig, userService: UserService, clientService: Client
               info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
             }
           }
-      }
-    }
-  }
-
-  val authenticate: Route = post {
-    path("oauth2" / "token") {
-      formField('grant_type ! "password") {
-        formFields('username, 'password, 'client_id.?, 'client_secret.?).as(PasswordCredentials) { credentials =>
-          extract(_.request.clientIP) { clientIP =>
-            onSuccess(authService.authenticate(credentials, clientIP)) { tokenInfo =>
-              uncacheable(OK, tokenInfo)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  val refreshAccessToken: Route = post {
-    path("oauth2" / "token") {
-      formField('grant_type ! "refresh_token") {
-        formFields('refresh_token, 'client_id.?, 'client_secret.?).as(RefreshTokenCredentials) { credentials =>
-          onSuccess(authService.refreshAccessToken(credentials)) { tokenInfo =>
-            uncacheable(OK, tokenInfo)
-          }
-        }
       }
     }
   }
@@ -257,62 +244,11 @@ class AuthApi(config: ApiConfig, userService: UserService, clientService: Client
     }
   }
 
-//
-//  val list: Route = get {
-//    pathEnd {
-//      paged(defaultCount = 25) { page =>
-//        //authenticate(authenticator) { implicit user =>
-//          onSuccess(userService.list(page)) { users =>
-//            uncacheable(users)
-//          }
-//        }
-//      }
-//    }
-//  }
-//
-//  val getById: Route = get {
-//    path(IntNumber) { id =>
-//      authenticate(authenticator) { implicit user =>
-//        onSuccess(userService.getById(id)) {
-//          case Some(user) => uncacheable(user)
-//          case None => complete(NotFound, None)
-//        }
-//      }
-//    }
-//  }
-//
-//  val updateById: Route = (patch | put) { // note: put is required because level 3 don't support patch
-//    path(IntNumber) { id =>
-//      authenticate(authenticator) { implicit user =>
-//        entity(as[UserPatch]) { patch =>
-//          onSuccess(userService.update(id, patch)) {
-//            case Some(user) => complete(user)
-//            case None => complete(NotFound, None)
-//          }
-//        }
-//      }
-//    }
-//  }
-//
-//  val deleteById: Route = delete {
-//    path(IntNumber) { id =>
-//      authenticate(authenticator) { implicit user =>
-//        onSuccess(userService.delete(id)) { _ =>
-//          complete(OK, None)
-//        }
-//      }
-//    }
-//  }
-
   val routes: Route = monitor() {
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
-        //rawPathPrefix(PathMatcher[HNil](config.externalUrl.path, HNil)) {
-        //respondWithHeader(RawHeader("Vary", "Accept, Accept-Encoding")) {
-        querySession ~ refreshAccessToken ~ authenticate ~ registerUser ~ registerClient ~ listClients ~ getClientById ~
+        querySession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
           updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo
-        //}
-        //}
       }
     }
   }

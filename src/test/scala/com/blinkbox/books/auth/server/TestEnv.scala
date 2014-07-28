@@ -1,13 +1,21 @@
 package com.blinkbox.books.auth.server
 
+import java.net.URL
+
+import akka.actor.{ActorRefFactory, ActorSystem}
+import com.blinkbox.books.auth.server.WebApp._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultClientService, DefaultUserService}
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.auth.{User => AuthenticatedUser, Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
+import com.blinkbox.books.config.ApiConfig
+import com.blinkbox.books.spray.ZuulTokenAuthenticator
 import com.blinkbox.books.testkit.{PublisherSpy, TestGeoIP, TestH2}
 import com.blinkbox.books.time.{Clock, StoppedClock}
 import org.joda.time.Duration
+import spray.routing.HttpService
+import scala.concurrent.duration._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import scala.slick.driver.JdbcProfile
 
 trait TestEnvDeps [Profile <: JdbcProfile] {
@@ -103,3 +111,17 @@ trait DefaultH2Deps extends TestEnvDeps[JdbcProfile] {
 }
 
 trait DefaultH2TestEnv extends DefaultH2Deps with TestEnv[JdbcProfile]
+trait DefaultH2ApiTestEnv extends DefaultH2TestEnv {
+  implicit val system: ActorSystem
+
+  val appConfig = AppConfig(config)
+
+  val authenticator = new ZuulTokenAuthenticator(
+    new ZuulTokenDeserializer(new ZuulTokenDecoder(appConfig.auth.keysDir.getAbsolutePath)),
+    _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
+
+
+  lazy val apiService = new AuthApi(appConfig.service, userService, clientService, authService, authenticator)
+
+  lazy val route = apiService.routes
+}
