@@ -25,21 +25,17 @@ val dependencySettings = Seq(
       "com.typesafe.slick"        %%  "slick"                 % "2.0.2",
       "com.gettyimages"           %%  "spray-swagger"         % "0.4.3",
       "commons-lang"              %   "commons-lang"          % "2.6",
-      "ch.qos.logback"            %   "logback-classic"       % "1.1.2",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
-      "com.blinkbox.books"        %%  "common-config"         % "0.7.0",
-      "com.blinkbox.books"        %%  "common-spray"          % "0.12.0",
+      "com.blinkbox.books"        %%  "common-config"         % "0.9.0",
+      "com.blinkbox.books"        %%  "common-spray"          % "0.13.1",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.5.0",
-      "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "4.0.0" withSources(),
+      "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "4.1.0",
       "mysql"                     %   "mysql-connector-java"  % "5.1.31",
       "io.spray"                  %   "spray-testkit"         % sprayV    % "test",
       "com.typesafe.akka"         %%  "akka-testkit"          % akkaV     % "test",
-      "org.scalatest"             %%  "scalatest"             % "2.2.0"   % "test",
-      "junit"                     %   "junit"                 % "4.11"    % "test",
-      "com.novocode"              %   "junit-interface"       % "0.10"    % "test",
-      "org.mockito"               %   "mockito-all"           % "1.9.5"   % "test",
       "xmlunit"                   %   "xmlunit"               % "1.5"     % "test",
-      "com.h2database"            %   "h2"                    % "1.4.180" % "test"
+      "com.h2database"            %   "h2"                    % "1.4.180" % "test",
+      "com.blinkbox.books"        %%  "common-scala-test"     % "0.2.0"
     )
   }
 )
