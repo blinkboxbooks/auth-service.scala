@@ -8,6 +8,7 @@ import com.blinkbox.books.auth.server.services.{DefaultClientService, DefaultUse
 import com.blinkbox.books.auth.{Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers
+import com.blinkbox.books.rabbitmq.RabbitMq
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time.SystemTimeSupport
 import spray.can.Http
@@ -31,7 +32,8 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
 
-  val notifier = new RabbitMqPublisher ~ new LegacyRabbitMqPublisher(config.rabbit)
+  val rabbitConnection = RabbitMq.reliableConnection(config.rabbit)
+  val publisher = new RabbitMqPublisher(rabbitConnection.createChannel) ~ new LegacyRabbitMqPublisher(rabbitConnection.createChannel)
 
   val db = {
     val jdbcUrl = s"jdbc:${config.db.uri.withUserInfo("")}"
@@ -51,9 +53,9 @@ class WebService(config: AppConfig) extends HttpServiceActor with SystemTimeSupp
   val userRepository = new DefaultUserRepository(tables, passwordHasher)
   val clientRepository = new DefaultClientRepository(tables)
 
-  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, notifier)
-  val userService = new DefaultUserService(db, userRepository, notifier)
-  val clientService = new DefaultClientService(db, clientRepository, authRepository, notifier)
+  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisher)
+  val userService = new DefaultUserService(db, userRepository, publisher)
+  val clientService = new DefaultClientService(db, clientRepository, authRepository, publisher)
 
   val users = new AuthApi(config.service, userService, clientService, authService, authenticator)
   val swagger = new SwaggerApi(config.swagger)
