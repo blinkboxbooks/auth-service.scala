@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.service
 
+import com.blinkbox.books.auth.server.DefaultH2TestEnv
 import com.blinkbox.books.auth.server.data.{User, UserId}
 import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.testkit.TestH2

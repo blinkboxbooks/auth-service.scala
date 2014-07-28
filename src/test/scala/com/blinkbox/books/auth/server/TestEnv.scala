@@ -1,15 +1,14 @@
-package com.blinkbox.books.auth.server.service
+package com.blinkbox.books.auth.server
 
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultUserService, DefaultClientService}
-import com.blinkbox.books.testkit.{TestGeoIP, PublisherSpy, TestH2}
-import com.blinkbox.books.time.{StoppedClock, Clock}
+import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultClientService, DefaultUserService}
+import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.testkit.{PublisherSpy, TestGeoIP, TestH2}
+import com.blinkbox.books.time.{Clock, StoppedClock}
 import org.joda.time.Duration
 
 import scala.concurrent.ExecutionContext
-import scala.slick.driver.{H2Driver, JdbcProfile}
+import scala.slick.driver.JdbcProfile
 
 trait TestEnvDeps [Profile <: JdbcProfile] {
   val db: Profile#Backend#Database
