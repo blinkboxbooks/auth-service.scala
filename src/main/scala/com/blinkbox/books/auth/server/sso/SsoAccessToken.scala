@@ -10,6 +10,7 @@ import com.blinkbox.security.jwt.{InvalidTokenException, TokenDecoder, Unsupport
 
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
+import scala.reflect.ClassTag
 import scala.util.Try
 
 trait KeyStore {
@@ -50,9 +51,11 @@ case class SsoAccessToken(token: String, claims: Map[String, AnyRef]) {
 
 object SsoAccessToken {
   def decode(token: String, decoder: TokenDecoder): Try[SsoAccessToken] = Try {
-    decoder.decode(token) match {
-      case claims: java.util.Map[_, _] => SsoAccessToken(token, claims.asInstanceOf[java.util.Map[String, AnyRef]].asScala.toMap)
-      case _ => throw new InvalidTokenException("The token does not contain valid claims.")
-    }
+    val claims = extractClaims[String, AnyRef](decoder.decode(token))
+    SsoAccessToken(token, claims)
+  }
+  private def extractClaims[K: ClassTag, V: ClassTag](payload: Any): Map[K, V] = payload match {
+    case claims: java.util.Map[K, V] => claims.asScala.toMap
+    case _ => throw new InvalidTokenException("The token does not contain valid claims.")
   }
 }
