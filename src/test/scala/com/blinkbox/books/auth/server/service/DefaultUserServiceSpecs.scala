@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.service
 
+import com.blinkbox.books.auth.server.DefaultH2TestEnv
 import com.blinkbox.books.auth.server.data.{User, UserId}
 import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.testkit.TestH2
@@ -9,7 +10,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
 
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(500, Millis), interval = Span(20, Millis))
+  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
   import com.blinkbox.books.testkit.TestH2.tables._
   import driver.simple._

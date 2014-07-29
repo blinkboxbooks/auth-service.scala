@@ -1,15 +1,22 @@
-package com.blinkbox.books.auth.server.service
+package com.blinkbox.books.auth.server
 
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.auth.server._
+import java.net.URL
+
+import akka.actor.{ActorRefFactory, ActorSystem}
+import com.blinkbox.books.auth.server.WebApp._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultUserService, DefaultClientService}
-import com.blinkbox.books.testkit.{TestGeoIP, PublisherSpy, TestH2}
-import com.blinkbox.books.time.{StoppedClock, Clock}
+import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultClientService, DefaultUserService}
+import com.blinkbox.books.auth.{User => AuthenticatedUser, Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
+import com.blinkbox.books.config.ApiConfig
+import com.blinkbox.books.spray.ZuulTokenAuthenticator
+import com.blinkbox.books.testkit.{PublisherSpy, TestGeoIP, TestH2}
+import com.blinkbox.books.time.{Clock, StoppedClock}
 import org.joda.time.Duration
+import spray.routing.HttpService
+import scala.concurrent.duration._
 
-import scala.concurrent.ExecutionContext
-import scala.slick.driver.{H2Driver, JdbcProfile}
+import scala.concurrent.{Future, ExecutionContext}
+import scala.slick.driver.JdbcProfile
 
 trait TestEnvDeps [Profile <: JdbcProfile] {
   val db: Profile#Backend#Database
@@ -67,6 +74,8 @@ trait TestEnv[Profile <: JdbcProfile] {
   val refreshTokenClientA1 = RefreshToken(RefreshTokenId(1), now, now, userIdA, Some(clientIdA1), "some-token-a1", false, exp, exp, exp)
   val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", false, exp, exp, exp)
   val refreshTokenClientA3 = RefreshToken(RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", true, now, now, now)
+  val refreshTokenNoClientA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a", false, now, now, now)
+  val refreshTokenNoClientDeregisteredA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a-deregistered", true, now, now, now)
 
   val clientsC =
     for (id <- 4 until 16)
@@ -91,7 +100,7 @@ trait TestEnv[Profile <: JdbcProfile] {
   db.withSession { implicit session =>
     tables.users ++= Seq(userA, userB, userC)
     tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
-    tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2)
+    tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
   }
 }
 
@@ -104,3 +113,17 @@ trait DefaultH2Deps extends TestEnvDeps[JdbcProfile] {
 }
 
 trait DefaultH2TestEnv extends DefaultH2Deps with TestEnv[JdbcProfile]
+trait DefaultH2ApiTestEnv extends DefaultH2TestEnv {
+  implicit val system: ActorSystem
+
+  val appConfig = AppConfig(config)
+
+  val authenticator = new ZuulTokenAuthenticator(
+    new ZuulTokenDeserializer(new ZuulTokenDecoder(appConfig.auth.keysDir.getAbsolutePath)),
+    _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
+
+
+  lazy val apiService = new AuthApi(appConfig.service, userService, clientService, authService, authenticator)
+
+  lazy val route = apiService.routes
+}
