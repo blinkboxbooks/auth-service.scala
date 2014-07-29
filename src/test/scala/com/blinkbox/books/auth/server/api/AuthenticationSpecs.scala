@@ -1,0 +1,232 @@
+package com.blinkbox.books.auth.server.api
+
+import com.blinkbox.books.auth.server.{ZuulRequestErrorCode, ZuulRequestException, TokenInfo}
+import spray.http.{StatusCodes, FormData}
+
+class AuthenticationSpecs extends SpecBase {
+
+  lazy val validCredentials = Map(
+    "grant_type" -> "password",
+    "username" -> env.userA.username,
+    "password" -> env.userA.passwordHash
+  )
+
+  lazy val clientCredentials = Map(
+    "client_id" -> env.clientInfoA1.client_id,
+    "client_secret" -> env.clientA1.secret
+  )
+
+  lazy val deregisteredClientCredentials = Map(
+    "client_id" -> "urn:blinkbox:zuul:client:3",
+    "client_secret" -> env.clientA3.secret
+  )
+
+  lazy val validCredentialsWithClient = validCredentials ++ clientCredentials
+  lazy val validCredentialsWithDeregisteredClient = validCredentials ++ deregisteredClientCredentials
+
+  lazy val validRefreshTokenCredentials = Map(
+    "grant_type" -> "refresh_token",
+    "refresh_token" -> env.refreshTokenNoClientA.token
+  )
+
+  lazy val revokedRefreshTokenCredentials = Map(
+    "grant_type" -> "refresh_token",
+    "refresh_token" -> env.refreshTokenNoClientDeregisteredA.token
+  )
+
+  lazy val validRefreshTokenCredentialsWithClient = Map(
+    "grant_type" -> "refresh_token",
+    "refresh_token" -> env.refreshTokenClientA1.token
+  ) ++ clientCredentials
+
+  lazy val validRefreshTokenCredentialsWithDeregisteredClient = Map(
+    "grant_type" -> "refresh_token",
+    "refresh_token" -> env.refreshTokenClientA3.token
+  ) ++ deregisteredClientCredentials
+
+  "The service" should "accept valid username/password pair returning a valid access token" in {
+    Post("/oauth2/token", FormData(validCredentials)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.OK)
+
+      val u = env.userA
+
+      responseAs[TokenInfo] should matchPattern {
+        case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), u.username, u.firstName, u.lastName,
+          None, None, None, None, None, None, None, None) =>
+      }
+    }
+  }
+
+  it should "accept valid username/password pair and client credentials returning a valid access token" in {
+    Post("/oauth2/token", FormData(validCredentialsWithClient)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.OK)
+
+      val u = env.userA
+      val c = env.clientInfoA1
+
+      responseAs[TokenInfo] should matchPattern {
+        case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
+          Some(c.client_id), Some(c.client_uri), Some(c.client_name), Some(c.client_brand), Some(c.client_model), Some(c.client_os), None, Some(_)) =>
+      }
+    }
+  }
+
+  it should "reject incomplete client information" in {
+    Post("/oauth2/token", FormData(validCredentialsWithClient - "client_secret")) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
+      }
+    }
+  }
+
+  it should "reject invalid username/password credentials" in {
+    Post("/oauth2/token", FormData(validCredentialsWithClient.updated("password", "invalid"))) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
+      }
+    }
+  }
+
+  it should "reject credentials for a de-registerd client" in {
+    Post("/oauth2/token", FormData(validCredentialsWithDeregisteredClient)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
+      }
+    }
+  }
+
+  it should "accept a valid refresh token" in {
+    Post("/oauth2/token", FormData(validRefreshTokenCredentials)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.OK)
+
+      val u = env.userA
+
+      responseAs[TokenInfo] should matchPattern {
+        case TokenInfo(_, "bearer", 1800, None, userIdExpr(_), userUriExpr(_), u.username, u.firstName, u.lastName,
+          None, None, None, None, None, None, None, None) =>
+      }
+    }
+  }
+
+  it should "accept a valid refresh token with valid client information" in {
+    Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.OK)
+
+      val u = env.userA
+      val c = env.clientInfoA1
+
+      responseAs[TokenInfo] should matchPattern {
+        case TokenInfo(_, "bearer", 1800, None, userIdExpr(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
+          Some(c.client_id), Some(c.client_uri), Some(c.client_name), Some(c.client_brand), Some(c.client_model), Some(c.client_os), None, Some(_)) =>
+      }
+    }
+  }
+
+  it should "reject an invalid refresh token" in {
+    Post("/oauth2/token", FormData(validRefreshTokenCredentials.updated("refresh_token", "invalid"))) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
+      }
+    }
+  }
+
+  it should "reject a valid refresh token with invalid client information" in {
+    Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient.updated("client_id", "invalid"))) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
+      }
+    }
+  }
+
+  it should "reject a valid refresh token with de-registered client information" in {
+    Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithDeregisteredClient)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
+      }
+    }
+  }
+
+  it should "reject a revoked refresh token" in {
+    Post("/oauth2/token", FormData(revokedRefreshTokenCredentials)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
+      }
+    }
+  }
+
+  it should "reject a refresh token if the associated client credentials are not provided" in {
+    Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient - "client_id" - "client_secret")) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
+      }
+    }
+  }
+
+  it should "revoke a valid refresh token and not allow its usage any more" in {
+    Post("/tokens/revoke", FormData(validRefreshTokenCredentials - "grant_type")) ~> route ~> check {
+      status should equal(StatusCodes.OK)
+    }
+
+    Post("/oauth2/token", FormData(validRefreshTokenCredentials)) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
+      }
+    }
+  }
+
+  it should "respond with an error when trying to revoke an invalid refresh token" in {
+    Post("/tokens/revoke", FormData(Map("refresh_token" -> "invalid"))) ~> route ~> check {
+      import com.blinkbox.books.auth.server.Serialization._
+
+      status should equal(StatusCodes.BadRequest)
+
+      responseAs[ZuulRequestException] should matchPattern {
+        case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
+      }
+    }
+  }
+}

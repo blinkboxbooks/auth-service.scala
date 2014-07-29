@@ -74,6 +74,8 @@ trait TestEnv[Profile <: JdbcProfile] {
   val refreshTokenClientA1 = RefreshToken(RefreshTokenId(1), now, now, userIdA, Some(clientIdA1), "some-token-a1", false, exp, exp, exp)
   val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", false, exp, exp, exp)
   val refreshTokenClientA3 = RefreshToken(RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", true, now, now, now)
+  val refreshTokenNoClientA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a", false, now, now, now)
+  val refreshTokenNoClientDeregisteredA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a-deregistered", true, now, now, now)
 
   val clientsC =
     for (id <- 4 until 16)
@@ -98,7 +100,7 @@ trait TestEnv[Profile <: JdbcProfile] {
   db.withSession { implicit session =>
     tables.users ++= Seq(userA, userB, userC)
     tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
-    tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2)
+    tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
   }
 }
 

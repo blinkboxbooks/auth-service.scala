@@ -7,22 +7,7 @@ import spray.httpx.unmarshalling.FormDataUnmarshallers
 import spray.routing.{HttpService, Route}
 import spray.testkit.ScalatestRouteTest
 
-class RegistrationSpecs extends FlatSpec with Matchers with ScalatestRouteTest with HttpService with BeforeAndAfterEach
-  with FormDataUnmarshallers {
-
-  def actorRefFactory = system
-
-  def newEnv = new DefaultH2ApiTestEnv {
-    implicit val system = RegistrationSpecs.this.system
-  }
-
-  var env: DefaultH2ApiTestEnv = _
-  var route: Route = _
-
-  override def beforeEach() {
-    env = newEnv
-    route = env.route
-  }
+class RegistrationSpecs extends SpecBase {
 
   val regDataSimple = Map(
     "grant_type" -> "urn:blinkbox:oauth:grant-type:registration",
@@ -40,11 +25,6 @@ class RegistrationSpecs extends FlatSpec with Matchers with ScalatestRouteTest w
     "client_model" -> "A model",
     "client_os" -> "An OS"
   )
-
-  val userIdExpr = """urn:blinkbox:zuul:user:(\d+)""".r
-  val userUriExpr = """\/users\/(\d+)""".r
-  val clientIdExpr = """urn:blinkbox:zuul:client:(\d+)""".r
-  val clientUriExpr = """\/clients\/(\d+)""".r
 
   "The service" should "allow the registration of a new user without a client" in {
     Post("/oauth2/token", FormData(regDataSimple)) ~> route ~> check {
