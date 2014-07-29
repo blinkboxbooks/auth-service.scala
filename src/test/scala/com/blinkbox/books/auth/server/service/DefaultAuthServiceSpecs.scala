@@ -13,7 +13,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
 
   implicit val ec = scala.concurrent.ExecutionContext.global
   implicit val cl = StoppedClock()
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(500, Millis), interval = Span(20, Millis))
+  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
   val simpleReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true, None, None, None, None)
   val clientReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true,

@@ -10,7 +10,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
 
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(500, Millis), interval = Span(20, Millis))
+  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
   import com.blinkbox.books.testkit.TestH2.tables._
   import driver.simple._

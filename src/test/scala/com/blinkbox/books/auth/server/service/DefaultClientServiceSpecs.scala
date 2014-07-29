@@ -14,7 +14,7 @@ import scala.util.{Failure, Success}
 
 class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
 
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(500, Millis), interval = Span(20, Millis))
+  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
   import com.blinkbox.books.testkit.TestH2.tables._
   import driver.simple._
