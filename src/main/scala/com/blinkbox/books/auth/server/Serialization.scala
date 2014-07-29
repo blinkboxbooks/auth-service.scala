@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server
 
+import com.blinkbox.books.spray.JsonFormats.ISODateTimeSerializer
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JString, JField, JObject}
 import org.json4s.ext.{JodaTimeSerializers, EnumNameSerializer}
@@ -34,6 +35,6 @@ object Serialization extends Json4sJacksonSupport {
     }
   )
 
-  implicit def json4sJacksonFormats: Formats = (DefaultFormats + ZuulRequestExceptionSerializer +
-    new EnumNameSerializer(RefreshTokenStatus) + clientInfoSerializer) ++ JodaTimeSerializers.all
+  implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer +
+    new EnumNameSerializer(RefreshTokenStatus) + clientInfoSerializer + ISODateTimeSerializer
 }
