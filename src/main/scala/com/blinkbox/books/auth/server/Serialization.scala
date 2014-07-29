@@ -28,7 +28,7 @@ object ZuulRequestExceptionSerializer extends Serializer[ZuulRequestException] {
   }
 }
 
-object Serialization extends Json4sJacksonSupport {
+class Serialization extends Json4sJacksonSupport {
   val clientInfoSerializer = FieldSerializer[ClientInfo](
     serializer = {
       case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("yyyy-MM-dd"))
@@ -38,3 +38,5 @@ object Serialization extends Json4sJacksonSupport {
   implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer +
     new EnumNameSerializer(RefreshTokenStatus) + clientInfoSerializer + ISODateTimeSerializer
 }
+
+object Serialization extends Serialization

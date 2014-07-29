@@ -1,8 +1,10 @@
 package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
+import org.json4s.Formats
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import spray.http._
+import spray.httpx.Json4sJacksonSupport
 import spray.httpx.unmarshalling.FormDataUnmarshallers
 import spray.routing.{HttpService, Route}
 import spray.testkit.ScalatestRouteTest
@@ -32,7 +34,7 @@ class RegistrationSpecs extends SpecBase {
 
       status should equal(StatusCodes.OK)
 
-      responseAs[TokenInfo] should matchPattern {
+      jsonResponseAs[TokenInfo] should matchPattern {
         case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), "user@domain.test", "First", "Last", None, None, None, None, None, None, None, None) =>
       }
     }
@@ -44,7 +46,7 @@ class RegistrationSpecs extends SpecBase {
 
       status should equal(StatusCodes.OK)
 
-      responseAs[TokenInfo] should matchPattern {
+      jsonResponseAs[TokenInfo] should matchPattern {
         case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), "user@domain.test", "First", "Last",
           Some(clientIdExpr(_)), Some(clientUriExpr(_)), Some("A name"), Some("A brand"), Some("A model"), Some("An OS"), Some(_), Some(_)) =>
       }
@@ -57,7 +59,7 @@ class RegistrationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidRequest, None) =>
       }
     }
@@ -69,7 +71,7 @@ class RegistrationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidRequest, Some(ZuulRequestErrorReason.UsernameAlreadyTaken)) =>
       }
     }

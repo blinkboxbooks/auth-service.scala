@@ -1,10 +1,14 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.DefaultH2ApiTestEnv
+import com.blinkbox.books.auth.server.{Serialization, DefaultH2ApiTestEnv}
 import org.scalatest.{BeforeAndAfterEach, Matchers, FlatSpec}
-import spray.httpx.unmarshalling.FormDataUnmarshallers
+import spray.http.MediaTypes
+import spray.httpx.Json4sJacksonSupport
+import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.testkit.ScalatestRouteTest
+
+import scala.reflect.ClassTag
 
 abstract class SpecBase extends FlatSpec
   with Matchers
@@ -30,5 +34,10 @@ abstract class SpecBase extends FlatSpec
   override def beforeEach() {
     env = newEnv
     route = env.route
+  }
+
+  def jsonResponseAs[T: FromResponseUnmarshaller: ClassTag]: T = {
+    mediaType should equal(MediaTypes.`application/json`)
+    responseAs[T]
   }
 }

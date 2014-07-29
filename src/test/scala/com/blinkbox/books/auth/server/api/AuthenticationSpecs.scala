@@ -52,7 +52,7 @@ class AuthenticationSpecs extends SpecBase {
 
       val u = env.userA
 
-      responseAs[TokenInfo] should matchPattern {
+      jsonResponseAs[TokenInfo] should matchPattern {
         case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), u.username, u.firstName, u.lastName,
           None, None, None, None, None, None, None, None) =>
       }
@@ -68,7 +68,7 @@ class AuthenticationSpecs extends SpecBase {
       val u = env.userA
       val c = env.clientInfoA1
 
-      responseAs[TokenInfo] should matchPattern {
+      jsonResponseAs[TokenInfo] should matchPattern {
         case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
           Some(c.client_id), Some(c.client_uri), Some(c.client_name), Some(c.client_brand), Some(c.client_model), Some(c.client_os), None, Some(_)) =>
       }
@@ -81,7 +81,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
       }
     }
@@ -93,7 +93,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
       }
     }
@@ -105,7 +105,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
       }
     }
@@ -119,7 +119,7 @@ class AuthenticationSpecs extends SpecBase {
 
       val u = env.userA
 
-      responseAs[TokenInfo] should matchPattern {
+      jsonResponseAs[TokenInfo] should matchPattern {
         case TokenInfo(_, "bearer", 1800, None, userIdExpr(_), userUriExpr(_), u.username, u.firstName, u.lastName,
           None, None, None, None, None, None, None, None) =>
       }
@@ -135,7 +135,7 @@ class AuthenticationSpecs extends SpecBase {
       val u = env.userA
       val c = env.clientInfoA1
 
-      responseAs[TokenInfo] should matchPattern {
+      jsonResponseAs[TokenInfo] should matchPattern {
         case TokenInfo(_, "bearer", 1800, None, userIdExpr(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
           Some(c.client_id), Some(c.client_uri), Some(c.client_name), Some(c.client_brand), Some(c.client_model), Some(c.client_os), None, Some(_)) =>
       }
@@ -148,7 +148,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
       }
     }
@@ -160,7 +160,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
       }
     }
@@ -172,7 +172,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
       }
     }
@@ -184,7 +184,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
       }
     }
@@ -196,7 +196,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidClient, None) =>
       }
     }
@@ -212,7 +212,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
       }
     }
@@ -224,7 +224,7 @@ class AuthenticationSpecs extends SpecBase {
 
       status should equal(StatusCodes.BadRequest)
 
-      responseAs[ZuulRequestException] should matchPattern {
+      jsonResponseAs[ZuulRequestException] should matchPattern {
         case ZuulRequestException(_, ZuulRequestErrorCode.InvalidGrant, None) =>
       }
     }
