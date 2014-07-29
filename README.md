@@ -1,10 +1,14 @@
+# Beware!
+
+**This Readme is outdated as this repository contains the WIP for a new version of Zuul based on spray.**
+
 # Zuul authentication server [![Build Status](http://teamcity01.mobcastdev.local:8111/app/rest/builds/buildType:%28id:Platform_ZuulServer_RakeBuild%29/statusIcon)](http://teamcity01.mobcastdev.local:8111/viewType.html?buildTypeId=Platform_ZuulServer_RakeBuild&guest=1)
 
 An OAuth 2.0 based authentication server, supporting user registration and profile management, and client registration and management.
 
 ## Requirements
 
-The authentication server requires Ruby 2.0.0 or later as it uses the AES/GCM encryption algorithm/mode for tokens, which isn't supported in 1.9.x. Note that it does not run under JRuby as it uses ECDSA signatures which are not currently supported on that platform. 
+The authentication server requires Ruby 2.0.0 or later as it uses the AES/GCM encryption algorithm/mode for tokens, which isn't supported in 1.9.x. Note that it does not run under JRuby as it uses ECDSA signatures which are not currently supported on that platform.
 
 You cannot run this server on Windows due to issues with Ruby versions and native gems. Use OS X or CentOS instead.
 
@@ -15,7 +19,7 @@ Install [RVM](https://rvm.io/) and make sure you're using Ruby 2.0.0 (if you `cd
 To check that your Ruby environment is suitable, run:
 
 ```
-$ ruby -v  
+$ ruby -v
   #=> should print something with 2.0.0-p195 in it
 $ irb
 $> require "openssl"
@@ -23,7 +27,7 @@ $> require "openssl"
 $> OpenSSL::OPENSSL_VERSION
   #=> should print something with 1.0.1c or higher in it
 $> OpenSSL::PKey::EC
-  #=> should not print an error about this being undefined     
+  #=> should not print an error about this being undefined
 ```
 
 Also install [Brew](http://brew.sh/) and then use it to install MySQL and RabbitMQ:
@@ -134,7 +138,7 @@ Once that is done, edit the file to ensure you have the correct settings. Most o
 
 **Ensure that you're using a decent web server** such as Thin, because WEBrick will fall over in a massive heap as soon as you put any load on it.
 
-To start the server in development/test mode using Thin run: 
+To start the server in development/test mode using Thin run:
 
 ```
 $ rackup -s thin --port 9393
