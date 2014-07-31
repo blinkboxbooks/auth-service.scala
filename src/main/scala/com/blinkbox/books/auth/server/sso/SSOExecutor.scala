@@ -1,10 +1,8 @@
 package com.blinkbox.books.auth.server.sso
 
-import org.json4s.DefaultFormats
 import scala.concurrent.Future
 import spray.client.pipelining._
 import spray.http._
-import spray.httpx.Json4sJacksonSupport
 
 /**
  * Trait to be extended to make a Req type part of the SSOExecutor typeclass
@@ -17,7 +15,7 @@ object SSOExecutor {
   def apply[Req, Resp](f: Req => Future[Resp]) = new SSOExecutor[Req, Resp] { def apply(r: Req) = f(r) }
 }
 
-object DefaultSSOConstants {
+object SSOConstants {
   val TokenUri = "/oauth2/token"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
@@ -26,12 +24,13 @@ object DefaultSSOConstants {
 /**
  * Container for the default implementations of the SSOExecutor typeclass
  */
-class DefaultSSOExecutors(config: SSOConfig, client: Client) extends Json4sJacksonSupport {
-  implicit val json4sJacksonFormats = DefaultFormats
+class SSOExecutors(config: SSOConfig, client: Client) {
+
+  import Serialization._
 
   private def versioned(uri: String) = s"/${config.version}$uri"
 
-  private val C = DefaultSSOConstants
+  private val C = SSOConstants
 
   implicit val registration: SSOExecutor[RegisterUser, TokenCredentials] = SSOExecutor { req: RegisterUser =>
     client.dataRequest[TokenCredentials](Post(versioned(C.TokenUri), FormData(Map(

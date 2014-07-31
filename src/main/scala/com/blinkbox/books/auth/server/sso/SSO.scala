@@ -1,7 +1,6 @@
 package com.blinkbox.books.auth.server.sso
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
 import spray.http.HttpCredentials
 
 case class SSOConfig(host: String, port: Int, version: String, credentials: HttpCredentials)
@@ -33,6 +32,6 @@ trait SSO {
   // def systemStatus(): Future[SystemStatus]
 }
 
-class DefaultSSO(implicit val ec: ExecutionContext) extends SSO {
+class DefaultSSO extends SSO {
   def perform[Req, Resp](req: Req)(implicit executor: SSOExecutor[Req, Resp]): Future[Resp] = executor(req)
 }

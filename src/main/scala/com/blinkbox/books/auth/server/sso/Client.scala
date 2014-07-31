@@ -1,12 +1,12 @@
 package com.blinkbox.books.auth.server.sso
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import spray.can.Http
 import spray.client.pipelining._
 import spray.http._
@@ -18,27 +18,40 @@ trait Client {
   def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T]
 }
 
-class DefaultClient(config: SSOConfig)(implicit val ec: ExecutionContext, system: ActorSystem) extends Client {
-  private implicit val setupTimeout = Timeout(500.millis)
+trait SprayClient extends Client {
+  val config: SSOConfig
+  val timeout: Timeout
+  val system: ActorSystem
+  val ec: ExecutionContext
 
-  private val unitIfSuccessful = { resp: HttpResponse =>
+  implicit lazy val _timeout = timeout
+  implicit lazy val _system = system
+  implicit lazy val _ec = ec
+
+  protected def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = sendReceive(transport)
+
+  protected lazy val unitIfSuccessful = { resp: HttpResponse =>
     if (resp.status.isSuccess) () else throw new UnsuccessfulResponseException(resp)
   }
 
-  private val basePipeline: Future[SendReceive] = for {
-    Http.HostConnectorInfo(connector, _) <- IO(Http) ? Http.HostConnectorSetup(config.host, port = config.port)
+  protected lazy val basePipeline: Future[SendReceive] = for {
+    Http.HostConnectorInfo(connector, _) <- IO(Http) ? Http.HostConnectorSetup(config.host, port = config.port, sslEncryption = true)
   } yield {
     addCredentials(config.credentials) ~>
     addHeader("Content-Type", "application/x-www-form-urlencoded") ~>
     addHeader("X-CSRF-Protection", "Foobar") ~> // This is needed for some obscure reason (see SSO API doc.)
-    sendReceive(connector)
+    doSendReceive(connector)
   }
 
-  private val unitPipeline = basePipeline map { _ ~> unitIfSuccessful }
+  protected lazy val unitPipeline = basePipeline map { _ ~> unitIfSuccessful }
 
-  private def dataPipeline[T : FromResponseUnmarshaller] = basePipeline map { _ ~> unmarshal[T] }
+  protected def dataPipeline[T : FromResponseUnmarshaller] = basePipeline map { _ ~> unmarshal[T] }
 
   def unitRequest(req: HttpRequest): Future[Unit] = unitPipeline.flatMap(_(req))
 
   def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T] = dataPipeline[T].flatMap(_(req))
+}
+
+class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient {
+  val timeout = Timeout(500.millis)
 }
