@@ -1,3 +1,8 @@
+// This is needed due to a bug in the scala reflection that makes tests intermittently fail.
+// See: https://issues.scala-lang.org/browse/SI-6240
+val testSettings = Seq(
+  parallelExecution in Test := false
+)
 
 val buildSettings = Seq(
   name := "auth-server",
@@ -43,4 +48,5 @@ val dependencySettings = Seq(
 val root = (project in file(".")).
   settings(rpmPrepSettings: _*).
   settings(buildSettings: _*).
-  settings(dependencySettings: _*)
+  settings(dependencySettings: _*).
+  settings(testSettings: _*)
