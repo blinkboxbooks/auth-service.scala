@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.{Serialization, DefaultH2ApiTestEnv}
+import com.blinkbox.books.auth.server.{Serialization, TestEnv}
 import org.scalatest.{BeforeAndAfterEach, Matchers, FlatSpec}
 import spray.http.MediaTypes
 import spray.httpx.Json4sJacksonSupport
@@ -19,11 +19,9 @@ abstract class SpecBase extends FlatSpec
 
   def actorRefFactory = system
 
-  private def newEnv = new DefaultH2ApiTestEnv {
-    implicit val system = SpecBase.this.system
-  }
+  private def newEnv = new TestEnv {}
 
-  var env: DefaultH2ApiTestEnv = _
+  var env: TestEnv = _
   var route: Route = _
 
   val userIdExpr = """urn:blinkbox:zuul:user:(\d+)""".r
@@ -33,7 +31,7 @@ abstract class SpecBase extends FlatSpec
 
   override def beforeEach() {
     env = newEnv
-    route = env.route
+    route = env.zuulRoutes
   }
 
   def jsonResponseAs[T: FromResponseUnmarshaller: ClassTag]: T = {

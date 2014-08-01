@@ -19,7 +19,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
   import com.blinkbox.books.testkit.TestH2.tables._
   import driver.simple._
 
-  "The user service" should "list active clients for registered users" in new DefaultH2TestEnv {
+  "The user service" should "list active clients for registered users" in new TestEnv {
     whenReady(clientService.listClients()(authenticatedUserA)) { list =>
       list.clients should have length(2)
       list.clients should matchPattern { case clientIdA :: clientIdB :: Nil => }
@@ -30,7 +30,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     }
   }
 
-  it should "access to client details by id only for the owning users and non-deregistered clients" in new DefaultH2TestEnv {
+  it should "access to client details by id only for the owning users and non-deregistered clients" in new TestEnv {
     whenReady(clientService.getClientById(clientIdA1)(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt.foreach { _ should equal(clientInfoA1) }
@@ -48,7 +48,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     }
   }
 
-  it should "delete clients and revoke their tokens by id given they are owned by the user and not already de-registered" in new DefaultH2TestEnv {
+  it should "delete clients and revoke their tokens by id given they are owned by the user and not already de-registered" in new TestEnv {
     whenReady(clientService.deleteClient(clientIdA1)(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt.foreach { _ should equal(clientInfoA1) }
@@ -72,7 +72,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     }
   }
 
-  it should "not allow deletion of non-owned, non-existing or already-deregistered clients" in new DefaultH2TestEnv {
+  it should "not allow deletion of non-owned, non-existing or already-deregistered clients" in new TestEnv {
     forbiddenClientAccesses foreach { case (c, u) =>
       whenReady(clientService.deleteClient(c)(u)) { infoOpt =>
         infoOpt shouldBe empty
@@ -81,7 +81,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     }
   }
 
-  it should "apply a full patch to owned non-deregistered clients" in new DefaultH2TestEnv {
+  it should "apply a full patch to owned non-deregistered clients" in new TestEnv {
     whenReady(clientService.updateClient(clientIdA1, fullClientPatch)(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt.foreach { _ should equal(fullPatchedClientInfoA1) }
@@ -96,7 +96,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     }
   }
 
-  it should "not allow updating non-owned, non-existing or non-deregistered clients" in new DefaultH2TestEnv {
+  it should "not allow updating non-owned, non-existing or non-deregistered clients" in new TestEnv {
     forbiddenClientAccesses foreach { case (c, u) =>
       whenReady(clientService.updateClient(c, fullClientPatch)(u)) { infoOpt =>
         infoOpt shouldBe empty
@@ -105,7 +105,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     }
   }
 
-  it should "allow creating a new client for users below their limits" in new DefaultH2TestEnv {
+  it should "allow creating a new client for users below their limits" in new TestEnv {
     whenReady(clientService.registerClient(clientRegistration)(authenticatedUserB)) { info =>
       val lastClient = db.withSession { implicit session =>
         tables.clients.sortBy(_.id.desc).first()
@@ -125,7 +125,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
 
   }
 
-  it should "respect client limits for an user preventing the creation of more clients" in new DefaultH2TestEnv {
+  it should "respect client limits for an user preventing the creation of more clients" in new TestEnv {
     failingWith[ZuulRequestException](clientService.registerClient(clientRegistration)(authenticatedUserC)) should matchPattern {
       case ZuulRequestException(_, InvalidRequest, Some(ClientLimitReached)) =>
     }

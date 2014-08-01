@@ -3,50 +3,59 @@ package com.blinkbox.books.auth.server
 import java.net.URL
 
 import akka.actor.{ActorRefFactory, ActorSystem}
-import com.blinkbox.books.auth.server.WebApp._
+import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultClientService, DefaultUserService}
+import com.blinkbox.books.auth.server.WebApp._
 import com.blinkbox.books.auth.{User => AuthenticatedUser, Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.spray.ZuulTokenAuthenticator
 import com.blinkbox.books.testkit.{PublisherSpy, TestGeoIP, TestH2}
-import com.blinkbox.books.time.{Clock, StoppedClock}
+import com.blinkbox.books.time.{TimeSupport, StoppedClock}
 import org.joda.time.Duration
-import spray.routing.HttpService
 import scala.concurrent.duration._
+import spray.routing.HttpService
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.slick.driver.JdbcProfile
 
-trait TestEnvDeps [Profile <: JdbcProfile] {
-  val db: Profile#Backend#Database
-  val driver: Profile
-  val tables: ZuulTables
-  val clock : Clock
-  val executionContext: ExecutionContext
 
-  implicit lazy val cl = clock
-  implicit lazy val ec = executionContext
+trait StoppedClockSupport extends TimeSupport {
+  override val clock = StoppedClock()
 }
 
-trait TestEnv[Profile <: JdbcProfile] {
-  this: TestEnvDeps[Profile] =>
+trait TestDatabaseComponent extends DatabaseComponent[JdbcProfile] {
+  override val db = TestH2.db
+  override val tables = TestH2.tables
+  override val driver = tables.driver
+}
+
+trait TestEventsComponent extends EventsComponent {
+  val publisherSpy = new PublisherSpy
+  override val publisher = publisherSpy
+}
+
+trait TestPasswordHasherComponent extends PasswordHasherComponent {
+  override val passwordHasher = PasswordHasher(identity, (s1, s2) => s1 == s2)
+}
+
+trait TestEnv extends
+    DefaultConfigComponent with
+    DefaultAsyncComponent with
+    StoppedClockSupport with
+    DefaultGeoIPComponent with
+    TestEventsComponent with
+    TestDatabaseComponent with
+    TestPasswordHasherComponent with
+    DefaultRepositoriesComponent with
+    DefaultUserServiceComponent with
+    DefaultClientServiceComponent with
+    DefaultAuthServiceComponent with
+    DefaultApiComponent {
 
   import driver.simple._
-  
+
   def now = clock.now()
-
-  val passwordHasher = PasswordHasher(identity, (s1, s2) => s1 == s2)
-  val geoIp = TestGeoIP.geoIpStub()
-
-  val publisherSpy = new PublisherSpy
-  val authRepository = new DefaultAuthRepository(tables)
-  val clientRepository = new DefaultClientRepository(tables)
-  val userRepository = new DefaultUserRepository(tables, passwordHasher)
-
-  val clientService = new DefaultClientService(db, clientRepository, authRepository, publisherSpy)
-  val userService = new DefaultUserService(db, userRepository, publisherSpy)
-  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisherSpy)
 
   val userIdA = UserId(1)
   val userIdB = UserId(2)
@@ -102,28 +111,4 @@ trait TestEnv[Profile <: JdbcProfile] {
     tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
     tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
   }
-}
-
-trait DefaultH2Deps extends TestEnvDeps[JdbcProfile] {
-  override val db = TestH2.db
-  override val tables = TestH2.tables
-  override val driver = tables.driver
-  override val clock = StoppedClock()
-  override val executionContext = ExecutionContext.global
-}
-
-trait DefaultH2TestEnv extends DefaultH2Deps with TestEnv[JdbcProfile]
-trait DefaultH2ApiTestEnv extends DefaultH2TestEnv {
-  implicit val system: ActorSystem
-
-  val appConfig = AppConfig(config)
-
-  val authenticator = new ZuulTokenAuthenticator(
-    new ZuulTokenDeserializer(new ZuulTokenDecoder(appConfig.auth.keysDir.getAbsolutePath)),
-    _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker!
-
-
-  lazy val apiService = new AuthApi(appConfig.service, userService, clientService, authService, authenticator)
-
-  lazy val route = apiService.routes
 }

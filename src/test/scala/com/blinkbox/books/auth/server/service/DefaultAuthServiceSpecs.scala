@@ -27,7 +27,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     token.user_uri should equal(s"/users/$regId")
   }
 
-  "The auth service" should "register a user without a client and no IP" in new DefaultH2TestEnv {
+  "The auth service" should "register a user without a client and no IP" in new TestEnv {
     whenReady(authService.registerUser(simpleReg, None)) { token =>
       import driver.simple._
 
@@ -42,7 +42,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "register a user with a client" in new DefaultH2TestEnv {
+  it should "register a user with a client" in new TestEnv {
     whenReady(authService.registerUser(clientReg, None)) { token =>
       import driver.simple._
 
@@ -57,23 +57,23 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "revoke a valid refresh token" in new DefaultH2TestEnv {
+  it should "revoke a valid refresh token" in new TestEnv {
     whenReady(authService.revokeRefreshToken(refreshTokenClientA1.token)) { _ =>  }
   }
 
-  it should "signal an error when revoking an invalid refresh token" in new DefaultH2TestEnv {
+  it should "signal an error when revoking an invalid refresh token" in new TestEnv {
     failingWith[ZuulRequestException](authService.revokeRefreshToken("foo-token")) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
-  it should "signal an error when revoking an already revoked refresh token" in new DefaultH2TestEnv {
+  it should "signal an error when revoking an already revoked refresh token" in new TestEnv {
     failingWith[ZuulRequestException](authService.revokeRefreshToken(refreshTokenClientA3.token)) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
-  it should "create an access token for valid user credentials without a client and not providing an IP" in new DefaultH2TestEnv {
+  it should "create an access token for valid user credentials without a client and not providing an IP" in new TestEnv {
     whenReady(authService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", None, None), None)) { token =>
       token.user_first_name should equal(userA.firstName)
       token.user_last_name should equal(userA.lastName)
@@ -90,7 +90,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "create an access token for valid user credentials with a client and not providing an IP" in new DefaultH2TestEnv {
+  it should "create an access token for valid user credentials with a client and not providing an IP" in new TestEnv {
     whenReady(authService.authenticate(
       PasswordCredentials("user.a@test.tst", "a-password", Some(clientInfoA1.client_id), Some("test-secret-a1")), None)) { token =>
 
@@ -109,13 +109,13 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "not create an access token and signal an error when providing wrong username/password pairs" in new DefaultH2TestEnv {
+  it should "not create an access token and signal an error when providing wrong username/password pairs" in new TestEnv {
     failingWith[ZuulRequestException](authService.authenticate(PasswordCredentials("foo", "bar", None, None), None)) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
-  it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in new DefaultH2TestEnv {
+  it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in new TestEnv {
     failingWith[ZuulRequestException](authService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", Some("foo"), Some("bar")), None)) should matchPattern {
       case ZuulRequestException(_, InvalidClient, None) =>
     }
@@ -123,7 +123,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
 
   //def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
 
-  it should "refresh a valid refresh token given the associated client credentials" in new DefaultH2TestEnv {
+  it should "refresh a valid refresh token given the associated client credentials" in new TestEnv {
     val refreshFuture = authService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA1.token, Some(clientInfoA1.client_id), Some("test-secret-a1")))
 
@@ -143,7 +143,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in new DefaultH2TestEnv {
+  it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in new TestEnv {
     val refreshFuture = authService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA2.token, Some(clientInfoA1.client_id), Some("test-secret-a2")))
 
@@ -152,7 +152,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in new DefaultH2TestEnv {
+  it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in new TestEnv {
     val correctClientFuture = authService.refreshAccessToken(
       RefreshTokenCredentials("foo-token", Some(clientInfoA1.client_id), Some("test-secret-a1")))
 
