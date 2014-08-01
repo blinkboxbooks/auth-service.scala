@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.sso
 
+import com.blinkbox.books.auth.server.SSOConfig
 import scala.concurrent.Future
 import spray.client.pipelining._
 import spray.http._

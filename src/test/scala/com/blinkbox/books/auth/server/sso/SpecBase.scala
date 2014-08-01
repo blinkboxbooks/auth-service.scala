@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.sso
 
+import com.blinkbox.books.auth.server.SSOConfig
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import org.scalatest.concurrent.ScalaFutures

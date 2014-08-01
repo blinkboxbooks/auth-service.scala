@@ -4,8 +4,22 @@ import com.blinkbox.books.config._
 import com.blinkbox.books.rabbitmq.RabbitMqConfig
 import com.typesafe.config.Config
 import com.blinkbox.books.config.Configuration
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration._
+import spray.http.{BasicHttpCredentials, HttpCredentials}
 
-case class AppConfig(service: ApiConfig, swagger: SwaggerConfig, db: DatabaseConfig, rabbit: RabbitMqConfig, auth: AuthClientConfig)
+case class AppConfig(service: ApiConfig, swagger: SwaggerConfig, db: DatabaseConfig, rabbit: RabbitMqConfig, auth: AuthClientConfig, sso: SSOConfig)
+case class SSOConfig(host: String, port: Int, version: String, credentials: HttpCredentials, timeout: FiniteDuration)
+
+object SSOConfig {
+  def apply(config: Config): SSOConfig = SSOConfig(
+    host = config.getString("sso.host"),
+    port = config.getInt("sso.port"),
+    version = config.getString("sso.version"),
+    credentials = BasicHttpCredentials(config.getString("sso.credentials.username"), config.getString("sso.credentials.password")),
+    timeout = config.getDuration("sso.timeout", TimeUnit.MILLISECONDS).millis
+  )
+}
 
 object AppConfig {
   def apply(config: Config): AppConfig = AppConfig(
@@ -13,7 +27,8 @@ object AppConfig {
     SwaggerConfig(config, 1),
     DatabaseConfig(config, "service.auth.db"),
     RabbitMqConfig(config),
-    AuthClientConfig(config))
+    AuthClientConfig(config),
+    SSOConfig(config))
 
   def default: AppConfig = AppConfig((new Configuration {}).config)
 }
