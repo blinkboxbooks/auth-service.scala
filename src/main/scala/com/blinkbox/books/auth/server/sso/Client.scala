@@ -52,4 +52,4 @@ trait SprayClient extends Client {
   def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T] = dataPipeline[T].flatMap(_(req))
 }
 
-class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem)
+class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient

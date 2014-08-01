@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
+import com.blinkbox.books.auth.server.sso.{DefaultClient, SSOExecutors, DefaultSSO}
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
@@ -62,9 +63,15 @@ trait DefaultGeoIPComponent extends GeoIPComponent {
 }
 
 trait DefaultAuthServiceComponent extends AuthServiceComponent {
-  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with GeoIPComponent with EventsComponent with AsyncComponent with TimeSupport =>
+  this: DatabaseComponent[JdbcProfile]
+    with RepositoriesComponent[JdbcProfile]
+    with GeoIPComponent
+    with EventsComponent
+    with AsyncComponent
+    with TimeSupport
+    with SSOComponent =>
 
-  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisher)
+  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
@@ -77,6 +84,12 @@ trait DefaultClientServiceComponent extends ClientServiceComponent {
   this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with AsyncComponent with TimeSupport =>
 
   val clientService = new DefaultClientService(db, clientRepository, authRepository, publisher)
+}
+
+trait DefaultSSOComponent extends SSOComponent {
+  this: ConfigComponent with AsyncComponent =>
+
+  override val sso = new DefaultSSO(config.sso, new DefaultClient(config.sso))
 }
 
 trait DefaultApiComponent {
