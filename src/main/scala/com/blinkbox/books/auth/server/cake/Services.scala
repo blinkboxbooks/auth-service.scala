@@ -17,13 +17,11 @@ trait ConfigComponent {
   def config: AppConfig
 }
 
-trait CommonsComponent {
+trait AsyncComponent {
   def actorSystem: ActorSystem
   def executionContext: ExecutionContext
-  def clock: Clock
 
   implicit lazy val ec = executionContext
-  implicit lazy val cl = clock
   implicit lazy val system = actorSystem
 }
 
@@ -70,6 +68,6 @@ trait ApiComponent {
 }
 
 trait WebComponent {
-  this: CommonsComponent with ConfigComponent =>
+  this: AsyncComponent with ConfigComponent =>
 }
 

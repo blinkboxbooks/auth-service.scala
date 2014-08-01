@@ -3,24 +3,24 @@ package com.blinkbox.books.auth.server
 import java.net.URL
 
 import akka.actor.{ActorRefFactory, ActorSystem}
-import com.blinkbox.books.auth.server.WebApp._
+import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultClientService, DefaultUserService}
+import com.blinkbox.books.auth.server.WebApp._
 import com.blinkbox.books.auth.{User => AuthenticatedUser, Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.spray.ZuulTokenAuthenticator
 import com.blinkbox.books.testkit.{PublisherSpy, TestGeoIP, TestH2}
-import com.blinkbox.books.time.{Clock, StoppedClock}
+import com.blinkbox.books.time.{TimeSupport, StoppedClock}
 import org.joda.time.Duration
-import spray.routing.HttpService
 import scala.concurrent.duration._
-import com.blinkbox.books.auth.server.cake._
+import spray.routing.HttpService
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.slick.driver.JdbcProfile
 
 
-trait TestCommonsComponent extends DefaultCommonsComponent {
+trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
 }
 
@@ -41,7 +41,8 @@ trait TestPasswordHasherComponent extends PasswordHasherComponent {
 
 trait TestEnv extends
     DefaultConfigComponent with
-    TestCommonsComponent with
+    DefaultAsyncComponent with
+    StoppedClockSupport with
     DefaultGeoIPComponent with
     TestEventsComponent with
     TestDatabaseComponent with

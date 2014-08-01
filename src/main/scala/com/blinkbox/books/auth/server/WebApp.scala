@@ -7,6 +7,7 @@ import com.blinkbox.books.auth.server.services.GeoIP
 import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers
 import com.blinkbox.books.spray._
+import com.blinkbox.books.time.SystemTimeSupport
 import spray.can.Http
 import spray.http.HttpHeaders.`Access-Control-Allow-Origin`
 import spray.http.{AllOrigins, RemoteAddress}
@@ -19,7 +20,8 @@ object DummyGeoIP extends GeoIP {
 
 object WebAppComponents extends
   DefaultConfigComponent with
-  DefaultCommonsComponent with
+  DefaultAsyncComponent with
+  SystemTimeSupport with
   DefaultGeoIPComponent with
   DefaultEventsComponent with
   DefaultDatabaseComponent with

@@ -6,7 +6,6 @@ import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
-import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.rabbitmq.RabbitMq
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
@@ -18,18 +17,16 @@ import spray.routing.authentication.ContextAuthenticator
 import spray.routing.Route
 
 trait DefaultConfigComponent extends ConfigComponent {
-  val configuration = new Configuration {}
-
-  override val config: AppConfig = AppConfig(configuration.config)
+  override val config = AppConfig.default
 }
 
-trait DefaultCommonsComponent extends CommonsComponent with SystemTimeSupport {
+trait DefaultAsyncComponent extends AsyncComponent {
   override val actorSystem: ActorSystem = ActorSystem("auth-server")
   override val executionContext: ExecutionContext = actorSystem.dispatcher
 }
 
 trait DefaultEventsComponent extends EventsComponent {
-  this: ConfigComponent with CommonsComponent =>
+  this: ConfigComponent with AsyncComponent with TimeSupport =>
   private val rabbitConnection: Connection = RabbitMq.reliableConnection(config.rabbit)
   override val publisher: Publisher = new RabbitMqPublisher(rabbitConnection.createChannel) ~ new LegacyRabbitMqPublisher(rabbitConnection.createChannel)
 }
@@ -53,7 +50,7 @@ trait DefaultPasswordHasherComponent extends PasswordHasherComponent {
 }
 
 trait DefaultRepositoriesComponent extends RepositoriesComponent[JdbcProfile] {
-  this: DatabaseComponent[JdbcProfile] with CommonsComponent with PasswordHasherComponent =>
+  this: DatabaseComponent[JdbcProfile] with PasswordHasherComponent with TimeSupport =>
 
   override val authRepository = new DefaultAuthRepository(tables)
   override val userRepository = new DefaultUserRepository(tables, passwordHasher)
@@ -65,25 +62,25 @@ trait DefaultGeoIPComponent extends GeoIPComponent {
 }
 
 trait DefaultAuthServiceComponent extends AuthServiceComponent {
-  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with GeoIPComponent with EventsComponent with CommonsComponent =>
+  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with GeoIPComponent with EventsComponent with AsyncComponent with TimeSupport =>
 
   val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisher)
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
-  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with CommonsComponent =>
+  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with AsyncComponent with TimeSupport =>
 
   val userService = new DefaultUserService(db, userRepository, publisher)
 }
 
 trait DefaultClientServiceComponent extends ClientServiceComponent {
-  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with CommonsComponent =>
+  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with AsyncComponent with TimeSupport =>
 
   val clientService = new DefaultClientService(db, clientRepository, authRepository, publisher)
 }
 
 trait DefaultApiComponent {
-  this: AuthServiceComponent with ClientServiceComponent with UserServiceComponent with ConfigComponent with CommonsComponent =>
+  this: AuthServiceComponent with ClientServiceComponent with UserServiceComponent with ConfigComponent with AsyncComponent =>
 
   val authenticator: ContextAuthenticator[User] = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
