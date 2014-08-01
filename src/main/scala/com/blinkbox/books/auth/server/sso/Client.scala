@@ -20,11 +20,10 @@ trait Client {
 
 trait SprayClient extends Client {
   val config: SSOConfig
-  val timeout: Timeout
   val system: ActorSystem
   val ec: ExecutionContext
 
-  implicit lazy val _timeout = timeout
+  implicit lazy val _timeout = Timeout(config.timeout)
   implicit lazy val _system = system
   implicit lazy val _ec = ec
 
@@ -52,6 +51,4 @@ trait SprayClient extends Client {
   def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T] = dataPipeline[T].flatMap(_(req))
 }
 
-class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient {
-  val timeout = Timeout(500.millis)
-}
+class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem)

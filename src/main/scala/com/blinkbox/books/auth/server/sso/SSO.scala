@@ -1,9 +1,10 @@
 package com.blinkbox.books.auth.server.sso
 
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 import spray.http.HttpCredentials
 
-case class SSOConfig(host: String, port: Int, version: String, credentials: HttpCredentials)
+case class SSOConfig(host: String, port: Int, version: String, credentials: HttpCredentials, timeout: FiniteDuration)
 
 trait SSO {
   def perform[Req, Resp](req: Req)(implicit executor: SSOExecutor[Req, Resp]): Future[Resp]

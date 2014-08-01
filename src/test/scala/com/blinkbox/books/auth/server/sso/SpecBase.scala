@@ -12,7 +12,7 @@ import spray.http._
 trait SpecBase extends ScalaFutures with Matchers {
   implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
-  val ssoConfig = SSOConfig("test.tst", 9999, "v1", BasicHttpCredentials("foo", "bar"))
+  val ssoConfig = SSOConfig("test.tst", 9999, "v1", BasicHttpCredentials("foo", "bar"), 500.millis)
 
   type HttpRequestAssertions = HttpRequest => Unit
   val nullAssertions: HttpRequestAssertions = _ => ()
