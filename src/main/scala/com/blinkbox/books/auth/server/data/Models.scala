@@ -1,10 +1,12 @@
 package com.blinkbox.books.auth.server.data
 
+import java.util.concurrent.TimeUnit
+
 import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.auth.server.RefreshTokenStatus
-import java.util.concurrent.TimeUnit
 import com.blinkbox.books.time.Clock
 import org.joda.time.DateTime
+
 import scala.concurrent.duration.FiniteDuration
 
 case class UserId(value: Int) extends AnyVal

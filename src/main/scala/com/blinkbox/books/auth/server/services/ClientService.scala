@@ -3,10 +3,10 @@ package com.blinkbox.books.auth.server.services
 import java.sql.DataTruncation
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
-import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientUpdated, ClientRegistered, Publisher}
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.auth.server.data.{AuthRepository, UserId, ClientRepository, ClientId}
 import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data.{AuthRepository, ClientId, ClientRepository, UserId}
+import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientRegistered, ClientUpdated, Publisher}
+import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 
 import scala.concurrent.{ExecutionContext, Future}

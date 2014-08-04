@@ -2,8 +2,8 @@ package com.blinkbox.books.auth.server.data
 
 import java.security.SecureRandom
 
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.auth.server.ClientRegistration
+import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.slick.SlickSupport
 import com.blinkbox.books.time.{Clock, TimeSupport}
 import com.blinkbox.security.jwt.util.Base64

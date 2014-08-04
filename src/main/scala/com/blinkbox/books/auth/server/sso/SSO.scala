@@ -1,7 +1,6 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.SSOConfig
-import com.blinkbox.books.auth.server.data.UserId
 import spray.client.pipelining._
 import spray.http.FormData
 
@@ -36,7 +35,7 @@ trait SSO {
 }
 
 class DefaultSSO(config: SSOConfig, client: Client) extends SSO {
-  import Serialization._
+  import com.blinkbox.books.auth.server.sso.Serialization._
 
   private def versioned(uri: String) = s"/${config.version}$uri"
 

@@ -1,12 +1,13 @@
 package com.blinkbox.books.auth.server
 
-import com.blinkbox.books.config._
+import java.util.concurrent.TimeUnit
+
+import com.blinkbox.books.config.{Configuration, _}
 import com.blinkbox.books.rabbitmq.RabbitMqConfig
 import com.typesafe.config.Config
-import com.blinkbox.books.config.Configuration
-import java.util.concurrent.TimeUnit
-import scala.concurrent.duration._
 import spray.http.{BasicHttpCredentials, HttpCredentials}
+
+import scala.concurrent.duration._
 
 case class AppConfig(service: ApiConfig, swagger: SwaggerConfig, db: DatabaseConfig, rabbit: RabbitMqConfig, auth: AuthClientConfig, sso: SSOConfig)
 case class SSOConfig(host: String, port: Int, version: String, credentials: HttpCredentials, timeout: FiniteDuration)

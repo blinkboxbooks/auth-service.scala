@@ -1,10 +1,10 @@
 package com.blinkbox.books.auth.server.data
 
 import com.blinkbox.books.auth.server.{PasswordHasher, UserRegistration}
-import com.blinkbox.books.slick.{JdbcSupport, SlickSupport}
+import com.blinkbox.books.slick.SlickSupport
 import com.blinkbox.books.time.{Clock, TimeSupport}
 
-import scala.slick.driver.{JdbcProfile, JdbcDriver}
+import scala.slick.driver.JdbcProfile
 import scala.slick.profile.BasicProfile
 
 trait UserRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
