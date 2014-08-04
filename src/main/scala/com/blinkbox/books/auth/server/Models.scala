@@ -2,8 +2,6 @@ package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.auth.Elevation.Elevation
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidClient
-import com.wordnik.swagger.annotations.{ApiModel, ApiModelProperty}
-import scala.annotation.meta.field
 import org.joda.time.DateTime
 
 object RefreshTokenStatus extends Enumeration {
@@ -12,7 +10,7 @@ object RefreshTokenStatus extends Enumeration {
   val Invalid = Value("INVALID")
 }
 
-import RefreshTokenStatus._
+import com.blinkbox.books.auth.server.RefreshTokenStatus._
 
 case class UserRegistration(
   firstName: String,

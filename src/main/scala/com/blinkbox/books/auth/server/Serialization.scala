@@ -2,10 +2,10 @@ package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.spray.JsonFormats.ISODateTimeSerializer
 import org.joda.time.DateTime
-import org.json4s.JsonAST.{JString, JField, JObject}
-import org.json4s.ext.{JodaTimeSerializers, EnumNameSerializer}
+import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonDSL._
 import org.json4s._
-import JsonDSL._
+import org.json4s.ext.EnumNameSerializer
 import spray.httpx.Json4sJacksonSupport
 
 object ZuulRequestExceptionSerializer extends Serializer[ZuulRequestException] {

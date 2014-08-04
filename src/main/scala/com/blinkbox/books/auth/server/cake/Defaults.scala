@@ -11,11 +11,12 @@ import com.blinkbox.books.rabbitmq.RabbitMq
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
 import com.rabbitmq.client.Connection
+import spray.routing.Route
+import spray.routing.authentication.ContextAuthenticator
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.driver.{JdbcProfile, MySQLDriver}
 import scala.slick.jdbc.JdbcBackend.Database
-import spray.routing.authentication.ContextAuthenticator
-import spray.routing.Route
 
 trait DefaultConfigComponent extends ConfigComponent {
   override val config = AppConfig.default

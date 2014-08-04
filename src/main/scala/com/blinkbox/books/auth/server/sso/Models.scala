@@ -2,8 +2,6 @@ package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
 
-import scala.concurrent.Future
-
 // sealed trait Token
 // case class RefreshToken() extends Token
 // case class PasswordResetToken() extends Token

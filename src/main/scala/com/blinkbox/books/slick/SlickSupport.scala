@@ -1,8 +1,8 @@
 package com.blinkbox.books.slick
 
-import org.joda.time.{DateTimeZone, DateTime}
+import org.joda.time.{DateTime, DateTimeZone}
 
-import scala.slick.driver.{JdbcProfile, H2Driver, JdbcDriver, MySQLDriver}
+import scala.slick.driver.JdbcProfile
 import scala.slick.profile._
 
 trait SlickSupport[Profile <: BasicProfile] {

@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.services
 
-import com.blinkbox.books.auth.server.{ClientInfo, UserInfo}
 import com.blinkbox.books.auth.server.data.{Client, User}
+import com.blinkbox.books.auth.server.{ClientInfo, UserInfo}
 
 trait UserInfoFactory {
   def userInfoFromUser(user: User) = UserInfo(

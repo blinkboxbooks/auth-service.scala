@@ -64,10 +64,10 @@ case class ZuulAuthorizationException(
   message: String, code: ZuulAuthorizationErrorCode, reason: Option[ZuulAuthorizationErrorReason] = None) extends ZuulException
 
 object FailWith {
-  import ZuulRequestErrorCode._
-  import ZuulAuthorizationErrorCode._
-  import ZuulRequestErrorReason._
-  import ZuulAuthorizationErrorReason._
+  import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode._
+  import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason._
+  import com.blinkbox.books.auth.server.ZuulRequestErrorCode._
+  import com.blinkbox.books.auth.server.ZuulRequestErrorReason._
 
   def invalidRefreshToken = throw ZuulRequestException("The refresh token is invalid.", InvalidGrant)
   def refreshTokenNotAuthorized = throw ZuulRequestException("Your client is not authorised to use this refresh token", InvalidClient)
