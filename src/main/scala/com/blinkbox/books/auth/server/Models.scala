@@ -41,11 +41,11 @@ trait ClientCredentials {
 }
 
 case class PasswordCredentials(username: String, password: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
-  if (clientId.isDefined ^ clientSecret.isDefined) FailWith.requestException("Both client id and client secret are required.", InvalidClient)
+  if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
 case class RefreshTokenCredentials(token: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
-  if (clientId.isDefined ^ clientSecret.isDefined) FailWith.requestException("Both client id and client secret are required.", InvalidClient)
+  if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
 case class ClientRegistration(

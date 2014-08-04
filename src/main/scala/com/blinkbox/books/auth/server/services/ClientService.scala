@@ -32,7 +32,7 @@ class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#
   override def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser) = Future {
     val client = db.withTransaction { implicit transaction =>
       if (clientRepo.activeClientCount(userId) >= MaxClients) {
-        FailWith.clientLimitReached
+        throw Failures.clientLimitReached
       }
       clientRepo.createClient(userId, registration)
     }

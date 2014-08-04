@@ -5,7 +5,7 @@ import com.blinkbox.books.auth.server.{ClientInfo, UserInfo}
 
 trait UserInfoFactory {
   def userInfoFromUser(user: User) = UserInfo(
-    user_id = s"urn:blinkbox:zuul:user:${user.id.value}",
+    user_id = user.id.external,
     user_uri = s"/users/${user.id.value}",
     user_username = user.username,
     user_first_name = user.firstName,
@@ -16,7 +16,7 @@ trait UserInfoFactory {
 
 trait ClientInfoFactory {
   def clientInfo(client: Client, includeClientSecret: Boolean = false) = ClientInfo(
-    client_id = s"urn:blinkbox:zuul:client:${client.id.value}",
+    client_id = client.id.external,
     client_uri = s"/clients/${client.id.value}",
     client_name = client.name,
     client_brand = client.brand,

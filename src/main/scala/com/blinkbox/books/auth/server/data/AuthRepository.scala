@@ -27,8 +27,6 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
   this: TimeSupport =>
   import driver.simple._
 
-  val ClientIdExpr = """urn:blinkbox:zuul:client:([0-9]+)""".r
-
   override def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit = {
     loginAttempts += LoginAttempt(clock.now(), username, succeeded, clientIP.fold("unknown")(_.toString()))
   }
@@ -37,7 +35,7 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
     if (id.isEmpty || secret.isEmpty) return None
 
     val numericId = id match {
-      case ClientIdExpr(n) => try Some(ClientId(n.toInt)) catch { case _: NumberFormatException => None }
+      case ExternalClientId(n) => Some(n)
       case _ => None
     }
 
