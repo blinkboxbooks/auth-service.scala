@@ -49,13 +49,13 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
 
   override def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     if (!registration.acceptedTerms)
-      FailWith.termsAndConditionsNotAccepted
+      throw Failures.termsAndConditionsNotAccepted
 
     if (registration.password.length < 6)
-      FailWith.passwordTooShort
+      throw Failures.passwordTooShort
 
     if (clientIP.isDefined && clientIP.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
-      FailWith.notInTheUK
+      throw Failures.notInTheUK
 
     val (user, client, token) = db.withTransaction { implicit transaction =>
       val u = userRepo.createUser(registration)
@@ -86,15 +86,15 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
 
   override def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
     val (user1, client1, token1) = db.withTransaction { implicit transaction =>
-      val t = authRepo.refreshTokenWithToken(credentials.token).getOrElse(FailWith.invalidRefreshToken)
-      val u = userRepo.userWithId(t.userId).getOrElse(FailWith.invalidRefreshToken)
+      val t = authRepo.refreshTokenWithToken(credentials.token).getOrElse(throw Failures.invalidRefreshToken)
+      val u = userRepo.userWithId(t.userId).getOrElse(throw Failures.invalidRefreshToken)
       val c = authenticateClient(credentials, u)
 
       (t.clientId, c) match {
         case (None, Some(client)) => authRepo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
         case (None, None) => // Do nothing: token isn't associated with a client and there is no client
         case (Some(tId), Some(client)) if (tId == client.id) => // Do nothing: token is associated with the right client
-        case _ => FailWith.refreshTokenNotAuthorized
+        case _ => throw Failures.refreshTokenNotAuthorized
       }
 
       authRepo.extendRefreshTokenLifetime(t)
@@ -108,7 +108,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     // TODO: This line should be re-written to avoid the `get` invocation on the option and to account for casting failure
     val tokenId = RefreshTokenId(user.claims.get("zl/rti").get.asInstanceOf[Int])
 
-    val token = db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(FailWith.unverifiedIdentity)
+    val token = db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(throw Failures.unverifiedIdentity)
     SessionInfo(
       token_status = token.status,
       token_elevation = if (token.isValid) Some(token.elevation) else None,
@@ -119,7 +119,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
 
   override def revokeRefreshToken(token: String): Future[Unit] = Future {
     db.withSession { implicit session =>
-      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(FailWith.invalidRefreshToken)
+      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(throw Failures.invalidRefreshToken)
       authRepo.revokeRefreshToken(retrievedToken)
     }
   }
@@ -128,7 +128,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     val user = userRepo.userWithUsernameAndPassword(credentials.username, credentials.password)
     authRepo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
 
-    user.getOrElse(FailWith.invalidUsernamePassword)
+    user.getOrElse(throw Failures.invalidUsernamePassword)
   }
 
   private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: authRepo.Session): Option[Client] =
@@ -137,5 +137,5 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       clientSecret <- credentials.clientSecret
     } yield authRepo.
       authenticateClient(clientId, clientSecret, user.id).
-      getOrElse(FailWith.invalidClientCredentials)
+      getOrElse(throw Failures.invalidClientCredentials)
 }
