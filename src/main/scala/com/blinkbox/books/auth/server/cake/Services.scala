@@ -6,6 +6,7 @@ import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.{AppConfig, PasswordHasher}
+import com.blinkbox.books.auth.server.sso.{SSOExecutors, SSO}
 import com.blinkbox.books.time._
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
@@ -61,6 +62,10 @@ trait UserServiceComponent {
   def userService: UserService
 }
 
+trait SSOComponent {
+  def sso: SSO
+}
+
 trait ApiComponent {
   def authenticator: ContextAuthenticator[User]
   def zuulRoutes: Route
@@ -70,4 +75,3 @@ trait ApiComponent {
 trait WebComponent {
   this: AsyncComponent with ConfigComponent =>
 }
-

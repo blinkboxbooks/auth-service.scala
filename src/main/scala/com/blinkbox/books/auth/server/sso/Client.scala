@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
+import com.blinkbox.books.auth.server.SSOConfig
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -51,4 +52,4 @@ trait SprayClient extends Client {
   def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T] = dataPipeline[T].flatMap(_(req))
 }
 
-class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem)
+class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient

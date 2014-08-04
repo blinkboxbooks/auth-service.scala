@@ -1,18 +1,20 @@
 package com.blinkbox.books.auth.server.sso
 
-import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
-import spray.http.HttpCredentials
+import com.blinkbox.books.auth.server.SSOConfig
+import com.blinkbox.books.auth.server.data.UserId
+import spray.client.pipelining._
+import spray.http.FormData
 
-case class SSOConfig(host: String, port: Int, version: String, credentials: HttpCredentials, timeout: FiniteDuration)
+import scala.concurrent.Future
+
+object SSOConstants {
+  val TokenUri = "/oauth2/token"
+
+  val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
+}
 
 trait SSO {
-  def perform[Req, Resp](req: Req)(implicit executor: SSOExecutor[Req, Resp]): Future[Resp]
-
-  // These are a method representation of the SSO Api; remove them if the typeclass approach works fine
-
-  // User - unauthenticated
-  // def register(reg: RegisterUser): Future[TokenCredentials]
+  def register(reg: RegisterUser): Future[TokenCredentials]
   // def authenticate(credentials: AuthenticateUser): Future[TokenCredentials]
   // def refresh(token: RefreshToken): Future[TokenCredentials]
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
@@ -33,6 +35,21 @@ trait SSO {
   // def systemStatus(): Future[SystemStatus]
 }
 
-class DefaultSSO extends SSO {
-  def perform[Req, Resp](req: Req)(implicit executor: SSOExecutor[Req, Resp]): Future[Resp] = executor(req)
+class DefaultSSO(config: SSOConfig, client: Client) extends SSO {
+  import Serialization._
+
+  private def versioned(uri: String) = s"/${config.version}$uri"
+
+  private val C = SSOConstants
+
+  def register(req: RegisterUser): Future[TokenCredentials] =
+    client.dataRequest[TokenCredentials](Post(versioned(C.TokenUri), FormData(Map(
+      "grant_type" -> C.RegistrationGrant,
+      "username" -> req.username,
+      "first_name" -> req.firstName,
+      "last_name" -> req.lastName,
+      "service_user_id" -> req.id.value.toString,
+      "service_allow_marketing" -> (if (req.allowMarketing) "true" else "false"),
+      "service_tc_accepted_version" -> req.acceptedTermsVersion
+    ))))
 }
