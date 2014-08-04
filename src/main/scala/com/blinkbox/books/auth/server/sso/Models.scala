@@ -13,14 +13,14 @@ sealed trait AdminRequest extends Request
 sealed trait Response
 sealed trait AdminResponse extends Response
 
-case class RegisterUser(
-  id: UserId,
-  firstName: String,
-  lastName: String,
-  username: String,
-  password: String,
-  acceptedTermsVersion: String,
-  allowMarketing: Boolean) extends Request
+//case class RegisterUser(
+//  id: UserId,
+//  firstName: String,
+//  lastName: String,
+//  username: String,
+//  password: String,
+//  acceptedTermsVersion: String,
+//  allowMarketing: Boolean) extends Request
 
 // case class AuthenticateUser() extends Request
 // case class RevokeToken(token: Token)

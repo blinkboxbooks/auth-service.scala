@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server.sso
 import akka.actor.{ActorRef, ActorSystem}
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.data.UserId
+import com.blinkbox.books.auth.server.UserRegistration
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}
@@ -24,7 +25,7 @@ class RegistrationSpecs extends FlatSpec with Matchers with SpecBase {
 
     ssoResponse.complete(Success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, json.getBytes))))
 
-    whenReady(sso.register(RegisterUser(UserId(123), "A name", "A surname", "anusername@test.tst", "a-password", "1.0", true))) { cred =>
+    whenReady(sso.register(UserRegistration("A name", "A surname", "anusername@test.tst", "a-password", true, true, None, None, None, None))) { cred =>
       cred should matchPattern {
         case TokenCredentials("2YotnFZFEjr1zCsicMWpAA", "bearer", 600, "tGzv3JOkF0XG5Qx2TlKWIA") =>
       }

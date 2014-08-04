@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.SSOConfig
+import com.blinkbox.books.auth.server.{UserRegistration, SSOConfig}
 import spray.client.pipelining._
 import spray.http.FormData
 
@@ -13,7 +13,7 @@ object SSOConstants {
 }
 
 trait SSO {
-  def register(reg: RegisterUser): Future[TokenCredentials]
+  def register(req: UserRegistration): Future[TokenCredentials]
   // def authenticate(credentials: AuthenticateUser): Future[TokenCredentials]
   // def refresh(token: RefreshToken): Future[TokenCredentials]
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
@@ -41,14 +41,12 @@ class DefaultSSO(config: SSOConfig, client: Client) extends SSO {
 
   private val C = SSOConstants
 
-  def register(req: RegisterUser): Future[TokenCredentials] =
+  def register(req: UserRegistration): Future[TokenCredentials] =
     client.dataRequest[TokenCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RegistrationGrant,
-      "username" -> req.username,
       "first_name" -> req.firstName,
       "last_name" -> req.lastName,
-      "service_user_id" -> req.id.value.toString,
-      "service_allow_marketing" -> (if (req.allowMarketing) "true" else "false"),
-      "service_tc_accepted_version" -> req.acceptedTermsVersion
+      "username" -> req.username,
+      "password" -> req.password
     ))))
 }
