@@ -10,6 +10,7 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTake
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
+import com.blinkbox.books.auth.server.sso.SSO
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
@@ -33,10 +34,15 @@ trait GeoIP {
   def countryCode(address: RemoteAddress): String
 }
 
-class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-  (db: Database, authRepo: AuthRepository[Profile], userRepo: UserRepository[Profile],
-   clientRepo: ClientRepository[Profile], geoIP: GeoIP, events: Publisher)
-  (implicit executionContext: ExecutionContext, clock: Clock) extends AuthService with UserInfoFactory with ClientInfoFactory {
+class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Database](
+    db: Database,
+    authRepo: AuthRepository[Profile],
+    userRepo: UserRepository[Profile],
+    clientRepo: ClientRepository[Profile],
+    geoIP: GeoIP,
+    events: Publisher,
+    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock)
+  extends AuthService with UserInfoFactory with ClientInfoFactory {
 
   // TODO: Make these configurable
   val MaxClients = 12

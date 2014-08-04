@@ -11,8 +11,10 @@ import scala.concurrent.Future
 import spray.http._
 import spray.httpx.unmarshalling.FromResponseUnmarshaller
 
+import scala.util.Success
+
 class RegistrationSpecs extends FlatSpec with Matchers with SpecBase {
-  "The SSO client" should "return token credentials for a valid response" in {
+  "The SSO client" should "return token credentials for a valid response" in new SSOTestEnv {
     val json = """{
       "access_token":"2YotnFZFEjr1zCsicMWpAA",
       "token_type":"bearer",
@@ -20,14 +22,9 @@ class RegistrationSpecs extends FlatSpec with Matchers with SpecBase {
       "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA"
     }"""
 
-    val resp = HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, json.getBytes))
+    ssoResponse.complete(Success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, json.getBytes))))
 
-    val f = withResponse(resp)({ ex =>
-      import ex._
-      sso.perform(RegisterUser(UserId(123), "A name", "A surname", "anusername@test.tst", "a-password", "1.0", true))
-    })
-
-    whenReady(f) { cred =>
+    whenReady(sso.register(RegisterUser(UserId(123), "A name", "A surname", "anusername@test.tst", "a-password", "1.0", true))) { cred =>
       cred should matchPattern {
         case TokenCredentials("2YotnFZFEjr1zCsicMWpAA", "bearer", 600, "tGzv3JOkF0XG5Qx2TlKWIA") =>
       }

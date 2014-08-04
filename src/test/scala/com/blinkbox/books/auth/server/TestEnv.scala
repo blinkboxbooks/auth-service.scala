@@ -1,24 +1,17 @@
 package com.blinkbox.books.auth.server
 
-import java.net.URL
-
-import akka.actor.{ActorRefFactory, ActorSystem}
+import akka.actor.ActorRef
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.services.{DefaultAuthService, DefaultClientService, DefaultUserService}
-import com.blinkbox.books.auth.server.WebApp._
-import com.blinkbox.books.auth.{User => AuthenticatedUser, Elevation, ZuulTokenDecoder, ZuulTokenDeserializer}
-import com.blinkbox.books.config.ApiConfig
-import com.blinkbox.books.spray.ZuulTokenAuthenticator
-import com.blinkbox.books.testkit.{PublisherSpy, TestGeoIP, TestH2}
-import com.blinkbox.books.time.{TimeSupport, StoppedClock}
+import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO}
+import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
+import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
-import scala.concurrent.duration._
-import spray.routing.HttpService
+import spray.http.{HttpRequest, HttpResponse}
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{Future, Promise}
 import scala.slick.driver.JdbcProfile
-
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
@@ -39,10 +32,41 @@ trait TestPasswordHasherComponent extends PasswordHasherComponent {
   override val passwordHasher = PasswordHasher(identity, (s1, s2) => s1 == s2)
 }
 
+trait TestSSOComponent extends SSOComponent {
+  this: ConfigComponent with AsyncComponent =>
+
+  import org.scalatest.Matchers._
+
+  type HttpRequestAssertions = HttpRequest => Unit
+
+  protected val requestAssertions: HttpRequestAssertions = _ => ()
+
+  private val commonAssertions: HttpRequestAssertions = { req =>
+    req.headers.find(_.name.toLowerCase == "x-csrf-protection") shouldBe defined
+
+    val contentType = req.headers.find(_.name.toLowerCase == "content-type")
+    contentType shouldBe defined
+    contentType foreach { _.value should equal("application/x-www-form-urlencoded") }
+  }
+
+  val ssoResponse = Promise[HttpResponse]
+
+  private val client = new DefaultClient(config.sso) {
+    override def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = { req: HttpRequest =>
+      commonAssertions(req)
+      requestAssertions(req)
+      ssoResponse.future
+    }
+  }
+
+  override val sso = new DefaultSSO(config.sso, client)
+}
+
 trait TestEnv extends
     DefaultConfigComponent with
     DefaultAsyncComponent with
     StoppedClockSupport with
+    TestSSOComponent with
     DefaultGeoIPComponent with
     TestEventsComponent with
     TestDatabaseComponent with
