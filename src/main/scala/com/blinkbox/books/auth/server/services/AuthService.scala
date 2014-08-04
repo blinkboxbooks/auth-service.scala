@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.sql.{SQLException, DataTruncation, SQLIntegrityConstraintViolationException}
+import java.sql.{DataTruncation, SQLException}
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
@@ -58,7 +58,8 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       val t = authRepo.createRefreshToken(u.id, c.map(_.id))
       (u, c, t)
     }
-    events.publish(UserRegistered(user, client))
+    events.publish(UserRegistered(user))
+    client.foreach(c => events.publish(ClientRegistered(c)))
     issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
   }.transform(identity, _ match {
     case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
