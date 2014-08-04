@@ -1,6 +1,7 @@
 package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data._
 import org.json4s.Formats
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import spray.http._
@@ -35,7 +36,7 @@ class RegistrationSpecs extends SpecBase {
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[TokenInfo] should matchPattern {
-        case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), "user@domain.test", "First", "Last", None, None, None, None, None, None, None, None) =>
+        case TokenInfo(_, "bearer", 1800, Some(_), ExternalUserId(_), userUriExpr(_), "user@domain.test", "First", "Last", None, None, None, None, None, None, None, None) =>
       }
     }
   }
@@ -47,8 +48,8 @@ class RegistrationSpecs extends SpecBase {
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[TokenInfo] should matchPattern {
-        case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), "user@domain.test", "First", "Last",
-          Some(clientIdExpr(_)), Some(clientUriExpr(_)), Some("A name"), Some("A brand"), Some("A model"), Some("An OS"), Some(_), Some(_)) =>
+        case TokenInfo(_, "bearer", 1800, Some(_), ExternalUserId(_), userUriExpr(_), "user@domain.test", "First", "Last",
+          Some(ExternalClientId(_)), Some(clientUriExpr(_)), Some("A name"), Some("A brand"), Some("A model"), Some("An OS"), Some(_), Some(_)) =>
       }
     }
   }

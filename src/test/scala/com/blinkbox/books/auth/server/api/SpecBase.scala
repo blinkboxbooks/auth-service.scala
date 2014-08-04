@@ -24,9 +24,7 @@ abstract class SpecBase extends FlatSpec
   var env: TestEnv = _
   var route: Route = _
 
-  val userIdExpr = """urn:blinkbox:zuul:user:(\d+)""".r
   val userUriExpr = """\/users\/(\d+)""".r
-  val clientIdExpr = """urn:blinkbox:zuul:client:(\d+)""".r
   val clientUriExpr = """\/clients\/(\d+)""".r
 
   override def beforeEach() {

@@ -19,9 +19,9 @@ object TokenBuilder {
     // TODO: Do this properly with configurable keys etc.
 
     val claims = new java.util.LinkedHashMap[String, AnyRef]
-    claims.put("sub", s"urn:blinkbox:zuul:user:${user.id.value}")
+    claims.put("sub", user.id.external)
     claims.put("exp", Long.box(expiresAt.getMillis))
-    client.foreach(c => claims.put("bb/cid", s"urn:blinkbox:zuul:client:${c.id.value}"))
+    client.foreach(c => claims.put("bb/cid", c.id.external))
     // TODO: Roles
     claims.put("zl/rti", Int.box(token.id.value))
 
@@ -55,12 +55,12 @@ object TokenBuilder {
       token_type = "bearer",
       expires_in = 1800,
       refresh_token = if (includeRefreshToken) Some(token.token) else None,
-      user_id = s"urn:blinkbox:zuul:user:${user.id.value}",
+      user_id = user.id.external,
       user_uri = s"/users/${user.id.value}",
       user_username = user.username,
       user_first_name = user.firstName,
       user_last_name = user.lastName,
-      client_id = client.map(row => s"urn:blinkbox:zuul:client:${row.id.value}"),
+      client_id = client.map(row => row.id.external),
       client_uri = client.map(row => s"/clients/${row.id.value}"),
       client_name = client.map(_.name),
       client_brand = client.map(_.brand),

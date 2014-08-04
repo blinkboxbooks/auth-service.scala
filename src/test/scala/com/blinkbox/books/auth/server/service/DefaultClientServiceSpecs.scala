@@ -120,7 +120,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
       val secret = lastClient.secret
 
       info should equal(ClientInfo(
-        s"urn:blinkbox:zuul:client:$id", s"/clients/$id", "Test name", "Test brand", "Test model", "Test OS", Some(secret), now))
+        ClientId(id).external, s"/clients/$id", "Test name", "Test brand", "Test model", "Test OS", Some(secret), now))
     }
 
   }
