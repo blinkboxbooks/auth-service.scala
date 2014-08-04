@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.{DefaultClient, SSOExecutors, DefaultSSO}
+import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO}
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
