@@ -2,6 +2,7 @@ package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidClient, InvalidGrant}
 import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.testkit.FailHelper
 import com.blinkbox.books.time.StoppedClock
 import org.scalatest.concurrent.ScalaFutures
@@ -23,7 +24,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     token.user_first_name should equal("New First")
     token.user_last_name should equal("New Last")
     token.user_username should equal("new.user@test.tst")
-    token.user_id should equal(s"urn:blinkbox:zuul:user:$regId")
+    token.user_id should equal(UserId(regId).external)
     token.user_uri should equal(s"/users/$regId")
   }
 
@@ -78,7 +79,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
       token.user_first_name should equal(userA.firstName)
       token.user_last_name should equal(userA.lastName)
       token.user_username should equal(userA.username)
-      token.user_id should equal(s"urn:blinkbox:zuul:user:${userA.id.value}")
+      token.user_id should equal(userA.id.external)
 
       token.client_id shouldBe empty
       token.client_brand shouldBe empty
@@ -97,7 +98,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
       token.user_first_name should equal(userA.firstName)
       token.user_last_name should equal(userA.lastName)
       token.user_username should equal(userA.username)
-      token.user_id should equal(s"urn:blinkbox:zuul:user:${userA.id.value}")
+      token.user_id should equal(userA.id.external)
 
       token.client_id shouldBe Some(clientInfoA1.client_id)
       token.client_brand shouldBe Some(clientInfoA1.client_brand)
@@ -129,7 +130,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
 
     whenReady(refreshFuture) { token =>
       token.expires_in should equal(1800)
-      token.user_id shouldBe s"urn:blinkbox:zuul:user:${userIdA.value}"
+      token.user_id shouldBe userIdA.external
       token.client_id shouldBe Some(clientInfoA1.client_id)
 
       import tables._

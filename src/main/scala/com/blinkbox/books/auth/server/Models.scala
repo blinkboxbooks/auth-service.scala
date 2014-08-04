@@ -2,8 +2,6 @@ package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.auth.Elevation.Elevation
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidClient
-import com.wordnik.swagger.annotations.{ApiModel, ApiModelProperty}
-import scala.annotation.meta.field
 import org.joda.time.DateTime
 
 object RefreshTokenStatus extends Enumeration {
@@ -12,7 +10,7 @@ object RefreshTokenStatus extends Enumeration {
   val Invalid = Value("INVALID")
 }
 
-import RefreshTokenStatus._
+import com.blinkbox.books.auth.server.RefreshTokenStatus._
 
 case class UserRegistration(
   firstName: String,
@@ -43,11 +41,11 @@ trait ClientCredentials {
 }
 
 case class PasswordCredentials(username: String, password: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
-  if (clientId.isDefined ^ clientSecret.isDefined) FailWith.requestException("Both client id and client secret are required.", InvalidClient)
+  if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
 case class RefreshTokenCredentials(token: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
-  if (clientId.isDefined ^ clientSecret.isDefined) FailWith.requestException("Both client id and client secret are required.", InvalidClient)
+  if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
 case class ClientRegistration(

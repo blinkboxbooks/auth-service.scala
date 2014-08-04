@@ -22,7 +22,7 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
         info.user_first_name should equal("A First")
         info.user_last_name should equal("A Last")
         info.user_username should equal("user.a@test.tst")
-        info.user_id should equal("urn:blinkbox:zuul:user:1")
+        info.user_id should equal(userIdA.external)
         info.user_allow_marketing_communications should equal(true)
       }
     }
@@ -41,7 +41,7 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
         info.user_first_name should equal("Updated First")
         info.user_last_name should equal("Updated Last")
         info.user_username should equal("updated@test.tst")
-        info.user_id should equal("urn:blinkbox:zuul:user:1")
+        info.user_id should equal(userIdA.external)
         info.user_allow_marketing_communications should equal(false)
       }
 

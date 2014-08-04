@@ -63,21 +63,21 @@ case class ZuulRequestException(
 case class ZuulAuthorizationException(
   message: String, code: ZuulAuthorizationErrorCode, reason: Option[ZuulAuthorizationErrorReason] = None) extends ZuulException
 
-object FailWith {
-  import ZuulRequestErrorCode._
-  import ZuulAuthorizationErrorCode._
-  import ZuulRequestErrorReason._
-  import ZuulAuthorizationErrorReason._
+object Failures {
+  import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode._
+  import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason._
+  import com.blinkbox.books.auth.server.ZuulRequestErrorCode._
+  import com.blinkbox.books.auth.server.ZuulRequestErrorReason._
 
-  def invalidRefreshToken = throw ZuulRequestException("The refresh token is invalid.", InvalidGrant)
-  def refreshTokenNotAuthorized = throw ZuulRequestException("Your client is not authorised to use this refresh token", InvalidClient)
-  def unverifiedIdentity = throw ZuulAuthorizationException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
-  def termsAndConditionsNotAccepted = throw ZuulRequestException("You must accept the terms and conditions", InvalidRequest)
-  def passwordTooShort = throw ZuulRequestException("Password must be at least 6 characters", InvalidRequest)
-  def notInTheUK = throw ZuulRequestException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
-  def invalidUsernamePassword = throw ZuulRequestException("The username and/or password is incorrect.", InvalidGrant)
-  def invalidClientCredentials = throw ZuulRequestException("Invalid client credentials.", InvalidClient)
-  def clientLimitReached = throw ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
+  def invalidRefreshToken = ZuulRequestException("The refresh token is invalid.", InvalidGrant)
+  def refreshTokenNotAuthorized = ZuulRequestException("Your client is not authorised to use this refresh token", InvalidClient)
+  def unverifiedIdentity = ZuulAuthorizationException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
+  def termsAndConditionsNotAccepted = ZuulRequestException("You must accept the terms and conditions", InvalidRequest)
+  def passwordTooShort = ZuulRequestException("Password must be at least 6 characters", InvalidRequest)
+  def notInTheUK = ZuulRequestException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))
+  def invalidUsernamePassword = ZuulRequestException("The username and/or password is incorrect.", InvalidGrant)
+  def invalidClientCredentials = ZuulRequestException("Invalid client credentials.", InvalidClient)
+  def clientLimitReached = ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
 
   def requestException(message: String, code: ZuulRequestErrorCode, reason: Option[ZuulRequestErrorReason] = None) =
     throw ZuulRequestException(message, code, reason)

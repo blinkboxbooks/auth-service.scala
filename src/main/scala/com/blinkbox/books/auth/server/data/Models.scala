@@ -1,19 +1,44 @@
 package com.blinkbox.books.auth.server.data
 
+import java.util.concurrent.TimeUnit
+
 import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.auth.server.RefreshTokenStatus
-import java.util.concurrent.TimeUnit
 import com.blinkbox.books.time.Clock
 import org.joda.time.DateTime
+
 import scala.concurrent.duration.FiniteDuration
 
-case class UserId(value: Int) extends AnyVal
+case class UserId(value: Int) extends AnyVal {
+  def external = s"urn:blinkbox:zuul:user:$value"
+}
+
 object UserId { val Invalid = UserId(-1) }
 
-case class ClientId(value: Int) extends AnyVal
+object ExternalUserId {
+  val expr = """urn:blinkbox:zuul:user:(\d+)""".r
+  def unapply(idString: String): Option[UserId] = idString match {
+    case expr(id) => Some(UserId(id.toInt))
+    case _ => None
+  }
+}
+
+case class ClientId(value: Int) extends AnyVal {
+  def external = s"urn:blinkbox:zuul:client:$value"
+}
+
 object ClientId { val Invalid = ClientId(-1) }
 
+object ExternalClientId {
+  val expr = """urn:blinkbox:zuul:client:(\d+)""".r
+  def unapply(idString: String): Option[ClientId] = idString match {
+    case expr(id) => Some(ClientId(id.toInt))
+    case _ => None
+  }
+}
+
 case class RefreshTokenId(value: Int) extends AnyVal
+
 object RefreshTokenId { val Invalid = RefreshTokenId(-1) }
 
 case class User(id: UserId, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)

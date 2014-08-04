@@ -4,9 +4,6 @@ import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.services.{ClientService, UserService, AuthService}
-import org.joda.time.DateTime
-
-import org.json4s.ext.{JodaTimeSerializers, EnumNameSerializer}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
@@ -15,12 +12,10 @@ import com.wordnik.swagger.annotations._
 import org.slf4j.LoggerFactory
 import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http.StatusCodes._
-import spray.http.{MediaTypes, HttpChallenge}
+import spray.http.HttpChallenge
 import spray.routing._
-import org.json4s._
 import spray.httpx.unmarshalling.FormDataUnmarshallers
 import com.blinkbox.books.auth.User
-import spray.httpx.Json4sJacksonSupport
 import spray.routing.authentication.ContextAuthenticator
 
 @Api(value = "/user", description = "An API for managing widgets.", protocols = "https",

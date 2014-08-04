@@ -5,14 +5,13 @@ import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.SSOConfig
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import spray.can.Http
 import spray.client.pipelining._
 import spray.http._
-import spray.httpx.unmarshalling.FromResponseUnmarshaller
 import spray.httpx.UnsuccessfulResponseException
+import spray.httpx.unmarshalling.FromResponseUnmarshaller
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait Client {
   def unitRequest(req: HttpRequest): Future[Unit]

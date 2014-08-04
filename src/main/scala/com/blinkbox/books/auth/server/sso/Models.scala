@@ -2,8 +2,6 @@ package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
 
-import scala.concurrent.Future
-
 // sealed trait Token
 // case class RefreshToken() extends Token
 // case class PasswordResetToken() extends Token
@@ -15,14 +13,14 @@ sealed trait AdminRequest extends Request
 sealed trait Response
 sealed trait AdminResponse extends Response
 
-case class RegisterUser(
-  id: UserId,
-  firstName: String,
-  lastName: String,
-  username: String,
-  password: String,
-  acceptedTermsVersion: String,
-  allowMarketing: Boolean) extends Request
+//case class RegisterUser(
+//  id: UserId,
+//  firstName: String,
+//  lastName: String,
+//  username: String,
+//  password: String,
+//  acceptedTermsVersion: String,
+//  allowMarketing: Boolean) extends Request
 
 // case class AuthenticateUser() extends Request
 // case class RevokeToken(token: Token)

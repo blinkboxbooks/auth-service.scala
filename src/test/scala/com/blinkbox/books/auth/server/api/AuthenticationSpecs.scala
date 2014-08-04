@@ -1,6 +1,7 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.{ZuulRequestErrorCode, ZuulRequestException, TokenInfo}
+import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data._
 import spray.http.{StatusCodes, FormData}
 
 class AuthenticationSpecs extends SpecBase {
@@ -17,7 +18,7 @@ class AuthenticationSpecs extends SpecBase {
   )
 
   lazy val deregisteredClientCredentials = Map(
-    "client_id" -> "urn:blinkbox:zuul:client:3",
+    "client_id" -> ClientId(3).external,
     "client_secret" -> env.clientA3.secret
   )
 
@@ -53,7 +54,7 @@ class AuthenticationSpecs extends SpecBase {
       val u = env.userA
 
       jsonResponseAs[TokenInfo] should matchPattern {
-        case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), u.username, u.firstName, u.lastName,
+        case TokenInfo(_, "bearer", 1800, Some(_), ExternalUserId(_), userUriExpr(_), u.username, u.firstName, u.lastName,
           None, None, None, None, None, None, None, None) =>
       }
     }
@@ -69,7 +70,7 @@ class AuthenticationSpecs extends SpecBase {
       val c = env.clientInfoA1
 
       jsonResponseAs[TokenInfo] should matchPattern {
-        case TokenInfo(_, "bearer", 1800, Some(_), userIdExpr(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
+        case TokenInfo(_, "bearer", 1800, Some(_), ExternalUserId(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
           Some(c.client_id), Some(c.client_uri), Some(c.client_name), Some(c.client_brand), Some(c.client_model), Some(c.client_os), None, Some(_)) =>
       }
     }
@@ -120,7 +121,7 @@ class AuthenticationSpecs extends SpecBase {
       val u = env.userA
 
       jsonResponseAs[TokenInfo] should matchPattern {
-        case TokenInfo(_, "bearer", 1800, None, userIdExpr(_), userUriExpr(_), u.username, u.firstName, u.lastName,
+        case TokenInfo(_, "bearer", 1800, None, ExternalUserId(_), userUriExpr(_), u.username, u.firstName, u.lastName,
           None, None, None, None, None, None, None, None) =>
       }
     }
@@ -136,7 +137,7 @@ class AuthenticationSpecs extends SpecBase {
       val c = env.clientInfoA1
 
       jsonResponseAs[TokenInfo] should matchPattern {
-        case TokenInfo(_, "bearer", 1800, None, userIdExpr(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
+        case TokenInfo(_, "bearer", 1800, None, ExternalUserId(_), userUriExpr(_), "user.a@test.tst", "A First", "A Last",
           Some(c.client_id), Some(c.client_uri), Some(c.client_name), Some(c.client_brand), Some(c.client_model), Some(c.client_os), None, Some(_)) =>
       }
     }
