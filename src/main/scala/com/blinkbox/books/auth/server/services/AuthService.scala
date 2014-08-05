@@ -24,7 +24,6 @@ import scala.slick.profile.BasicProfile
 
 trait AuthService {
   def revokeRefreshToken(token: String): Future[Unit]
-  def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
@@ -46,32 +45,6 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
 
   // TODO: Make this configurable
   val MaxClients = 12
-
-  override def registerUser(registration: UserRegistration, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
-    if (!registration.acceptedTerms)
-      throw Failures.termsAndConditionsNotAccepted
-
-    if (registration.password.length < 6)
-      throw Failures.passwordTooShort
-
-    if (clientIP.isDefined && clientIP.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
-      throw Failures.notInTheUK
-
-    val (user, client, token) = db.withTransaction { implicit transaction =>
-      val u = userRepo.createUser(registration)
-      val c = registration.client.map(clientRepo.createClient(u.id, _))
-      val t = authRepo.createRefreshToken(u.id, c.map(_.id))
-      (u, c, t)
-    }
-    events.publish(UserRegistered(user))
-    client.foreach(c => events.publish(ClientRegistered(c)))
-
-    TokenBuilder.issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
-  }.transform(identity, _ match {
-    case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
-    case e: SQLException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
-    case e => e
-  })
 
   override def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
     val (user, client, token) = db.withTransaction { implicit transaction =>

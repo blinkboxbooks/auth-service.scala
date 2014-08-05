@@ -75,6 +75,7 @@ trait TestEnv extends
     DefaultUserServiceComponent with
     DefaultClientServiceComponent with
     DefaultAuthServiceComponent with
+    DefaultRegistrationServiceComponent with
     DefaultApiComponent {
 
   import driver.simple._

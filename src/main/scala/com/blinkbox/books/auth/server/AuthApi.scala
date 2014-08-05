@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
-import com.blinkbox.books.auth.server.services.{ClientService, UserService, AuthService}
+import com.blinkbox.books.auth.server.services.{RegistrationService, ClientService, UserService, AuthService}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
@@ -77,7 +77,13 @@ trait AuthRoutes extends HttpService {
 //  def deleteById: Route
 }
 
-class AuthApi(config: ApiConfig, userService: UserService, clientService: ClientService, authService: AuthService, authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
+class AuthApi(
+    config: ApiConfig,
+    userService: UserService,
+    clientService: ClientService,
+    authService: AuthService,
+    registrationService: RegistrationService,
+    authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends AuthRoutes with Directives with FormDataUnmarshallers {
 
   implicit val log = LoggerFactory.getLogger(classOf[AuthApi])
@@ -104,7 +110,7 @@ class AuthApi(config: ApiConfig, userService: UserService, clientService: Client
   val registerUser: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
     formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>
       extract(_.request.clientIP) { clientIP =>
-        onSuccess(authService.registerUser(registration, clientIP)) { tokenInfo =>
+        onSuccess(registrationService.registerUser(registration, clientIP)) { tokenInfo =>
           uncacheable(OK, tokenInfo)
         }
       }

@@ -1,13 +1,12 @@
 package com.blinkbox.books.auth.server.services
 
-import java.sql.{SQLException, DataTruncation}
+import java.sql.{DataTruncation, SQLException}
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
-import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
-import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.events.{ClientRegistered, UserRegistered, Publisher}
-import com.blinkbox.books.auth.server.sso.{TokenCredentials, SSO}
 import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
+import com.blinkbox.books.auth.server.sso.{SSO, TokenCredentials}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 
@@ -25,7 +24,7 @@ class DefaultRegistrationService[Profile <: BasicProfile, Database <: Profile#Ba
     clientRepo: ClientRepository[Profile],
     geoIP: GeoIP,
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) {
+    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
 
   // TODO: Make this configurable
   private val TermsAndConditionsVersion = "1.0"
@@ -41,6 +40,7 @@ class DefaultRegistrationService[Profile <: BasicProfile, Database <: Profile#Ba
       registration
     }
 
+  // TODO: Add persistence for token credentials
   private def persistDetails(registration: UserRegistration, credentials: TokenCredentials): Future[(User, Option[Client], RefreshToken)] =
     Future {
       db.withTransaction { implicit transaction =>
@@ -52,8 +52,8 @@ class DefaultRegistrationService[Profile <: BasicProfile, Database <: Profile#Ba
     }
 
   private val errorTransformer = (_: Throwable) match {
-    case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
-    case e: SQLException => ZuulRequestException(e.getMessage, InvalidRequest, Some(UsernameAlreadyTaken))
+    case e: DataTruncation => Failures.requestException(e.getMessage, InvalidRequest)
+    case e: SQLException => Failures.usernameAlreadyTaken
     case e => e
   }
 
@@ -64,7 +64,7 @@ class DefaultRegistrationService[Profile <: BasicProfile, Database <: Profile#Ba
       (user, client, token) <- persistDetails(reg, cred)
       _                     <- sso linkAccount(user.id, registration.allowMarketing, TermsAndConditionsVersion)
       _                     <- events publish UserRegistered(user)
-      _                     <- client.map(cl => events publish ClientRegistered(cl)).getOrElse(Future.successful(()))
+      _                     <- client map(cl => events publish ClientRegistered(cl)) getOrElse(Future.successful(()))
     } yield TokenBuilder.issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
 
     tokenInfo.transform(identity, errorTransformer)
