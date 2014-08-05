@@ -49,13 +49,24 @@ trait TestSSOComponent extends SSOComponent {
     contentType foreach { _.value should equal("application/x-www-form-urlencoded") }
   }
 
-  val ssoResponse = Promise[HttpResponse]
+  private var ssoResponse = List.empty[Promise[HttpResponse]]
+
+  def completeResponse(completion: Promise[HttpResponse] => Unit): Unit = {
+    val p = Promise[HttpResponse]
+    completion(p)
+    ssoResponse = p :: ssoResponse
+  }
+
+  def nextResponse(): Future[HttpResponse] = ssoResponse.reverse match {
+    case p :: ps => p.future
+    case _ => sys.error("Expected SSO response mock, got nothing")
+  }
 
   private val client = new DefaultClient(config.sso) {
     override def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = { req: HttpRequest =>
       commonAssertions(req)
       requestAssertions(req)
-      ssoResponse.future
+      nextResponse()
     }
   }
 

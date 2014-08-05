@@ -6,8 +6,9 @@ import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Span}
 import org.scalatest.{Matchers, FlatSpec}
+import spray.http.{ContentTypes, HttpEntity, StatusCodes, HttpResponse}
 
-// TODO: IP-related scenarios are not being tested at the moment, add those tests
+// TODO: IP-related scenarios and scenarios with failures from SSO are not being tested at the moment, add those tests
 class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
   implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
@@ -23,7 +24,18 @@ class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaF
     token.user_uri should equal(s"/users/$regId")
   }
 
-  "The auth service" should "register a user without a client and no IP" in new TestEnv {
+  val registrationJson = """{
+    "access_token":"2YotnFZFEjr1zCsicMWpAA",
+    "token_type":"bearer",
+    "expires_in":600,
+    "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA"
+  }"""
+
+  "The registration service" should "register a user without a client and no IP" in new TestEnv {
+
+    completeResponse(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
+    completeResponse(_.success(HttpResponse(StatusCodes.NoContent)))
+
     whenReady(registrationService.registerUser(simpleReg, None)) { token =>
       import driver.simple._
 
@@ -39,6 +51,10 @@ class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaF
   }
 
   it should "register a user with a client" in new TestEnv {
+
+    completeResponse(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
+    completeResponse(_.success(HttpResponse(StatusCodes.NoContent)))
+
     whenReady(registrationService.registerUser(clientReg, None)) { token =>
       import driver.simple._
 

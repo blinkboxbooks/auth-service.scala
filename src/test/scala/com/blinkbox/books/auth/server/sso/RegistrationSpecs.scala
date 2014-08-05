@@ -23,7 +23,7 @@ class RegistrationSpecs extends FlatSpec with Matchers with SpecBase {
       "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA"
     }"""
 
-    ssoResponse.complete(Success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, json.getBytes))))
+    completeResponse(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, json.getBytes))))
 
     whenReady(sso.register(UserRegistration("A name", "A surname", "anusername@test.tst", "a-password", true, true, None, None, None, None))) { cred =>
       cred should matchPattern {

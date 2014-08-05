@@ -1,9 +1,8 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.{Serialization, TestEnv}
-import org.scalatest.{BeforeAndAfterEach, Matchers, FlatSpec}
+import com.blinkbox.books.auth.server.TestEnv
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 import spray.http.MediaTypes
-import spray.httpx.Json4sJacksonSupport
 import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.testkit.ScalatestRouteTest
