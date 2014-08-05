@@ -1,16 +1,13 @@
 package com.blinkbox.books.auth.server
 
-import akka.actor.ActorRef
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO}
+import com.blinkbox.books.auth.server.sso.{DefaultSSO, SSOResponseMocker, TestSSOClient}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
-import spray.http.{HttpRequest, HttpResponse}
 
-import scala.concurrent.{Future, Promise}
 import scala.slick.driver.JdbcProfile
 
 trait StoppedClockSupport extends TimeSupport {
@@ -35,40 +32,9 @@ trait TestPasswordHasherComponent extends PasswordHasherComponent {
 trait TestSSOComponent extends SSOComponent {
   this: ConfigComponent with AsyncComponent =>
 
-  import org.scalatest.Matchers._
+  val ssoResponse = new SSOResponseMocker
 
-  type HttpRequestAssertions = HttpRequest => Unit
-
-  protected val requestAssertions: HttpRequestAssertions = _ => ()
-
-  private val commonAssertions: HttpRequestAssertions = { req =>
-    req.headers.find(_.name.toLowerCase == "x-csrf-protection") shouldBe defined
-
-    val contentType = req.headers.find(_.name.toLowerCase == "content-type")
-    contentType shouldBe defined
-    contentType foreach { _.value should equal("application/x-www-form-urlencoded") }
-  }
-
-  private var ssoResponse = List.empty[Promise[HttpResponse]]
-
-  def completeResponse(completion: Promise[HttpResponse] => Unit): Unit = {
-    val p = Promise[HttpResponse]
-    completion(p)
-    ssoResponse = p :: ssoResponse
-  }
-
-  def nextResponse(): Future[HttpResponse] = ssoResponse.reverse match {
-    case p :: ps => p.future
-    case _ => sys.error("Expected SSO response mock, got nothing")
-  }
-
-  private val client = new DefaultClient(config.sso) {
-    override def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = { req: HttpRequest =>
-      commonAssertions(req)
-      requestAssertions(req)
-      nextResponse()
-    }
-  }
+  private val client = new TestSSOClient(config.sso, ssoResponse.nextResponse)
 
   override val sso = new DefaultSSO(config.sso, client)
 }
