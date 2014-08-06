@@ -4,10 +4,10 @@ import java.sql.DataTruncation
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.auth.server.cake.{DBTypes, DatabaseComponent}
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
 import com.blinkbox.books.auth.server.sso.{SSO, TokenCredentials}
+import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 

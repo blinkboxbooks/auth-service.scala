@@ -8,6 +8,7 @@ import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO}
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
+import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
 import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException

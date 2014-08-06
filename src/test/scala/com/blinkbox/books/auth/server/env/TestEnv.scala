@@ -5,6 +5,7 @@ import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.sso.{DefaultSSO, SSOResponseMocker, TestSSOClient}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration

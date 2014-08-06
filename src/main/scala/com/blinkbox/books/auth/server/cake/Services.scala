@@ -7,13 +7,12 @@ import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.SSO
 import com.blinkbox.books.auth.server.{AppConfig, PasswordHasher}
+import com.blinkbox.books.slick.{BaseRepositoriesComponent, BaseDatabaseComponent}
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
-import scala.slick.driver.JdbcProfile
-import scala.slick.profile.BasicProfile
 
 trait ConfigComponent {
   def config: AppConfig
@@ -31,20 +30,8 @@ trait EventsComponent {
   def publisher: Publisher
 }
 
-trait DBTypes {
-  type Profile <: JdbcProfile
-  type ConstraintException <: Throwable
-  type Database = Profile#Backend#Database
-  val constraintExceptionTag: ClassTag[ConstraintException]
-}
-
-trait DatabaseComponent {
-  type Types <: DBTypes
+trait DatabaseComponent extends BaseDatabaseComponent {
   type Tables = ZuulTables[Types#Profile]
-
-  def driver: Types#Profile
-  def db: Types#Database
-  def tables: ZuulTables[Types#Profile]
 
   implicit val constraintExceptionTag: ClassTag[Types#ConstraintException]
 }
@@ -53,7 +40,7 @@ trait PasswordHasherComponent {
   def passwordHasher: PasswordHasher
 }
 
-trait RepositoriesComponent {
+trait RepositoriesComponent extends BaseRepositoriesComponent {
   this: DatabaseComponent =>
   def authRepository: AuthRepository[Types#Profile]
   def userRepository: UserRepository[Types#Profile]
