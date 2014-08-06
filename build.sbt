@@ -18,30 +18,22 @@ val dependencySettings = Seq(
     val sprayV = "1.3.1"
     val json4sV = "3.2.10"
     Seq(
-      "io.spray"                  %   "spray-can"             % sprayV,
-      "io.spray"                  %   "spray-routing"         % sprayV,
-      "io.spray"                  %%  "spray-json"            % "1.2.6",
       "io.spray"                  %   "spray-client"          % sprayV,
-      "org.json4s"                %%  "json4s-jackson"        % json4sV,
       "org.json4s"                %%  "json4s-native"         % json4sV, // for swagger :-/
-      "org.json4s"                %%  "json4s-ext"            % json4sV,
-      "com.typesafe.akka"         %%  "akka-actor"            % akkaV,
       "com.typesafe.akka"         %%  "akka-slf4j"            % akkaV,
       "com.typesafe.slick"        %%  "slick"                 % "2.0.2",
-      "com.gettyimages"           %%  "spray-swagger"         % "0.4.3",
       "commons-lang"              %   "commons-lang"          % "2.6",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
       "com.blinkbox.books"        %%  "common-config"         % "0.9.0",
-      "com.blinkbox.books"        %%  "common-spray"          % "0.13.1",
+      "com.blinkbox.books"        %%  "common-spray"          % "0.14.0",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.5.0",
-      "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "4.1.0",
+      "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "4.1.2",
       "com.blinkbox.books.hermes" %%  "message-schemas"       % "0.1.1",
       "mysql"                     %   "mysql-connector-java"  % "5.1.31",
+      "com.blinkbox.books"        %%  "common-scala-test"     % "0.2.0"   % "test",
       "io.spray"                  %   "spray-testkit"         % sprayV    % "test",
-      "com.typesafe.akka"         %%  "akka-testkit"          % akkaV     % "test",
       "xmlunit"                   %   "xmlunit"               % "1.5"     % "test",
-      "com.h2database"            %   "h2"                    % "1.4.180" % "test",
-      "com.blinkbox.books"        %%  "common-scala-test"     % "0.2.0"
+      "com.h2database"            %   "h2"                    % "1.4.180" % "test"
     )
   }
 )
