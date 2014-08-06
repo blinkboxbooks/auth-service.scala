@@ -19,15 +19,13 @@ trait RegistrationService {
 }
 
 class DefaultRegistrationService[DB <: DBTypes](
-    val dbComponent: DB#Database,
+    db: DB#Database,
     authRepo: AuthRepository[DB#Profile],
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
     geoIP: GeoIP,
     events: Publisher,
     sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock, tag: ClassTag[DB#ConstraintException]) extends RegistrationService {
-
-  val db = dbComponent
 
   // TODO: Make this configurable
   private val TermsAndConditionsVersion = "1.0"
