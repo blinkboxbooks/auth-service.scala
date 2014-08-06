@@ -7,24 +7,25 @@ import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
 import com.blinkbox.books.auth.server.sso.{SSO, TokenCredentials}
+import com.blinkbox.books.slick.DatabaseTypes
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.slick.profile.BasicProfile
+import scala.reflect.ClassTag
 
 trait RegistrationService {
   def registerUser(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[TokenInfo]
 }
 
-class DefaultRegistrationService[Profile <: BasicProfile, Database <: Profile#Backend#Database](
-    db: Database,
-    authRepo: AuthRepository[Profile],
-    userRepo: UserRepository[Profile],
-    clientRepo: ClientRepository[Profile],
+class DefaultRegistrationService[DbTypes <: DatabaseTypes](
+    db: DbTypes#Database,
+    authRepo: AuthRepository[DbTypes#Profile],
+    userRepo: UserRepository[DbTypes#Profile],
+    clientRepo: ClientRepository[DbTypes#Profile],
     geoIP: GeoIP,
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
+    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock, tag: ClassTag[DbTypes#ConstraintException]) extends RegistrationService {
 
   // TODO: Make this configurable
   private val TermsAndConditionsVersion = "1.0"
@@ -53,7 +54,7 @@ class DefaultRegistrationService[Profile <: BasicProfile, Database <: Profile#Ba
 
   private val errorTransformer = (_: Throwable) match {
     case e: DataTruncation => Failures.requestException(e.getMessage, InvalidRequest)
-    case e: SQLException => Failures.usernameAlreadyTaken
+    case e: DbTypes#ConstraintException => Failures.usernameAlreadyTaken
     case e => e
   }
 

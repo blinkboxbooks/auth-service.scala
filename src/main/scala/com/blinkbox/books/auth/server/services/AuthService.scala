@@ -12,6 +12,7 @@ import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
 import com.blinkbox.books.auth.server.sso.SSO
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.slick.DatabaseTypes
 import com.blinkbox.books.time.Clock
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
@@ -20,6 +21,7 @@ import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.slick.profile.BasicProfile
 
 trait AuthService {

@@ -8,11 +8,13 @@ import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.SSO
 import com.blinkbox.books.auth.server.{AppConfig, PasswordHasher}
 import com.blinkbox.books.auth.server.sso.SSO
+import com.blinkbox.books.slick.DatabaseTypes
 import com.blinkbox.books.time._
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
 import scala.concurrent.ExecutionContext
+import scala.reflect.ClassTag
 import scala.slick.driver.JdbcProfile
 
 trait ConfigComponent {
@@ -31,9 +33,9 @@ trait EventsComponent {
   def publisher: Publisher
 }
 
-trait DatabaseComponent[Profile <: JdbcProfile] {
-  def driver: Profile
-  def db: Profile#Backend#Database
+trait DatabaseComponent[DbTypes <: DatabaseTypes] {
+  def driver: DbTypes#Profile
+  def db: DbTypes#Database
   def tables: ZuulTables
 }
 
