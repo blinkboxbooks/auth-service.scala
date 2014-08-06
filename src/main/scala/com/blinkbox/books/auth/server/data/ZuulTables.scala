@@ -76,8 +76,3 @@ object ZuulTables {
     override val driver = _driver
   }
 }
-
-//trait ZuulTablesSupport[Profile <: JdbcProfile] {
-//  val tables: ZuulTables[Profile]
-//  lazy val driver = tables.driver
-//}
