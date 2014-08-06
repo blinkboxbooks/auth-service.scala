@@ -9,16 +9,28 @@ import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
 
-import scala.slick.driver.JdbcProfile
+import scala.reflect.ClassTag
+import scala.slick.driver.{H2Driver, JdbcProfile}
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
 }
 
-trait TestDatabaseComponent extends DatabaseComponent[JdbcProfile] {
+trait TestDBTypes extends DBTypes {
+  type Profile = JdbcProfile
+  type ConstraintException = org.h2.jdbc.JdbcSQLException
+  val constraintExceptionTag = implicitly[ClassTag[ConstraintException]]
+}
+
+trait TestDatabaseComponent extends DatabaseComponent {
+  type Types = TestDBTypes
+  val tp = new TestDBTypes {}
+
   override val db = TestH2.db
-  override val tables = TestH2.tables
-  override val driver = tables.driver
+  override val driver = H2Driver
+  override val tables = ZuulTables[Types#Profile](driver)
+
+  implicit val constraintExceptionTag: ClassTag[Types#ConstraintException] = tp.constraintExceptionTag
 }
 
 trait TestEventsComponent extends EventsComponent {

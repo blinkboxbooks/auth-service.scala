@@ -6,12 +6,14 @@ import scala.reflect.ClassTag
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile._
 
-trait SlickSupport[Profile <: BasicProfile] {
-  val driver: Profile
+trait SlickTypes[Profile <: BasicProfile] {
   type Session = Profile#Backend#Session
+  type Database = Profile#Backend#Database
 }
 
-trait JdbcSupport extends SlickSupport[JdbcProfile] {
+trait TablesContainer[+Profile <: JdbcProfile] {
+  val driver: Profile
+
   import driver.simple._
 
   protected implicit def jodaDateTimeColumnType = MappedColumnType.base[DateTime, java.sql.Timestamp](
@@ -19,9 +21,7 @@ trait JdbcSupport extends SlickSupport[JdbcProfile] {
     ts => new DateTime(ts.getTime, DateTimeZone.UTC))
 }
 
-trait DatabaseTypes {
-  type Profile <: BasicProfile
-  type ConstraintException <: Throwable
-  type Database = Profile#Backend#Database
-  lazy implicit val constraintExceptionTag: ClassTag[ConstraintException] = scala.reflect.classTag[ConstraintException]
+trait TablesSupport[Profile <: JdbcProfile, Tables <: TablesContainer[Profile]] {
+  val tables: Tables
 }
+

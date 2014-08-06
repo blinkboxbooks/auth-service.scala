@@ -1,13 +1,13 @@
 package com.blinkbox.books.auth.server.services
 
-import java.sql.{DataTruncation, SQLException}
+import java.sql.DataTruncation
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.cake.{DBTypes, DatabaseComponent}
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
 import com.blinkbox.books.auth.server.sso.{SSO, TokenCredentials}
-import com.blinkbox.books.slick.DatabaseTypes
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 
@@ -18,14 +18,16 @@ trait RegistrationService {
   def registerUser(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[TokenInfo]
 }
 
-class DefaultRegistrationService[DbTypes <: DatabaseTypes](
-    db: DbTypes#Database,
-    authRepo: AuthRepository[DbTypes#Profile],
-    userRepo: UserRepository[DbTypes#Profile],
-    clientRepo: ClientRepository[DbTypes#Profile],
+class DefaultRegistrationService[DB <: DBTypes](
+    val dbComponent: DB#Database,
+    authRepo: AuthRepository[DB#Profile],
+    userRepo: UserRepository[DB#Profile],
+    clientRepo: ClientRepository[DB#Profile],
     geoIP: GeoIP,
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock, tag: ClassTag[DbTypes#ConstraintException]) extends RegistrationService {
+    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock, tag: ClassTag[DB#ConstraintException]) extends RegistrationService {
+
+  val db = dbComponent
 
   // TODO: Make this configurable
   private val TermsAndConditionsVersion = "1.0"
@@ -54,7 +56,7 @@ class DefaultRegistrationService[DbTypes <: DatabaseTypes](
 
   private val errorTransformer = (_: Throwable) match {
     case e: DataTruncation => Failures.requestException(e.getMessage, InvalidRequest)
-    case e: DbTypes#ConstraintException => Failures.usernameAlreadyTaken
+    case e: DB#ConstraintException => Failures.usernameAlreadyTaken
     case e => e
   }
 

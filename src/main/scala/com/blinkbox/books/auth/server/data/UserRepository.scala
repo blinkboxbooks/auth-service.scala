@@ -1,13 +1,13 @@
 package com.blinkbox.books.auth.server.data
 
 import com.blinkbox.books.auth.server.{PasswordHasher, UserRegistration}
-import com.blinkbox.books.slick.SlickSupport
+import com.blinkbox.books.slick.{TablesSupport, SlickTypes}
 import com.blinkbox.books.time.{Clock, TimeSupport}
 
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile.BasicProfile
 
-trait UserRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
+trait UserRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   val passwordHasher: PasswordHasher
 
   def userWithUsernameAndPassword(username: String, password: String)(implicit session: Session): Option[User]
@@ -16,8 +16,10 @@ trait UserRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
   def userWithId(id: UserId)(implicit session: Session): Option[User]
 }
 
-trait JdbcUserRepository extends UserRepository[JdbcProfile] with ZuulTables {
+trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile] with TablesSupport[Profile, ZuulTables[Profile]] {
   this: TimeSupport =>
+
+  import tables._
   import driver.simple._
 
   override def userWithUsernameAndPassword(username: String, password: String)(implicit session: Session): Option[User] = {
@@ -44,5 +46,5 @@ trait JdbcUserRepository extends UserRepository[JdbcProfile] with ZuulTables {
   override def updateUser(user: User)(implicit session: Session): Unit = users.where(_.id === user.id).update(user)
 }
 
-class DefaultUserRepository(val tables: ZuulTables, val passwordHasher: PasswordHasher)(implicit val clock: Clock)
-  extends TimeSupport with ZuulTablesSupport with JdbcUserRepository
+class DefaultUserRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile], val passwordHasher: PasswordHasher)(implicit val clock: Clock)
+  extends TimeSupport with JdbcUserRepository[Profile]
