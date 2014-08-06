@@ -1,5 +1,6 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.env
 
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.sso.{DefaultSSO, SSOResponseMocker, TestSSOClient}
@@ -39,7 +40,7 @@ trait TestSSOComponent extends SSOComponent {
   override val sso = new DefaultSSO(config.sso, client)
 }
 
-trait TestEnv extends
+class TestEnv extends
     DefaultConfigComponent with
     DefaultAsyncComponent with
     StoppedClockSupport with

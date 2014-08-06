@@ -1,11 +1,11 @@
 package com.blinkbox.books.auth.server.sso
 
-import akka.actor.{ActorSystem, ActorRef}
+import akka.actor.{ActorRef, ActorSystem}
 import com.blinkbox.books.auth.server.SSOConfig
 import org.scalatest.Matchers._
-import spray.http.{HttpResponse, HttpRequest}
+import spray.http.{HttpRequest, HttpResponse}
 
-import scala.concurrent.{Promise, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class TestSSOClient(
     config: SSOConfig,
@@ -28,10 +28,12 @@ class TestSSOClient(
 class SSOResponseMocker {
   private var ssoResponse = List.empty[Promise[HttpResponse]]
 
-  def complete(completion: Promise[HttpResponse] => Unit): Unit = {
-    val p = Promise[HttpResponse]
-    completion(p)
-    ssoResponse = p :: ssoResponse
+  def complete(completions: (Promise[HttpResponse] => Unit)*): Unit = {
+    for (c <- completions) {
+      val p = Promise[HttpResponse]
+      c(p)
+      ssoResponse = p :: ssoResponse
+    }
   }
 
   def nextResponse(): Future[HttpResponse] = ssoResponse.reverse match {

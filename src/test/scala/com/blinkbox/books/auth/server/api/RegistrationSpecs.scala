@@ -2,10 +2,10 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.env.{RegistrationTestEnv, TestEnv}
 import spray.http._
 
-class RegistrationSpecs extends SpecBase {
-
+class RegistrationSpecs extends ApiSpecBase {
 
   val regDataSimple = Map(
     "grant_type" -> "urn:blinkbox:oauth:grant-type:registration",
@@ -24,17 +24,9 @@ class RegistrationSpecs extends SpecBase {
     "client_os" -> "An OS"
   )
 
-  val registrationJson = """{
-    "access_token":"2YotnFZFEjr1zCsicMWpAA",
-    "token_type":"bearer",
-    "expires_in":600,
-    "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA"
-  }"""
+  override def newEnv = new RegistrationTestEnv
 
   "The service" should "allow the registration of a new user without a client" in {
-
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent)))
 
     Post("/oauth2/token", FormData(regDataSimple)) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
@@ -48,9 +40,6 @@ class RegistrationSpecs extends SpecBase {
   }
 
   it should "allow the registration of a new user with a client" in {
-
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent)))
 
     Post("/oauth2/token", FormData(regDataFull)) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
@@ -66,9 +55,6 @@ class RegistrationSpecs extends SpecBase {
 
   it should "not allow the registration of a new user with partial client data" in {
 
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent)))
-
     Post("/oauth2/token", FormData(regDataFull - "client_model")) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 
@@ -81,9 +67,6 @@ class RegistrationSpecs extends SpecBase {
   }
 
   it should "not allow the registration of a new user with an existing username" in {
-
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
-    env.ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent)))
 
     Post("/oauth2/token", FormData(regDataSimple.updated("username", "user.a@test.tst"))) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._

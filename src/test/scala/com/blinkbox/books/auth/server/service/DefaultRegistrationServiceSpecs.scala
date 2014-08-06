@@ -1,12 +1,12 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.{TestEnv, TokenInfo, UserRegistration}
+import com.blinkbox.books.auth.server.env.RegistrationTestEnv
+import com.blinkbox.books.auth.server.{TokenInfo, UserRegistration}
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Span}
-import org.scalatest.{Matchers, FlatSpec}
-import spray.http.{ContentTypes, HttpEntity, StatusCodes, HttpResponse}
+import org.scalatest.{FlatSpec, Matchers}
 
 // TODO: IP-related scenarios and scenarios with failures from SSO are not being tested at the moment, add those tests
 class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
@@ -24,20 +24,11 @@ class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaF
     token.user_uri should equal(s"/users/$regId")
   }
 
-  val registrationJson = """{
-    "access_token":"2YotnFZFEjr1zCsicMWpAA",
-    "token_type":"bearer",
-    "expires_in":600,
-    "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA"
-  }"""
+  "The registration service" should "register a user without a client and no IP" in new RegistrationTestEnv {
 
-  "The registration service" should "register a user without a client and no IP" in new TestEnv {
-
-    ssoResponse.complete(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
-    ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent)))
+    import driver.simple._
 
     whenReady(registrationService.registerUser(simpleReg, None)) { token =>
-      import driver.simple._
 
       val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first().value }
 
@@ -50,12 +41,10 @@ class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaF
     }
   }
 
-  it should "register a user with a client" in new TestEnv {
-
-    ssoResponse.complete(_.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, registrationJson.getBytes))))
-    ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent)))
+  it should "register a user with a client" in new RegistrationTestEnv {
 
     whenReady(registrationService.registerUser(clientReg, None)) { token =>
+
       import driver.simple._
 
       val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first().value }

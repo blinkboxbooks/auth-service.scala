@@ -2,9 +2,10 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import spray.http.{StatusCodes, FormData}
+import com.blinkbox.books.auth.server.env.TestEnv
+import spray.http.{FormData, StatusCodes}
 
-class AuthenticationSpecs extends SpecBase {
+class AuthenticationSpecs extends ApiSpecBase {
 
   lazy val validCredentials = Map(
     "grant_type" -> "password",
@@ -44,6 +45,8 @@ class AuthenticationSpecs extends SpecBase {
     "grant_type" -> "refresh_token",
     "refresh_token" -> env.refreshTokenClientA3.token
   ) ++ deregisteredClientCredentials
+
+  override def newEnv = new TestEnv
 
   "The service" should "accept valid username/password pair returning a valid access token" in {
     Post("/oauth2/token", FormData(validCredentials)) ~> route ~> check {

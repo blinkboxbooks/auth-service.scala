@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.TestSSOComponent
 import com.blinkbox.books.auth.server.cake.{DefaultAsyncComponent, DefaultConfigComponent}
+import com.blinkbox.books.auth.server.env.TestSSOComponent
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 

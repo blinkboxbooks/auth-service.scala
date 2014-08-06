@@ -1,9 +1,8 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.TestEnv
 import com.blinkbox.books.auth.server.data.{User, UserId}
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.events.UserUpdated
-import com.blinkbox.books.testkit.TestH2
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}

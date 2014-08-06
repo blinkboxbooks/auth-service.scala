@@ -1,15 +1,15 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.TestEnv
+import com.blinkbox.books.auth.server.env.TestEnv
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-import spray.http.MediaTypes
+import spray.http._
 import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.testkit.ScalatestRouteTest
 
 import scala.reflect.ClassTag
 
-abstract class SpecBase extends FlatSpec
+abstract class ApiSpecBase extends FlatSpec
   with Matchers
   with ScalatestRouteTest
   with HttpService
@@ -18,7 +18,7 @@ abstract class SpecBase extends FlatSpec
 
   def actorRefFactory = system
 
-  private def newEnv = new TestEnv {}
+  protected def newEnv: TestEnv
 
   var env: TestEnv = _
   var route: Route = _

@@ -3,17 +3,11 @@ package com.blinkbox.books.testkit
 import java.util.concurrent.atomic.AtomicReference
 
 import com.blinkbox.books.auth.server.events.{Event, Publisher}
-import com.blinkbox.books.auth.server.PasswordHasher
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.services.GeoIP
-import com.blinkbox.books.slick.JdbcSupport
 import org.h2.jdbc.JdbcSQLException
-import org.hamcrest.{BaseMatcher, Description, Matcher}
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
 import org.scalatest.Assertions
 import org.scalatest.concurrent.{AsyncAssertions, PatienceConfiguration}
-import org.scalatest.mock.MockitoSugar
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
