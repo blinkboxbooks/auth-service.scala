@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.sso
 
+import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.{UserRegistration, SSOConfig}
 import spray.client.pipelining._
 import spray.http.FormData
@@ -8,6 +9,7 @@ import scala.concurrent.Future
 
 object SSOConstants {
   val TokenUri = "/oauth2/token"
+  val LinkUri = "/link"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
 }
@@ -19,7 +21,7 @@ trait SSO {
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
   // def revokeToken(token: RevokeToken): Future[Unit]
   // // User - authenticated
-  // def linkAccount(link: LinkAccount): Future[Unit]
+  def linkAccount(id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
   // def updatePassword(update: UpdatePassword): Future[Unit]
   // def tokenStatus(req: GetTokenStatus): Future[TokenStatus]
@@ -48,5 +50,12 @@ class DefaultSSO(config: SSOConfig, client: Client) extends SSO {
       "last_name" -> req.lastName,
       "username" -> req.username,
       "password" -> req.password
+    ))))
+
+  def linkAccount(id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] =
+    client.unitRequest(Post(versioned(C.LinkUri), FormData(Map(
+      "service_user_id" -> id.external,
+      "service_allow_marketing" -> allowMarketing.toString,
+      "service_tc_accepted_version" -> termsVersion
     ))))
 }

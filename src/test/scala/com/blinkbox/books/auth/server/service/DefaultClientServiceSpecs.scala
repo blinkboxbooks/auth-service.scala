@@ -4,13 +4,12 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.ZuulRequestErrorReason.ClientLimitReached
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientUpdated}
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}
-
-import scala.util.{Failure, Success}
 
 class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
 

@@ -69,6 +69,7 @@ object Failures {
   import com.blinkbox.books.auth.server.ZuulRequestErrorCode._
   import com.blinkbox.books.auth.server.ZuulRequestErrorReason._
 
+  def usernameAlreadyTaken = ZuulRequestException("The selected username is already taken", InvalidRequest, Some(UsernameAlreadyTaken))
   def invalidRefreshToken = ZuulRequestException("The refresh token is invalid.", InvalidGrant)
   def refreshTokenNotAuthorized = ZuulRequestException("Your client is not authorised to use this refresh token", InvalidClient)
   def unverifiedIdentity = ZuulAuthorizationException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))

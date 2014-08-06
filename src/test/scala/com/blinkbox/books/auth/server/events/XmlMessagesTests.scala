@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.events
 
-import com.blinkbox.books.auth.server.data.{ClientId, UserId, Client, User}
+import com.blinkbox.books.auth.server.data.{Client, ClientId, User, UserId}
 import com.blinkbox.books.time.StoppedClock
 import org.custommonkey.xmlunit.{Diff, XMLUnit}
 import org.joda.time.{DateTime, DateTimeZone}

@@ -7,7 +7,7 @@ import java.util.Date
 import com.blinkbox.security.jwt.InvalidTokenException
 import org.scalatest.FunSuite
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 private object TestKeyStore extends KeyStore {
   def verificationKey: PublicKey = {

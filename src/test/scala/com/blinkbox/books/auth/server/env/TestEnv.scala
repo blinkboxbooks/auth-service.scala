@@ -1,16 +1,14 @@
-package com.blinkbox.books.auth.server
+package com.blinkbox.books.auth.server.env
 
-import akka.actor.ActorRef
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO}
+import com.blinkbox.books.auth.server.sso.{DefaultSSO, SSOResponseMocker, TestSSOClient}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
-import spray.http.{HttpRequest, HttpResponse}
 
-import scala.concurrent.{Future, Promise}
 import scala.slick.driver.JdbcProfile
 
 trait StoppedClockSupport extends TimeSupport {
@@ -35,34 +33,14 @@ trait TestPasswordHasherComponent extends PasswordHasherComponent {
 trait TestSSOComponent extends SSOComponent {
   this: ConfigComponent with AsyncComponent =>
 
-  import org.scalatest.Matchers._
+  val ssoResponse = new SSOResponseMocker
 
-  type HttpRequestAssertions = HttpRequest => Unit
-
-  protected val requestAssertions: HttpRequestAssertions = _ => ()
-
-  private val commonAssertions: HttpRequestAssertions = { req =>
-    req.headers.find(_.name.toLowerCase == "x-csrf-protection") shouldBe defined
-
-    val contentType = req.headers.find(_.name.toLowerCase == "content-type")
-    contentType shouldBe defined
-    contentType foreach { _.value should equal("application/x-www-form-urlencoded") }
-  }
-
-  val ssoResponse = Promise[HttpResponse]
-
-  private val client = new DefaultClient(config.sso) {
-    override def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = { req: HttpRequest =>
-      commonAssertions(req)
-      requestAssertions(req)
-      ssoResponse.future
-    }
-  }
+  private val client = new TestSSOClient(config.sso, ssoResponse.nextResponse)
 
   override val sso = new DefaultSSO(config.sso, client)
 }
 
-trait TestEnv extends
+class TestEnv extends
     DefaultConfigComponent with
     DefaultAsyncComponent with
     StoppedClockSupport with
@@ -75,6 +53,7 @@ trait TestEnv extends
     DefaultUserServiceComponent with
     DefaultClientServiceComponent with
     DefaultAuthServiceComponent with
+    DefaultRegistrationServiceComponent with
     DefaultApiComponent {
 
   import driver.simple._

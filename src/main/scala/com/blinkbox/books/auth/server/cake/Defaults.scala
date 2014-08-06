@@ -75,6 +75,18 @@ trait DefaultAuthServiceComponent extends AuthServiceComponent {
   val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
 }
 
+trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
+  this: DatabaseComponent[JdbcProfile]
+    with RepositoriesComponent[JdbcProfile]
+    with GeoIPComponent
+    with EventsComponent
+    with AsyncComponent
+    with TimeSupport
+    with SSOComponent =>
+
+  val registrationService = new DefaultRegistrationService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
+}
+
 trait DefaultUserServiceComponent extends UserServiceComponent {
   this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with AsyncComponent with TimeSupport =>
 
@@ -94,13 +106,18 @@ trait DefaultSSOComponent extends SSOComponent {
 }
 
 trait DefaultApiComponent {
-  this: AuthServiceComponent with ClientServiceComponent with UserServiceComponent with ConfigComponent with AsyncComponent =>
+  this: AuthServiceComponent
+    with ClientServiceComponent
+    with UserServiceComponent
+    with RegistrationServiceComponent
+    with ConfigComponent
+    with AsyncComponent =>
 
   val authenticator: ContextAuthenticator[User] = new ZuulTokenAuthenticator(
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker
 
-  private val zuulApi = new AuthApi(config.service, userService, clientService, authService, authenticator)
+  private val zuulApi = new AuthApi(config.service, userService, clientService, authService, registrationService, authenticator)
   private val swaggerApi = new SwaggerApi(config.swagger)
 
   val zuulRoutes: Route = zuulApi.routes
