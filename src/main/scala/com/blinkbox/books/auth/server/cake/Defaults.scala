@@ -36,7 +36,7 @@ trait DefaultEventsComponent extends EventsComponent {
   override val publisher: Publisher = new RabbitMqPublisher(rabbitConnection.createChannel) ~ new LegacyRabbitMqPublisher(rabbitConnection.createChannel)
 }
 
-trait DefaultDBTypes extends DBTypes {
+class DefaultDBTypes extends DBTypes {
   type Profile = JdbcProfile
   type ConstraintException = MySQLIntegrityConstraintViolationException
   val constraintExceptionTag = implicitly[ClassTag[ConstraintException]]
@@ -45,10 +45,7 @@ trait DefaultDBTypes extends DBTypes {
 trait DefaultDatabaseComponent extends DatabaseComponent {
   this: ConfigComponent =>
 
-  type Types = DefaultDBTypes
-  val tp = new DefaultDBTypes {}
-
-  implicit val constraintExceptionTag = tp.constraintExceptionTag
+  val Types = new DefaultDBTypes
 
   override val driver = MySQLDriver
 
@@ -58,7 +55,7 @@ trait DefaultDatabaseComponent extends DatabaseComponent {
     Database.forURL(jdbcUrl, driver = "com.mysql.jdbc.Driver", user = user, password = password)
   }
 
-  override val tables = ZuulTables[Types#Profile](driver)
+  override val tables = ZuulTables[Types.Profile](driver)
 }
 
 trait DefaultPasswordHasherComponent extends PasswordHasherComponent {
@@ -98,7 +95,7 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
     with TimeSupport
     with SSOComponent =>
 
-  val registrationService = new DefaultRegistrationService[Types](db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
+  val registrationService = new DefaultRegistrationService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {

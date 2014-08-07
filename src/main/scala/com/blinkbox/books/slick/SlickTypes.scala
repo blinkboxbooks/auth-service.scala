@@ -49,14 +49,14 @@ trait DBTypes {
  * is quite tricky and has to be implemented by instantiating the correct DBTypes implementation.
  */
 trait BaseDatabaseComponent {
-  type Types <: DBTypes
-  type Tables <: TablesContainer[Types#Profile]
+  val Types: DBTypes
+  type Tables <: TablesContainer[Types.Profile]
 
-  def driver: Types#Profile
-  def db: Types#Database
+  def driver: Types.Profile
+  def db: Types.Database
   def tables: Tables
 
-  implicit val constraintExceptionTag: ClassTag[Types#ConstraintException]
+  implicit lazy val constraintExceptionTag: ClassTag[Types.ConstraintException] = Types.constraintExceptionTag
 }
 
 /**

@@ -17,21 +17,18 @@ trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
 }
 
-trait TestDBTypes extends DBTypes {
+class TestDBTypes extends DBTypes {
   type Profile = JdbcProfile
   type ConstraintException = org.h2.jdbc.JdbcSQLException
   val constraintExceptionTag = implicitly[ClassTag[ConstraintException]]
 }
 
 trait TestDatabaseComponent extends DatabaseComponent {
-  type Types = TestDBTypes
-  val tp = new TestDBTypes {}
+  val Types = new TestDBTypes
 
   override val db = TestH2.db
   override val driver = H2Driver
-  override val tables = ZuulTables[Types#Profile](driver)
-
-  implicit val constraintExceptionTag: ClassTag[Types#ConstraintException] = tp.constraintExceptionTag
+  override val tables = ZuulTables[Types.Profile](driver)
 }
 
 trait TestEventsComponent extends EventsComponent {
