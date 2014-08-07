@@ -3,15 +3,14 @@ package com.blinkbox.books.auth.server.data
 import java.security.SecureRandom
 
 import com.blinkbox.books.auth.server.ClientRegistration
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.slick.SlickSupport
+import com.blinkbox.books.slick.{TablesSupport, SlickTypes}
 import com.blinkbox.books.time.{Clock, TimeSupport}
 import com.blinkbox.security.jwt.util.Base64
 
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile.BasicProfile
 
-trait ClientRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
+trait ClientRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def activeClients(userId: UserId)(implicit session: Session): List[Client]
   def activeClientCount(userId: UserId)(implicit session: Session): Int
   def clientWithId(userId: UserId, id: ClientId)(implicit session: Session): Option[Client]
@@ -19,8 +18,10 @@ trait ClientRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
   def createClient(userId: UserId, registration: ClientRegistration)(implicit session: Session): Client
 }
 
-trait JdbcClientRepository extends ClientRepository[JdbcProfile] with ZuulTables {
+trait JdbcClientRepository[Profile <: JdbcProfile] extends ClientRepository[Profile] with TablesSupport[Profile, ZuulTables[Profile]] {
   this: TimeSupport =>
+
+  import tables._
   import driver.simple._
 
   override def activeClients(userId: UserId)(implicit session: Session): List[Client] =
@@ -50,5 +51,5 @@ trait JdbcClientRepository extends ClientRepository[JdbcProfile] with ZuulTables
   }
 }
 
-class DefaultClientRepository(val tables: ZuulTables)(implicit val clock: Clock)
-  extends TimeSupport with ZuulTablesSupport with JdbcClientRepository
+class DefaultClientRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile])(implicit val clock: Clock)
+  extends TimeSupport with JdbcClientRepository[Profile]

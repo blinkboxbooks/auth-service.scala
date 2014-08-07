@@ -7,13 +7,12 @@ import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.SSO
 import com.blinkbox.books.auth.server.{AppConfig, PasswordHasher}
-import com.blinkbox.books.auth.server.sso.SSO
-import com.blinkbox.books.time._
+import com.blinkbox.books.slick.{BaseRepositoriesComponent, BaseDatabaseComponent}
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
 import scala.concurrent.ExecutionContext
-import scala.slick.driver.JdbcProfile
+import scala.reflect.ClassTag
 
 trait ConfigComponent {
   def config: AppConfig
@@ -31,20 +30,21 @@ trait EventsComponent {
   def publisher: Publisher
 }
 
-trait DatabaseComponent[Profile <: JdbcProfile] {
-  def driver: Profile
-  def db: Profile#Backend#Database
-  def tables: ZuulTables
+trait DatabaseComponent extends BaseDatabaseComponent {
+  type Tables = ZuulTables[Types.Profile]
+
+  implicit val constraintExceptionTag: ClassTag[Types.ConstraintException]
 }
 
 trait PasswordHasherComponent {
   def passwordHasher: PasswordHasher
 }
 
-trait RepositoriesComponent[Profile <: JdbcProfile] {
-  def authRepository: AuthRepository[Profile]
-  def userRepository: UserRepository[Profile]
-  def clientRepository: ClientRepository[Profile]
+trait RepositoriesComponent extends BaseRepositoriesComponent {
+  this: DatabaseComponent =>
+  def authRepository: AuthRepository[Types.Profile]
+  def userRepository: UserRepository[Types.Profile]
+  def clientRepository: ClientRepository[Types.Profile]
 }
 
 trait GeoIPComponent {

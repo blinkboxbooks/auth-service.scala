@@ -2,8 +2,7 @@ package com.blinkbox.books.auth.server.data
 
 import java.security.SecureRandom
 
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.slick.SlickSupport
+import com.blinkbox.books.slick.{TablesSupport, SlickTypes}
 import com.blinkbox.books.time.{Clock, TimeSupport}
 import com.blinkbox.security.jwt.util.Base64
 import spray.http.RemoteAddress
@@ -11,7 +10,7 @@ import spray.http.RemoteAddress
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile.BasicProfile
 
-trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
+trait AuthRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
   def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client]
   def createRefreshToken(userId: UserId, clientId: Option[ClientId])(implicit session: Session): RefreshToken
@@ -23,8 +22,10 @@ trait AuthRepository[Profile <: BasicProfile] extends SlickSupport[Profile] {
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
 }
 
-trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
+trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile] with TablesSupport[Profile, ZuulTables[Profile]] {
   this: TimeSupport =>
+
+  import tables._
   import driver.simple._
 
   override def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit = {
@@ -89,5 +90,5 @@ trait JdbcAuthRepository extends AuthRepository[JdbcProfile] with ZuulTables {
   }
 }
 
-class DefaultAuthRepository(val tables: ZuulTables)(implicit val clock: Clock)
-  extends TimeSupport with ZuulTablesSupport with JdbcAuthRepository
+class DefaultAuthRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile])(implicit val clock: Clock)
+  extends TimeSupport with JdbcAuthRepository[Profile]

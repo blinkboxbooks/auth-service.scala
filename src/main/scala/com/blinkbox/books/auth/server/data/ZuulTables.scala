@@ -1,11 +1,11 @@
 package com.blinkbox.books.auth.server.data
 
-import com.blinkbox.books.slick.JdbcSupport
+import com.blinkbox.books.slick.TablesContainer
 import org.joda.time.DateTime
 
 import scala.slick.driver.JdbcProfile
 
-trait ZuulTables extends JdbcSupport {
+trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
   import driver.simple._
 
   lazy val users = TableQuery[Users]
@@ -72,12 +72,7 @@ trait ZuulTables extends JdbcSupport {
 }
 
 object ZuulTables {
-  def apply[Profile <: JdbcProfile](_driver: Profile) = new ZuulTables {
-    override val driver: JdbcProfile = _driver
+  def apply[Profile <: JdbcProfile](_driver: Profile) = new ZuulTables[Profile] {
+    override val driver = _driver
   }
-}
-
-trait ZuulTablesSupport extends JdbcSupport {
-  val tables: ZuulTables
-  lazy val driver = tables.driver
 }

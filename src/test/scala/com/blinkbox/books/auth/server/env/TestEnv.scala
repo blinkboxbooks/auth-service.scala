@@ -5,20 +5,30 @@ import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.sso.{DefaultSSO, SSOResponseMocker, TestSSOClient}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
 
-import scala.slick.driver.JdbcProfile
+import scala.reflect.ClassTag
+import scala.slick.driver.{H2Driver, JdbcProfile}
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
 }
 
-trait TestDatabaseComponent extends DatabaseComponent[JdbcProfile] {
+class TestDBTypes extends DBTypes {
+  type Profile = JdbcProfile
+  type ConstraintException = org.h2.jdbc.JdbcSQLException
+  val constraintExceptionTag = implicitly[ClassTag[ConstraintException]]
+}
+
+trait TestDatabaseComponent extends DatabaseComponent {
+  val Types = new TestDBTypes
+
   override val db = TestH2.db
-  override val tables = TestH2.tables
-  override val driver = tables.driver
+  override val driver = H2Driver
+  override val tables = ZuulTables[Types.Profile](driver)
 }
 
 trait TestEventsComponent extends EventsComponent {

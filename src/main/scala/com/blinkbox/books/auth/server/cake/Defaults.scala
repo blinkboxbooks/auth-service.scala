@@ -8,13 +8,16 @@ import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO}
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
+import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
+import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException
 import com.rabbitmq.client.Connection
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.slick.driver.{JdbcProfile, MySQLDriver}
 import scala.slick.jdbc.JdbcBackend.Database
 
@@ -33,8 +36,16 @@ trait DefaultEventsComponent extends EventsComponent {
   override val publisher: Publisher = new RabbitMqPublisher(rabbitConnection.createChannel) ~ new LegacyRabbitMqPublisher(rabbitConnection.createChannel)
 }
 
-trait DefaultDatabaseComponent extends DatabaseComponent[JdbcProfile] {
+class DefaultDBTypes extends DBTypes {
+  type Profile = JdbcProfile
+  type ConstraintException = MySQLIntegrityConstraintViolationException
+  val constraintExceptionTag = implicitly[ClassTag[ConstraintException]]
+}
+
+trait DefaultDatabaseComponent extends DatabaseComponent {
   this: ConfigComponent =>
+
+  val Types = new DefaultDBTypes
 
   override val driver = MySQLDriver
 
@@ -44,15 +55,15 @@ trait DefaultDatabaseComponent extends DatabaseComponent[JdbcProfile] {
     Database.forURL(jdbcUrl, driver = "com.mysql.jdbc.Driver", user = user, password = password)
   }
 
-  override val tables: ZuulTables = ZuulTables(driver)
+  override val tables = ZuulTables[Types.Profile](driver)
 }
 
 trait DefaultPasswordHasherComponent extends PasswordHasherComponent {
   override val passwordHasher = PasswordHasher.default
 }
 
-trait DefaultRepositoriesComponent extends RepositoriesComponent[JdbcProfile] {
-  this: DatabaseComponent[JdbcProfile] with PasswordHasherComponent with TimeSupport =>
+trait DefaultRepositoriesComponent extends RepositoriesComponent {
+  this: DatabaseComponent with PasswordHasherComponent with TimeSupport =>
 
   override val authRepository = new DefaultAuthRepository(tables)
   override val userRepository = new DefaultUserRepository(tables, passwordHasher)
@@ -64,8 +75,8 @@ trait DefaultGeoIPComponent extends GeoIPComponent {
 }
 
 trait DefaultAuthServiceComponent extends AuthServiceComponent {
-  this: DatabaseComponent[JdbcProfile]
-    with RepositoriesComponent[JdbcProfile]
+  this: DatabaseComponent
+    with RepositoriesComponent
     with GeoIPComponent
     with EventsComponent
     with AsyncComponent
@@ -76,8 +87,8 @@ trait DefaultAuthServiceComponent extends AuthServiceComponent {
 }
 
 trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
-  this: DatabaseComponent[JdbcProfile]
-    with RepositoriesComponent[JdbcProfile]
+  this: DatabaseComponent
+    with RepositoriesComponent
     with GeoIPComponent
     with EventsComponent
     with AsyncComponent
@@ -88,13 +99,13 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
-  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with AsyncComponent with TimeSupport =>
+  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport =>
 
   val userService = new DefaultUserService(db, userRepository, publisher)
 }
 
 trait DefaultClientServiceComponent extends ClientServiceComponent {
-  this: DatabaseComponent[JdbcProfile] with RepositoriesComponent[JdbcProfile] with EventsComponent with AsyncComponent with TimeSupport =>
+  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport =>
 
   val clientService = new DefaultClientService(db, clientRepository, authRepository, publisher)
 }

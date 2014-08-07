@@ -1,22 +1,11 @@
 package com.blinkbox.books.auth.server.services
 
-import java.nio.file.{Files, Paths}
-import java.security.KeyFactory
-import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.sql.{DataTruncation, SQLException}
-
-import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
-import com.blinkbox.books.auth.server.ZuulRequestErrorReason.UsernameAlreadyTaken
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
 import com.blinkbox.books.auth.server.sso.SSO
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
-import com.blinkbox.security.jwt.TokenEncoder
-import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
-import com.blinkbox.security.jwt.signatures.ES256
-import org.joda.time.{DateTime, DateTimeZone}
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
