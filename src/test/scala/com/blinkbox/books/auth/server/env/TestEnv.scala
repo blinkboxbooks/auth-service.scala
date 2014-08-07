@@ -1,9 +1,11 @@
 package com.blinkbox.books.auth.server.env
 
+import java.util.Date
+
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.sso.{DefaultSSO, SSOResponseMocker, TestSSOClient}
+import com.blinkbox.books.auth.server.sso.{SsoAccessTokenDecoder, DefaultSSO, SSOResponseMocker, TestSSOClient}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
@@ -46,8 +48,11 @@ trait TestSSOComponent extends SSOComponent {
   val ssoResponse = new SSOResponseMocker
 
   private val client = new TestSSOClient(config.sso, ssoResponse.nextResponse)
+  private val tokenDecoder = new SsoAccessTokenDecoder(SSOTestKeyStore) {
+    override def validateExpirationTime(expirationTime: Date) = {} // allow expired token for test purposes
+  }
 
-  override val sso = new DefaultSSO(config.sso, client)
+  override val sso = new DefaultSSO(config.sso, client, tokenDecoder)
 }
 
 class TestEnv extends
@@ -93,11 +98,11 @@ class TestEnv extends
   val clientA3 = Client(clientIdA3, now, now, userIdA, "Client A3", "Test brand A3", "Test model A3", "Test OS A3", "test-secret-a3", true)
 
   val exp = now.withDurationAdded(Duration.standardHours(1), 1)
-  val refreshTokenClientA1 = RefreshToken(RefreshTokenId(1), now, now, userIdA, Some(clientIdA1), "some-token-a1", false, exp, exp, exp)
-  val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", false, exp, exp, exp)
-  val refreshTokenClientA3 = RefreshToken(RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", true, now, now, now)
-  val refreshTokenNoClientA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a", false, now, now, now)
-  val refreshTokenNoClientDeregisteredA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a-deregistered", true, now, now, now)
+  val refreshTokenClientA1 = RefreshToken(RefreshTokenId(1), now, now, userIdA, Some(clientIdA1), "some-token-a1", "some-sso-token-a1", false, exp, exp, exp)
+  val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", "some-sso-token-a2", false, exp, exp, exp)
+  val refreshTokenClientA3 = RefreshToken(RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", "some-sso-token-a3", true, now, now, now)
+  val refreshTokenNoClientA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a", "some-sso-token-a", false, now, now, now)
+  val refreshTokenNoClientDeregisteredA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a-deregistered", "some-sso-token-a-deregistered", true, now, now, now)
 
   val clientsC =
     for (id <- 4 until 16)

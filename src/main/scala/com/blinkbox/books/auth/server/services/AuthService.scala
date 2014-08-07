@@ -39,11 +39,11 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     val (user, client, token) = db.withTransaction { implicit transaction =>
       val u = authenticateUser(credentials, clientIP)
       val c = authenticateClient(credentials, u)
-      val t = authRepo.createRefreshToken(u.id, c.map(_.id))
+      val t = authRepo.createRefreshToken(u.id, c.map(_.id), ???) // TODO: Put the SSO token here
       (u, c, t)
     }
     events.publish(UserAuthenticated(user, client))
-    TokenBuilder.issueAccessToken(user, client, token, includeRefreshToken = true)
+    TokenBuilder.issueAccessToken(user, client, token, ???, includeRefreshToken = true) // TODO: Put SSO credentials here
   }
 
   override def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
@@ -63,7 +63,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       (u, c, t)
     }
     events.publish(UserAuthenticated(user1, client1))
-    TokenBuilder.issueAccessToken(user1, client1, token1)
+    TokenBuilder.issueAccessToken(user1, client1, token1, ???) // TODO: Put SSO credentials here
   }
 
   override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {

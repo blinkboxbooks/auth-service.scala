@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO}
+import com.blinkbox.books.auth.server.sso.{FileKeyStore, SsoAccessTokenDecoder, DefaultClient, DefaultSSO}
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
@@ -113,7 +113,9 @@ trait DefaultClientServiceComponent extends ClientServiceComponent {
 trait DefaultSSOComponent extends SSOComponent {
   this: ConfigComponent with AsyncComponent =>
 
-  override val sso = new DefaultSSO(config.sso, new DefaultClient(config.sso))
+  private val keyStore = new FileKeyStore(config.sso.keyStore)
+  private val tokenDecoder = new SsoAccessTokenDecoder(keyStore)
+  override val sso = new DefaultSSO(config.sso, new DefaultClient(config.sso), tokenDecoder)
 }
 
 trait DefaultApiComponent {

@@ -6,7 +6,7 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{SSO, TokenCredentials}
+import com.blinkbox.books.auth.server.sso.{SSO, SSOCredentials}
 import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -41,13 +41,12 @@ class DefaultRegistrationService[DB <: DBTypes](
       registration
     }
 
-  // TODO: Add persistence for token credentials
-  private def persistDetails(registration: UserRegistration, credentials: TokenCredentials): Future[(User, Option[Client], RefreshToken)] =
+  private def persistDetails(registration: UserRegistration, credentials: SSOCredentials): Future[(User, Option[Client], RefreshToken)] =
     Future {
       db.withTransaction { implicit transaction =>
         val u = userRepo.createUser(registration)
         val c = registration.client.map(clientRepo.createClient(u.id, _))
-        val t = authRepo.createRefreshToken(u.id, c.map(_.id))
+        val t = authRepo.createRefreshToken(u.id, c.map(_.id), credentials.refreshToken)
         (u, c, t)
       }
     }
@@ -66,7 +65,7 @@ class DefaultRegistrationService[DB <: DBTypes](
       _                     <- sso linkAccount(user.id, registration.allowMarketing, TermsAndConditionsVersion)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(cl)) getOrElse(Future.successful(()))
-    } yield TokenBuilder.issueAccessToken(user, client, token, includeRefreshToken = true, includeClientSecret = true)
+    } yield TokenBuilder.issueAccessToken(user, client, token, cred, includeRefreshToken = true, includeClientSecret = true)
 
     tokenInfo.transform(identity, errorTransformer)
   }
