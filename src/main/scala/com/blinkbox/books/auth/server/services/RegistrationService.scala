@@ -62,7 +62,7 @@ class DefaultRegistrationService[DB <: DBTypes](
       reg                   <- validateRegistration(registration, clientIp)
       cred                  <- sso register reg
       (user, client, token) <- persistDetails(reg, cred)
-      _                     <- sso linkAccount(user.id, registration.allowMarketing, TermsAndConditionsVersion)
+      _                     <- sso linkAccount(cred, user.id, registration.allowMarketing, TermsAndConditionsVersion)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(cl)) getOrElse(Future.successful(()))
     } yield TokenBuilder.issueAccessToken(user, client, token, cred, includeRefreshToken = true, includeClientSecret = true)

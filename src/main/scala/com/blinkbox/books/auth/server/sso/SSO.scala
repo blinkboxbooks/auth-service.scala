@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.sso
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.{UserRegistration, SSOConfig}
 import spray.client.pipelining._
-import spray.http.FormData
+import spray.http.{OAuth2BearerToken, FormData}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,7 +24,7 @@ trait SSO {
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
   // def revokeToken(token: RevokeToken): Future[Unit]
   // // User - authenticated
-  def linkAccount(id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
+  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
   // def updatePassword(update: UpdatePassword): Future[Unit]
   // def tokenStatus(req: GetTokenStatus): Future[TokenStatus]
@@ -40,7 +40,7 @@ trait SSO {
 }
 
 class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends SSO {
-  import com.blinkbox.books.auth.server.sso.Serialization._
+  import com.blinkbox.books.auth.server.sso.Serialization.json4sUnmarshaller
 
   private def versioned(uri: String) = s"/${config.version}$uri"
 
@@ -54,6 +54,8 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def commonErrorsTransformer: PartialFunction[Throwable, Throwable] = { case e: Throwable => e }
   private def registrationErrorsTransformer = ((_: Throwable) match { case e: Throwable => e }) andThen commonErrorsTransformer
 
+  def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
+
   def register(req: UserRegistration): Future[SSOCredentials] =
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RegistrationGrant,
@@ -63,8 +65,8 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "password" -> req.password
     )))) map validateToken transform(identity, registrationErrorsTransformer)
 
-  def linkAccount(id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] =
-    client.unitRequest(Post(versioned(C.LinkUri), FormData(Map(
+  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] =
+    withCredentials(ssoCredentials).unitRequest(Post(versioned(C.LinkUri), FormData(Map(
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion

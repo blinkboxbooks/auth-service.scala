@@ -61,11 +61,10 @@ object TokenBuilder {
       includeRefreshToken: Boolean = false,
       includeClientSecret: Boolean = false): TokenInfo = {
 
-    val expiresAt = DateTime.now(DateTimeZone.UTC).plusSeconds(1800)
     TokenInfo(
       access_token = buildAccessToken(user, client, token, ssoCredentials),
       token_type = "bearer",
-      expires_in = 1800,
+      expires_in = ssoCredentials.expiresIn - 60, // One minute before the SSO token
       refresh_token = if (includeRefreshToken) Some(token.token) else None,
       user_id = user.id.external,
       user_uri = s"/users/${user.id.value}",
