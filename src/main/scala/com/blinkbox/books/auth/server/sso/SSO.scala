@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.{UserRegistration, SSOConfig}
+import com.blinkbox.books.auth.server.{PasswordCredentials, UserRegistration, SSOConfig}
 import spray.client.pipelining._
 import spray.http.{OAuth2BearerToken, FormData}
 
@@ -15,11 +15,12 @@ object SSOConstants {
   val LinkUri = "/link"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
+  val PasswordGrant = "password"
 }
 
 trait SSO {
   def register(req: UserRegistration): Future[SSOCredentials]
-  // def authenticate(credentials: AuthenticateUser): Future[TokenCredentials]
+  def authenticate(c: PasswordCredentials): Future[SSOCredentials]
   // def refresh(token: RefreshToken): Future[TokenCredentials]
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
   // def revokeToken(token: RevokeToken): Future[Unit]
@@ -53,6 +54,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   // TODO: Put some real implementations here, the return type should always be an SSOException
   private def commonErrorsTransformer: PartialFunction[Throwable, Throwable] = { case e: Throwable => e }
   private def registrationErrorsTransformer = ((_: Throwable) match { case e: Throwable => e }) andThen commonErrorsTransformer
+  private def authenticationErrorsTransformer = ((_: Throwable) match { case e: Throwable => e }) andThen commonErrorsTransformer
 
   def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
 
@@ -71,4 +73,11 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion
     ))))
+
+  def authenticate(c: PasswordCredentials): Future[SSOCredentials] =
+    client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
+      "grant_type" -> C.PasswordGrant,
+      "username" -> c.username,
+      "password" -> c.password
+    )))) map validateToken transform(identity, authenticationErrorsTransformer)
 }
