@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidClient, InvalidGrant}
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.auth.server.env.TestEnv
+import com.blinkbox.books.auth.server.env.{AuthenticationTestEnv, TestEnv}
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
@@ -28,7 +28,8 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "create an access token for valid user credentials without a client and not providing an IP" in new TestEnv {
+  it should "create an access token for valid user credentials without a client and not providing an IP" in new AuthenticationTestEnv {
+    ssoSuccessfulAuthentication()
     whenReady(authService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", None, None), None)) { token =>
       token.user_first_name should equal(userA.firstName)
       token.user_last_name should equal(userA.lastName)
@@ -45,7 +46,8 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "create an access token for valid user credentials with a client and not providing an IP" in new TestEnv {
+  it should "create an access token for valid user credentials with a client and not providing an IP" in new AuthenticationTestEnv {
+    ssoSuccessfulAuthentication()
     whenReady(authService.authenticate(
       PasswordCredentials("user.a@test.tst", "a-password", Some(clientInfoA1.client_id), Some("test-secret-a1")), None)) { token =>
 
@@ -64,21 +66,22 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
     }
   }
 
-  it should "not create an access token and signal an error when providing wrong username/password pairs" in new TestEnv {
+  it should "not create an access token and signal an error when providing wrong username/password pairs" in new AuthenticationTestEnv {
+    ssoUnsuccessfulAuthentication()
     failingWith[ZuulRequestException](authService.authenticate(PasswordCredentials("foo", "bar", None, None), None)) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
-  it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in new TestEnv {
+  it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in new AuthenticationTestEnv {
+    ssoSuccessfulAuthentication()
     failingWith[ZuulRequestException](authService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", Some("foo"), Some("bar")), None)) should matchPattern {
       case ZuulRequestException(_, InvalidClient, None) =>
     }
   }
 
-  //def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
-
   it should "refresh a valid refresh token given the associated client credentials" in new TestEnv {
+    cancel("Awaiting SSO implementation")
     val refreshFuture = authService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA1.token, Some(clientInfoA1.client_id), Some("test-secret-a1")))
 
@@ -99,6 +102,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
   }
 
   it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in new TestEnv {
+    cancel("Awaiting SSO implementation")
     val refreshFuture = authService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA2.token, Some(clientInfoA1.client_id), Some("test-secret-a2")))
 
@@ -108,6 +112,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
   }
 
   it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in new TestEnv {
+    cancel("Awaiting SSO implementation")
     val correctClientFuture = authService.refreshAccessToken(
       RefreshTokenCredentials("foo-token", Some(clientInfoA1.client_id), Some("test-secret-a1")))
 

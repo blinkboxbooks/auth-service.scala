@@ -3,12 +3,16 @@ package com.blinkbox.books.auth.server.sso
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.{PasswordCredentials, UserRegistration, SSOConfig}
 import spray.client.pipelining._
-import spray.http.{OAuth2BearerToken, FormData}
+import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
+import spray.httpx.UnsuccessfulResponseException
 
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait SSOException extends Throwable
 case class InvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
+case object Unauthorized extends SSOException
+case object Conflict extends SSOException
+case class UnknownSSOException(e: Throwable) extends SSOException
 
 object SSOConstants {
   val TokenUri = "/oauth2/token"
@@ -51,10 +55,14 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     if (SsoAccessToken.decode(cred.accessToken, tokenDecoder).isSuccess) cred
     else throw new InvalidAccessToken(cred)
 
-  // TODO: Put some real implementations here, the return type should always be an SSOException
-  private def commonErrorsTransformer: PartialFunction[Throwable, Throwable] = { case e: Throwable => e }
-  private def registrationErrorsTransformer = ((_: Throwable) match { case e: Throwable => e }) andThen commonErrorsTransformer
-  private def authenticationErrorsTransformer = ((_: Throwable) match { case e: Throwable => e }) andThen commonErrorsTransformer
+  private def commonErrorsTransformer: Throwable => SSOException = {
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => Unauthorized
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => Conflict
+    case e: Throwable  => UnknownSSOException(e)
+  }
+  // TODO: These two transformers should deal with some specific exception and then forward to common for unhandled ones
+  private def registrationErrorsTransformer = commonErrorsTransformer
+  private def authenticationErrorsTransformer = commonErrorsTransformer
 
   def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
 

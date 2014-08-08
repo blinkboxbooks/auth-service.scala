@@ -6,7 +6,7 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{SSO, SSOCredentials}
+import com.blinkbox.books.auth.server.sso.{Conflict, SSO, SSOCredentials}
 import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -53,7 +53,9 @@ class DefaultRegistrationService[DB <: DBTypes](
 
   private val errorTransformer = (_: Throwable) match {
     case e: DataTruncation => Failures.requestException(e.getMessage, InvalidRequest)
-    case e: DB#ConstraintException => Failures.usernameAlreadyTaken
+    case Conflict => Failures.usernameAlreadyTaken
+    // TODO: Decide what to do in this case
+    case e: DB#ConstraintException => sys.error("Unexpected constraint violation when saving the user")
     case e => e
   }
 

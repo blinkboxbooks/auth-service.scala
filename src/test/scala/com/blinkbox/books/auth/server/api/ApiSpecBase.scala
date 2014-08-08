@@ -9,7 +9,7 @@ import spray.testkit.ScalatestRouteTest
 
 import scala.reflect.ClassTag
 
-abstract class ApiSpecBase extends FlatSpec
+abstract class ApiSpecBase[E <: TestEnv] extends FlatSpec
   with Matchers
   with ScalatestRouteTest
   with HttpService
@@ -18,9 +18,9 @@ abstract class ApiSpecBase extends FlatSpec
 
   def actorRefFactory = system
 
-  protected def newEnv: TestEnv
+  protected def newEnv: E
 
-  var env: TestEnv = _
+  var env: E = _
   var route: Route = _
 
   val userUriExpr = """\/users\/(\d+)""".r

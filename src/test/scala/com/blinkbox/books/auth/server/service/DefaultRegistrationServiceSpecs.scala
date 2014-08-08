@@ -25,6 +25,7 @@ class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaF
   }
 
   "The registration service" should "register a user without a client and no IP" in new RegistrationTestEnv {
+    ssoSuccessfulRegistration()
 
     import driver.simple._
 
@@ -42,6 +43,7 @@ class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaF
   }
 
   it should "register a user with a client" in new RegistrationTestEnv {
+    ssoSuccessfulRegistration()
 
     whenReady(registrationService.registerUser(clientReg, None)) { token =>
 

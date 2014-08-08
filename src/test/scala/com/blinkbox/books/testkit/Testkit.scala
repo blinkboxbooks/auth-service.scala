@@ -44,8 +44,6 @@ object TestGeoIP {
   }
 }
 
-
-
 class PublisherSpy extends Publisher {
   var events = List.empty[Event]
 

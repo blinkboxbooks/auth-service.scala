@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
-import com.blinkbox.books.auth.server.sso.SSO
+import com.blinkbox.books.auth.server.sso.{Unauthorized, SSO}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -47,7 +47,10 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       events.publish(UserAuthenticated(user, client))
 
       TokenBuilder.issueAccessToken(user, client, token, ssoCreds, includeRefreshToken = true)
-    }
+    } transform(identity, {
+      case Unauthorized => Failures.invalidUsernamePassword
+      case e: Throwable => e
+    })
 
   override def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
     val (user1, client1, token1) = db.withTransaction { implicit transaction =>
