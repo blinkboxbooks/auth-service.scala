@@ -16,18 +16,22 @@ object TokenBuilder {
   val SigningKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
   val EncryptionKeyPath = "/opt/bbb/keys/blinkbox/plat/enc/rsa/1/public.key"
 
-  def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: SSOCredentials): (Long, String) = {
+  def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: Option[SSOCredentials]): (Long, String) = {
 
     // TODO: Do this properly with configurable keys etc.
 
-    val expiresIn = Long.box(ssoCredentials.expiresIn - 60)
-    
+    // Expires in 30 minutes if no SSO credentials are provided
+    val expiresIn = ssoCredentials.map(c => Long.box(c.expiresIn - 60)).getOrElse(Long.box(1800L))
+
     val claims = new java.util.LinkedHashMap[String, AnyRef]
     claims.put("sub", user.id.external)
-    // Expires our token 1 minute before the SSO one; please note that SSO expiration times are in seconds, ours in millis
+
+    // Expires our token 1 minute before the SSO ones
     claims.put("exp", expiresIn)
-    // Stores the SSO access token within the Zuul one
-    claims.put("sso/at", ssoCredentials.accessToken)
+
+    // Stores the SSO access token within the Zuul one if provided
+    ssoCredentials.foreach(c => claims.put("sso/at", c.accessToken))
+
     client.foreach(c => claims.put("bb/cid", c.id.external))
     // TODO: Roles
     claims.put("zl/rti", Int.box(token.id.value))
@@ -59,7 +63,7 @@ object TokenBuilder {
       user: User,
       client: Option[Client],
       token: RefreshToken,
-      ssoCredentials: SSOCredentials,
+      ssoCredentials: Option[SSOCredentials],
       includeRefreshToken: Boolean = false,
       includeClientSecret: Boolean = false): TokenInfo = {
 

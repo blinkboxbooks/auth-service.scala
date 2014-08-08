@@ -53,7 +53,18 @@ case class User(id: UserId,
 
 case class Client(id: ClientId, createdAt: DateTime, updatedAt: DateTime, userId: UserId, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
 
-case class RefreshToken(id: RefreshTokenId, createdAt: DateTime, updatedAt: DateTime, userId: UserId, clientId: Option[ClientId], token: String, ssoToken: String, isRevoked: Boolean, expiresAt: DateTime, elevationExpiresAt: DateTime, criticalElevationExpiresAt: DateTime) {
+case class RefreshToken(
+    id: RefreshTokenId,
+    createdAt: DateTime,
+    updatedAt: DateTime,
+    userId: UserId,
+    clientId: Option[ClientId],
+    token: String,
+    ssoRefreshToken: Option[String],
+    isRevoked: Boolean,
+    expiresAt: DateTime,
+    elevationExpiresAt: DateTime,
+    criticalElevationExpiresAt: DateTime) {
   def isExpired(implicit clock: Clock) = expiresAt.isBefore(clock.now())
   def isValid(implicit clock: Clock) = !isExpired && !isRevoked
   def status(implicit clock: Clock) = if (isValid) RefreshTokenStatus.Valid else RefreshTokenStatus.Invalid

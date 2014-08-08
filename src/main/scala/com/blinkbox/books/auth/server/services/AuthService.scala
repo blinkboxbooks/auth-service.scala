@@ -82,10 +82,5 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
   }
 
   private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: authRepo.Session): Option[Client] =
-    for {
-      clientId <- credentials.clientId
-      clientSecret <- credentials.clientSecret
-    } yield authRepo.
-      authenticateClient(clientId, clientSecret, user.id).
-      getOrElse(throw Failures.invalidClientCredentials)
+    credentials.asPair.flatMap { case (id, secret) => authRepo.authenticateClient(id, secret, user.id) }
 }
