@@ -40,7 +40,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       val (user, client, token) = db.withTransaction { implicit transaction =>
         val u = authenticateUser(credentials, clientIP)
         val c = authenticateClient(credentials, u)
-        val t = authRepo.createRefreshToken(u.id, c.map(_.id), ssoCreds.accessToken)
+        val t = authRepo.createRefreshToken(u.id, c.map(_.id), ssoCreds.refreshToken)
         (u, c, t)
       }
 
