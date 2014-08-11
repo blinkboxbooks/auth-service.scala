@@ -72,7 +72,7 @@ case class UserInfo(
 case class TokenInfo(
   access_token: String,
   token_type: String,
-  expires_in: Int,
+  expires_in: Long,
   refresh_token: Option[String],
   user_id: String,
   user_uri: String,
