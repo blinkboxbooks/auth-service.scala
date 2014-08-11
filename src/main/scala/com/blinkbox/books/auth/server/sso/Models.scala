@@ -34,7 +34,7 @@ sealed trait AdminResponse extends Response
 // case class GetUserDetails() extends AdminRequest
 // case class UpdateUser() extends AdminRequest
 
-case class TokenCredentials(accessToken: String, tokenType: String, expiresIn: Int, refreshToken: String) extends Response {
+case class SSOCredentials(accessToken: String, tokenType: String, expiresIn: Int, refreshToken: String) extends Response {
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
 }
 // case class PasswordResetCredentials() extends Response

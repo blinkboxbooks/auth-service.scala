@@ -52,11 +52,12 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def userId = column[UserId]("user_id", O.NotNull)
     def clientId = column[Option[ClientId]]("client_id")
     def token = column[String]("token", O.NotNull)
+    def ssoToken = column[String]("sso_refresh_token", O.NotNull)
     def isRevoked = column[Boolean]("revoked", O.NotNull)
     def expiresAt = column[DateTime]("expires_at", O.NotNull)
     def elevationExpiresAt = column[DateTime]("elevation_expires_at", O.NotNull)
     def criticalElevationExpiresAt = column[DateTime]("critical_elevation_expires_at", O.NotNull)
-    def * = (id, createdAt, updatedAt, userId, clientId, token, isRevoked, expiresAt, elevationExpiresAt, criticalElevationExpiresAt) <> (RefreshToken.tupled, RefreshToken.unapply)
+    def * = (id, createdAt, updatedAt, userId, clientId, token, ssoToken, isRevoked, expiresAt, elevationExpiresAt, criticalElevationExpiresAt) <> (RefreshToken.tupled, RefreshToken.unapply)
     def indexOnToken = index("index_refresh_tokens_on_token", token)
     def user = foreignKey("fk_refresh_tokens_to_users", userId, users)(_.id)
   }

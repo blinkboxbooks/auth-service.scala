@@ -13,7 +13,7 @@ import scala.slick.profile.BasicProfile
 trait AuthRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
   def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client]
-  def createRefreshToken(userId: UserId, clientId: Option[ClientId])(implicit session: Session): RefreshToken
+  def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: String)(implicit session: Session): RefreshToken
   def refreshTokenWithId(id: RefreshTokenId)(implicit session: Session): Option[RefreshToken]
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
   def refreshTokensByClientId(clientId: ClientId)(implicit session: Session): List[RefreshToken]
@@ -48,8 +48,8 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
     client
   }
 
-  override def createRefreshToken(userId: UserId, clientId: Option[ClientId])(implicit session: Session): RefreshToken = {
-    val token = newRefreshToken(userId, clientId)
+  override def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: String)(implicit session: Session): RefreshToken = {
+    val token = newRefreshToken(userId, clientId, ssoToken)
     val id = (refreshTokens returning refreshTokens.map(_.id)) += token
     token.copy(id = id)
   }
@@ -81,12 +81,12 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
   override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
     refreshTokens.where(_.id === t.id).map(_.isRevoked).update(true)
 
-  private def newRefreshToken(userId: UserId, clientId: Option[ClientId]) = {
+  private def newRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: String) = {
     val now = clock.now()
     val buf = new Array[Byte](32)
     new SecureRandom().nextBytes(buf)
     val token = Base64.encode(buf)
-    RefreshToken(RefreshTokenId.Invalid, now, now, userId, clientId, token, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
+    RefreshToken(RefreshTokenId.Invalid, now, now, userId, clientId, token, ssoToken, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
   }
 }
 

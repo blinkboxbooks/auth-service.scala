@@ -5,6 +5,7 @@ import java.security.KeyFactory
 import java.security.spec.{X509EncodedKeySpec, PKCS8EncodedKeySpec}
 
 import com.blinkbox.books.auth.server.data.{RefreshToken, Client, User}
+import com.blinkbox.books.auth.server.sso.SSOCredentials
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
@@ -12,27 +13,33 @@ import org.joda.time.{DateTimeZone, DateTime}
 
 object TokenBuilder {
   // TODO: Make this configurable
-  val PrivateKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
+  val SigningKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
+  val EncryptionKeyPath = "/opt/bbb/keys/blinkbox/plat/enc/rsa/1/public.key"
 
-  def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, expiresAt: DateTime) = {
+  def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: SSOCredentials): (Long, String) = {
 
     // TODO: Do this properly with configurable keys etc.
 
+    val expiresIn = Long.box(ssoCredentials.expiresIn - 60)
+    
     val claims = new java.util.LinkedHashMap[String, AnyRef]
     claims.put("sub", user.id.external)
-    claims.put("exp", Long.box(expiresAt.getMillis))
+    // Expires our token 1 minute before the SSO one; please note that SSO expiration times are in seconds, ours in millis
+    claims.put("exp", expiresIn)
+    // Stores the SSO access token within the Zuul one
+    claims.put("sso/at", ssoCredentials.accessToken)
     client.foreach(c => claims.put("bb/cid", c.id.external))
     // TODO: Roles
     claims.put("zl/rti", Int.box(token.id.value))
 
-    val signingKeyData = Files.readAllBytes(Paths.get(PrivateKeyPath))
+    val signingKeyData = Files.readAllBytes(Paths.get(SigningKeyPath))
     val signingKeySpec = new PKCS8EncodedKeySpec(signingKeyData)
     val signingKey = KeyFactory.getInstance("EC").generatePrivate(signingKeySpec)
     val signer = new ES256(signingKey)
     val signingHeaders = new java.util.LinkedHashMap[String, AnyRef]
     signingHeaders.put("kid", "/blinkbox/zuul/sig/ec/1")
 
-    val encryptionKeyData = Files.readAllBytes(Paths.get("/opt/bbb/keys/blinkbox/plat/enc/rsa/1/public.key"))
+    val encryptionKeyData = Files.readAllBytes(Paths.get(EncryptionKeyPath))
     val encryptionKeySpec = new X509EncodedKeySpec(encryptionKeyData)
     val encryptionKey = KeyFactory.getInstance("RSA").generatePublic(encryptionKeySpec)
     val encryptionAlgorithm = new RSA_OAEP(encryptionKey)
@@ -45,15 +52,23 @@ object TokenBuilder {
     val signed = encoder.encode(claims, signer, signingHeaders)
     val encrypted = encoder.encode(signed, encrypter, encryptionHeaders)
 
-    encrypted
+    (expiresIn, encrypted)
   }
 
-  def issueAccessToken(user: User, client: Option[Client], token: RefreshToken, includeRefreshToken: Boolean = false, includeClientSecret: Boolean = false): TokenInfo = {
-    val expiresAt = DateTime.now(DateTimeZone.UTC).plusSeconds(1800)
+  def issueAccessToken(
+      user: User,
+      client: Option[Client],
+      token: RefreshToken,
+      ssoCredentials: SSOCredentials,
+      includeRefreshToken: Boolean = false,
+      includeClientSecret: Boolean = false): TokenInfo = {
+
+    val (expiresIn, accessToken) = buildAccessToken(user, client, token, ssoCredentials)
+
     TokenInfo(
-      access_token = buildAccessToken(user, client, token, expiresAt),
+      access_token = accessToken,
       token_type = "bearer",
-      expires_in = 1800,
+      expires_in = expiresIn,
       refresh_token = if (includeRefreshToken) Some(token.token) else None,
       user_id = user.id.external,
       user_uri = s"/users/${user.id.value}",
