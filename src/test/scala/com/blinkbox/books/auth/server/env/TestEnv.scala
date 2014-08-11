@@ -70,6 +70,7 @@ class TestEnv extends
     DefaultAuthServiceComponent with
     DefaultRegistrationServiceComponent with
     DefaultPasswordAuthenticationServiceComponent with
+    DefaultRefreshTokenServiceComponent with
     DefaultApiComponent {
 
   import driver.simple._

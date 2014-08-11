@@ -84,6 +84,7 @@ class AuthApi(
     authService: AuthService,
     registrationService: RegistrationService,
     passwordAuthenticationService: PasswordAuthenticationService,
+    refreshTokenService: RefreshTokenService,
     authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends AuthRoutes with Directives with FormDataUnmarshallers {
 
@@ -130,7 +131,7 @@ class AuthApi(
 
   val refreshAccessToken: Route = formField('grant_type ! "refresh_token") {
     formFields('refresh_token, 'client_id.?, 'client_secret.?).as(RefreshTokenCredentials) { credentials =>
-      onSuccess(authService.refreshAccessToken(credentials)) { tokenInfo =>
+      onSuccess(refreshTokenService.refreshAccessToken(credentials)) { tokenInfo =>
         uncacheable(OK, tokenInfo)
       }
     }

@@ -38,6 +38,7 @@ object WebAppComponents extends
   DefaultUserServiceComponent with
   DefaultClientServiceComponent with
   DefaultAuthServiceComponent with
+  DefaultRefreshTokenServiceComponent with
   DefaultRegistrationServiceComponent with
   DefaultPasswordAuthenticationServiceComponent with
   DefaultApiComponent

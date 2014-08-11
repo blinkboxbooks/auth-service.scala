@@ -1,7 +1,22 @@
 package com.blinkbox.books.auth.server.services
 
-import com.blinkbox.books.auth.server.data.{Client, User}
-import com.blinkbox.books.auth.server.{ClientInfo, UserInfo}
+import com.blinkbox.books.auth.server.data.{UserId, AuthRepository, Client, User}
+import com.blinkbox.books.auth.server.{ClientInfo, UserInfo, ClientCredentials, Failures}
+
+import scala.slick.profile.BasicProfile
+
+trait ClientAuthenticator[Profile <: BasicProfile] {
+  protected def authenticateClient(
+      authRepo: AuthRepository[Profile],
+      credentials: ClientCredentials,
+      userId: UserId)(implicit session: authRepo.Session): Option[Client] =
+    for {
+      clientId <- credentials.clientId
+      clientSecret <- credentials.clientSecret
+    } yield authRepo.
+      authenticateClient(clientId, clientSecret, userId).
+      getOrElse(throw Failures.invalidClientCredentials)
+}
 
 trait UserInfoFactory {
   def userInfoFromUser(user: User) = UserInfo(
