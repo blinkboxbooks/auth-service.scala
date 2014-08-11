@@ -16,7 +16,7 @@ trait SSOResponseFixtures {
 trait CommonResponder {
   this: TestSSOComponent =>
 
-  def ssoNoInvocation() = ssoResponse.complete(_.failure(new NoSuchElementException("No invocation for SSO was expected")))
+  def ssoNoInvocation() = ssoResponse.complete(_.failure(new IllegalStateException("No invocation for SSO was expected")))
 }
 
 trait RegistrationResponder extends CommonResponder with SSOResponseFixtures {
@@ -44,7 +44,6 @@ trait AuthenticationResponder extends CommonResponder with SSOResponseFixtures {
     )
 }
 
-class RegistrationTestEnv extends TestEnv with RegistrationResponder {
-}
+class RegistrationTestEnv extends TestEnv with RegistrationResponder
 
 class AuthenticationTestEnv extends TestEnv with AuthenticationResponder
