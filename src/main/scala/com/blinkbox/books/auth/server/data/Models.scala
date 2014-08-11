@@ -41,7 +41,15 @@ case class RefreshTokenId(value: Int) extends AnyVal
 
 object RefreshTokenId { val Invalid = RefreshTokenId(-1) }
 
-case class User(id: UserId, createdAt: DateTime, updatedAt: DateTime, username: String, firstName: String, lastName: String, passwordHash: String, allowMarketing: Boolean)
+case class User(id: UserId,
+    createdAt: DateTime,
+    updatedAt: DateTime,
+    username: String,
+    firstName: String,
+    lastName: String,
+    passwordHash: String,
+    allowMarketing: Boolean,
+    ssoLinked: Boolean = false)
 
 case class Client(id: ClientId, createdAt: DateTime, updatedAt: DateTime, userId: UserId, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
 

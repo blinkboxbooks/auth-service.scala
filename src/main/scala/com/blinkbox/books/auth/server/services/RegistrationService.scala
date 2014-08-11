@@ -51,6 +51,12 @@ class DefaultRegistrationService[DB <: DBTypes](
       }
     }
 
+  private def markLinked(user: User): Future[Unit] = Future {
+    db.withSession { implicit session =>
+      userRepo.updateUser(user.copy(ssoLinked = true))
+    }
+  }
+
   private val errorTransformer = (_: Throwable) match {
     case e: DataTruncation => Failures.requestException(e.getMessage, InvalidRequest)
     case Conflict => Failures.usernameAlreadyTaken
@@ -65,6 +71,7 @@ class DefaultRegistrationService[DB <: DBTypes](
       cred                  <- sso register reg
       (user, client, token) <- persistDetails(reg, cred)
       _                     <- sso linkAccount(cred, user.id, registration.allowMarketing, TermsAndConditionsVersion)
+      _                     <- markLinked(user)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(cl)) getOrElse(Future.successful(()))
     } yield TokenBuilder.issueAccessToken(user, client, token, cred, includeRefreshToken = true, includeClientSecret = true)
