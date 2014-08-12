@@ -9,6 +9,7 @@ import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.profile.BasicProfile
+import scala.util.Random
 
 trait PasswordAuthenticationService {
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
@@ -39,7 +40,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
 
   private def createFromSSO(ssoCredentials: SSOCredentials): Future[User] = {
     val registrationFuture = sso.userInfo(ssoCredentials).map { u =>
-      UserRegistration(u.firstName, u.lastName, u.username, "sso-no-password", true, false, None, None, None, None)
+      UserRegistration(u.firstName, u.lastName, u.username, Random.nextString(32), true, false, None, None, None, None)
     }
 
     for {
