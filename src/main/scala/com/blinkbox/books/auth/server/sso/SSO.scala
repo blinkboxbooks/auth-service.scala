@@ -7,6 +7,7 @@ import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
 import spray.httpx.UnsuccessfulResponseException
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 sealed trait SSOException extends Throwable
 case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
@@ -24,7 +25,7 @@ object SSOConstants {
 }
 
 trait SSO {
-  def register(req: UserRegistration): Future[SSOCredentials]
+  def register(req: UserRegistration): Future[(String, SSOCredentials)]
   def authenticate(c: PasswordCredentials): Future[SSOCredentials]
   // def refresh(token: RefreshToken): Future[TokenCredentials]
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
@@ -52,9 +53,10 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   private val C = SSOConstants
 
-  private def validateToken(cred: SSOCredentials): SSOCredentials =
-    if (SsoAccessToken.decode(cred.accessToken, tokenDecoder).isSuccess) cred
-    else throw new SSOInvalidAccessToken(cred)
+  private def extractUserId(cred: SSOCredentials): (String, SSOCredentials) = SsoAccessToken.decode(cred.accessToken, tokenDecoder) match {
+    case Success(token) => (token.subject, cred)
+    case Failure(_) => throw new SSOInvalidAccessToken(cred)
+  }
 
   private def commonErrorsTransformer: Throwable => SSOException = {
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SSOUnauthorized
@@ -67,14 +69,14 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
 
-  def register(req: UserRegistration): Future[SSOCredentials] =
+  def register(req: UserRegistration): Future[(String, SSOCredentials)] =
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RegistrationGrant,
       "first_name" -> req.firstName,
       "last_name" -> req.lastName,
       "username" -> req.username,
       "password" -> req.password
-    )))) map validateToken transform(identity, registrationErrorsTransformer)
+    )))) map extractUserId transform(identity, registrationErrorsTransformer)
 
   def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] =
     withCredentials(ssoCredentials).unitRequest(Post(versioned(C.LinkUri), FormData(Map(
@@ -88,7 +90,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "grant_type" -> C.PasswordGrant,
       "username" -> c.username,
       "password" -> c.password
-    )))) map validateToken transform(identity, authenticationErrorsTransformer)
+    )))) map extractUserId transform(_._2, authenticationErrorsTransformer)
 
   def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] =
     withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri)))
