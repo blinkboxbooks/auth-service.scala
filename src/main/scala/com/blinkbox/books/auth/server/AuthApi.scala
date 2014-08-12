@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
-import com.blinkbox.books.auth.server.services.{RegistrationService, ClientService, UserService, AuthService}
+import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
@@ -83,6 +83,7 @@ class AuthApi(
     clientService: ClientService,
     authService: AuthService,
     registrationService: RegistrationService,
+    passwordAuthenticationService: PasswordAuthenticationService,
     authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends AuthRoutes with Directives with FormDataUnmarshallers {
 
@@ -120,7 +121,7 @@ class AuthApi(
   val authenticate: Route = formField('grant_type ! "password") {
     formFields('username, 'password, 'client_id.?, 'client_secret.?).as(PasswordCredentials) { credentials =>
       extract(_.request.clientIP) { clientIP =>
-        onSuccess(authService.authenticate(credentials, clientIP)) { tokenInfo =>
+        onSuccess(passwordAuthenticationService.authenticate(credentials, clientIP)) { tokenInfo =>
           uncacheable(OK, tokenInfo)
         }
       }

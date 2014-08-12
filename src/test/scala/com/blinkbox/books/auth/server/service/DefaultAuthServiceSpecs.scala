@@ -12,7 +12,7 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
-  it should "revoke a valid refresh token" in new TestEnv {
+  "The authentication service" should "revoke a valid refresh token" in new TestEnv {
     whenReady(authService.revokeRefreshToken(refreshTokenClientA1.token)) { _ =>  }
   }
 
@@ -25,58 +25,6 @@ class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures w
   it should "signal an error when revoking an already revoked refresh token" in new TestEnv {
     failingWith[ZuulRequestException](authService.revokeRefreshToken(refreshTokenClientA3.token)) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
-    }
-  }
-
-  it should "create an access token for valid user credentials without a client and not providing an IP" in new AuthenticationTestEnv {
-    ssoSuccessfulAuthentication()
-    whenReady(authService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", None, None), None)) { token =>
-      token.user_first_name should equal(userA.firstName)
-      token.user_last_name should equal(userA.lastName)
-      token.user_username should equal(userA.username)
-      token.user_id should equal(userA.id.external)
-
-      token.client_id shouldBe empty
-      token.client_brand shouldBe empty
-      token.client_model shouldBe empty
-      token.client_name shouldBe empty
-      token.client_os shouldBe empty
-      token.client_secret shouldBe empty
-      token.client_uri shouldBe empty
-    }
-  }
-
-  it should "create an access token for valid user credentials with a client and not providing an IP" in new AuthenticationTestEnv {
-    ssoSuccessfulAuthentication()
-    whenReady(authService.authenticate(
-      PasswordCredentials("user.a@test.tst", "a-password", Some(clientInfoA1.client_id), Some("test-secret-a1")), None)) { token =>
-
-      token.user_first_name should equal(userA.firstName)
-      token.user_last_name should equal(userA.lastName)
-      token.user_username should equal(userA.username)
-      token.user_id should equal(userA.id.external)
-
-      token.client_id shouldBe Some(clientInfoA1.client_id)
-      token.client_brand shouldBe Some(clientInfoA1.client_brand)
-      token.client_model shouldBe Some(clientInfoA1.client_model)
-      token.client_name shouldBe Some(clientInfoA1.client_name)
-      token.client_os shouldBe Some(clientInfoA1.client_os)
-      token.client_secret shouldBe None
-      token.client_uri shouldBe Some(clientInfoA1.client_uri)
-    }
-  }
-
-  it should "not create an access token and signal an error when providing wrong username/password pairs" in new AuthenticationTestEnv {
-    ssoUnsuccessfulAuthentication()
-    failingWith[ZuulRequestException](authService.authenticate(PasswordCredentials("foo", "bar", None, None), None)) should matchPattern {
-      case ZuulRequestException(_, InvalidGrant, None) =>
-    }
-  }
-
-  it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in new AuthenticationTestEnv {
-    ssoSuccessfulAuthentication()
-    failingWith[ZuulRequestException](authService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", Some("foo"), Some("bar")), None)) should matchPattern {
-      case ZuulRequestException(_, InvalidClient, None) =>
     }
   }
 

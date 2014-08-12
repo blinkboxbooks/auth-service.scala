@@ -67,6 +67,10 @@ trait RegistrationServiceComponent {
   def registrationService: RegistrationService
 }
 
+trait PasswordAuthenticationServiceComponent {
+  def passwordAuthenticationService: PasswordAuthenticationService
+}
+
 trait SSOComponent {
   def sso: SSO
 }

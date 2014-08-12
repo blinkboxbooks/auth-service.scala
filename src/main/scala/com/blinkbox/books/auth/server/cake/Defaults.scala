@@ -110,6 +110,12 @@ trait DefaultClientServiceComponent extends ClientServiceComponent {
   val clientService = new DefaultClientService(db, clientRepository, authRepository, publisher)
 }
 
+trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticationServiceComponent {
+  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SSOComponent =>
+
+  val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, clientRepository, publisher, sso)
+}
+
 trait DefaultSSOComponent extends SSOComponent {
   this: ConfigComponent with AsyncComponent =>
 
@@ -123,6 +129,7 @@ trait DefaultApiComponent {
     with ClientServiceComponent
     with UserServiceComponent
     with RegistrationServiceComponent
+    with PasswordAuthenticationServiceComponent
     with ConfigComponent
     with AsyncComponent =>
 
@@ -130,7 +137,7 @@ trait DefaultApiComponent {
     new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker
 
-  private val zuulApi = new AuthApi(config.service, userService, clientService, authService, registrationService, authenticator)
+  private val zuulApi = new AuthApi(config.service, userService, clientService, authService, registrationService, passwordAuthenticationService, authenticator)
   private val swaggerApi = new SwaggerApi(config.swagger)
 
   val zuulRoutes: Route = zuulApi.routes

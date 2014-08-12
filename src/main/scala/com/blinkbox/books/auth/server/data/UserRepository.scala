@@ -11,6 +11,7 @@ trait UserRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   val passwordHasher: PasswordHasher
 
   def userWithUsernameAndPassword(username: String, password: String)(implicit session: Session): Option[User]
+  def userWithUsername(username: String)(implicit session: Session): Option[User]
   def updateUser(user: User)(implicit session: Session): Unit
   def createUser(registration: UserRegistration)(implicit session: Session): User
   def userWithId(id: UserId)(implicit session: Session): Option[User]
@@ -21,6 +22,9 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
 
   import tables._
   import driver.simple._
+
+  override def userWithUsername(username: String)(implicit session: Session): Option[User] =
+    users.where(_.username === username).firstOption
 
   override def userWithUsernameAndPassword(username: String, password: String)(implicit session: Session): Option[User] = {
     val user = users.where(_.username === username).firstOption

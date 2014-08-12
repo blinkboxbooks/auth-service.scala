@@ -32,6 +32,7 @@ object WebAppComponents extends
   DefaultClientServiceComponent with
   DefaultAuthServiceComponent with
   DefaultRegistrationServiceComponent with
+  DefaultPasswordAuthenticationServiceComponent with
   DefaultApiComponent
 
 class WebService extends HttpServiceActor {
