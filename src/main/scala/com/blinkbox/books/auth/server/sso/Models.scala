@@ -7,12 +7,6 @@ import com.blinkbox.books.auth.server.data.UserId
 // case class PasswordResetToken() extends Token
 // case class AccessToken() extends Token
 
-// These traits has more a documenting function than a functional one
-sealed trait Request
-sealed trait AdminRequest extends Request
-sealed trait Response
-sealed trait AdminResponse extends Response
-
 //case class RegisterUser(
 //  id: UserId,
 //  firstName: String,
@@ -34,9 +28,14 @@ sealed trait AdminResponse extends Response
 // case class GetUserDetails() extends AdminRequest
 // case class UpdateUser() extends AdminRequest
 
-case class SSOCredentials(accessToken: String, tokenType: String, expiresIn: Int, refreshToken: String) extends Response {
+case class SSOCredentials(accessToken: String, tokenType: String, expiresIn: Int, refreshToken: String) {
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
 }
+
+case class LinkedAccount(service: String, serviceUserId: String, serviceAllowMarketing: Boolean)
+
+case class UserInformation(userId: String, username: String, firstName: String, lastName: String, linkedAccounts: List[LinkedAccount])
+
 // case class PasswordResetCredentials() extends Response
 // case class TokenStatus() extends Response
 // case class UserInformation() extends Response

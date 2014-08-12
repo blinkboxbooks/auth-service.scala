@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.services
 
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.events.{UserAuthenticated, Publisher}
+import com.blinkbox.books.auth.server.events.{UserUpdated, UserRegistered, UserAuthenticated, Publisher}
 import com.blinkbox.books.auth.server.sso.{Unauthorized, SSOCredentials, SSO}
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.time.Clock
@@ -22,50 +22,78 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     events: Publisher,
     sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordAuthenticationService {
 
+  // TODO: Move this to configuration
   val TermsVersion = "1.0"
 
-  def findUser(username: String): Future[Option[User]] = Future {
+  private def findUser(username: String): Future[Option[User]] = Future {
     db.withSession { implicit session => userRepo.userWithUsername(username) }
   }
 
-  // TODO: Get user info from SSO, create user and fire event
-  def createUser(ssoCredentials: SSOCredentials): Future[User] = ???
-
-  def updateFromSSO(user: User): Future[User] = Future {
-    val linkedUser = user.copy(ssoLinked = true)
-    // TODO: Get user info from SSO, update user and fire event
-    db.withSession { implicit session => userRepo.updateUser(linkedUser) }
-    linkedUser
+  private def registerUser(reg: UserRegistration): Future[User] = Future {
+    db.withSession { implicit session => userRepo.createUser(reg) }
   }
 
-  def ensureLinked(maybeUser: Option[User], ssoCredentials: SSOCredentials): Future[User] =
-    maybeUser.fold(createUser(ssoCredentials)) { user =>
+  private def updateUser(user: User): Future[Unit] = Future {
+    db.withSession { implicit session => userRepo.updateUser(user) }
+  }
+
+  private def createFromSSO(ssoCredentials: SSOCredentials): Future[User] = {
+    val registrationFuture = sso.userInfo(ssoCredentials).map { u =>
+      UserRegistration(u.firstName, u.lastName, u.username, "sso-no-password", true, false, None, None, None, None)
+    }
+
+    for {
+      registration <- registrationFuture
+      user         <- registerUser(registration)
+      _            <- sso linkAccount(ssoCredentials, user.id, false, TermsVersion)
+      linkedUser   =  user.copy(ssoLinked = true)
+      _            <- updateUser(linkedUser)
+      _            <- events.publish(UserRegistered(linkedUser))
+    } yield linkedUser
+  }
+
+  private def updateFromSSO(ssoCredentials: SSOCredentials, user: User): Future[User] = {
+    val userFuture = sso.userInfo(ssoCredentials).map { u =>
+      user.copy(
+        firstName = u.firstName,
+        lastName = u.lastName)
+    }
+    
+    for {
+      updatedUser <- userFuture
+      _           <- updateUser(user)
+      _           <- events.publish(UserUpdated(user, updatedUser))
+    } yield updatedUser
+  }
+
+  private def ensureLinked(maybeUser: Option[User], ssoCredentials: SSOCredentials): Future[User] =
+    maybeUser.fold(createFromSSO(ssoCredentials)) { user =>
       if (user.ssoLinked) Future.successful(user)
       else for {
-        _           <- sso.linkAccount(ssoCredentials, user.id, false, TermsVersion)
-        updatedUser <- updateFromSSO(user)
+        _           <- sso linkAccount(ssoCredentials, user.id, user.allowMarketing, TermsVersion)
+        updatedUser <- updateFromSSO(ssoCredentials, user.copy(ssoLinked = true))
       } yield updatedUser
     }
 
-  def getUser(credentials: PasswordCredentials, ssoCredentials: SSOCredentials): Future[User] =
-    for {
-      maybeUser <- findUser(credentials.username)
-      user <- ensureLinked(maybeUser, ssoCredentials)
-    } yield user
-
-  def getClient(credentials: PasswordCredentials, user: User): Future[Option[Client]] = Future {
+  private def getClient(credentials: PasswordCredentials, user: User): Future[Option[Client]] = Future {
     db.withSession { implicit session => authenticateClient(credentials, user) }
   }
 
-  def getToken(userId: UserId, clientId: Option[ClientId], refreshToken: String) : Future[RefreshToken] = Future {
+  private def getToken(userId: UserId, clientId: Option[ClientId], refreshToken: String) : Future[RefreshToken] = Future {
     db.withSession { implicit session => authRepo.createRefreshToken(userId, clientId, refreshToken) }
   }
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
-    // TODO: authRepo.recordLoginAttempt(credentials.username, user.isDefined, clientIP)
+    val ssoAuthenticationFuture = sso authenticate (credentials)
+
+    ssoAuthenticationFuture.onComplete { outcome =>
+      db.withSession { implicit session => authRepo.recordLoginAttempt(credentials.username, outcome.isSuccess, clientIP) }
+    }
+
     for {
-      ssoCredentials  <- sso authenticate (credentials)
-      user            <- getUser(credentials, ssoCredentials)
+      ssoCredentials  <- ssoAuthenticationFuture
+      maybeUser       <- findUser(credentials.username)
+      user            <- ensureLinked(maybeUser, ssoCredentials)
       client          <- getClient(credentials, user)
       token           <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken)
       _               <- events.publish(UserAuthenticated(user, client))

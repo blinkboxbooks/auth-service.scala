@@ -17,6 +17,7 @@ case class UnknownSSOException(e: Throwable) extends SSOException
 object SSOConstants {
   val TokenUri = "/oauth2/token"
   val LinkUri = "/link"
+  val InfoUri = "/user"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
   val PasswordGrant = "password"
@@ -34,7 +35,7 @@ trait SSO {
   // def updatePassword(update: UpdatePassword): Future[Unit]
   // def tokenStatus(req: GetTokenStatus): Future[TokenStatus]
   // def refreshSession(): Future[Unit]
-  // def userInfo(): Future[UserInformation]
+  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation]
   // def updateUser(req: PatchUser): Future[Unit]
   // // Admin
   // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
@@ -88,4 +89,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "username" -> c.username,
       "password" -> c.password
     )))) map validateToken transform(identity, authenticationErrorsTransformer)
+
+  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] =
+    withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri)))
 }
