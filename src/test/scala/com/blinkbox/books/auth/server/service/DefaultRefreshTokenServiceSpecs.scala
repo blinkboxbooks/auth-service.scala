@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidGrant, InvalidClient}
 import com.blinkbox.books.auth.server.{ZuulRequestException, RefreshTokenCredentials}
-import com.blinkbox.books.auth.server.env.TestEnv
+import com.blinkbox.books.auth.server.env.{CommonResponder, AuthenticationTestEnv, TestEnv}
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FlatSpec, Matchers}
@@ -12,13 +12,14 @@ class DefaultRefreshTokenServiceSpecs extends FlatSpec with Matchers with ScalaF
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
 
-  it should "refresh a valid refresh token given the associated client credentials" in new TestEnv {
-    cancel("Awaiting SSO implementation")
+  it should "refresh a valid refresh token given the associated client credentials" in new AuthenticationTestEnv {
+    ssoSuccessfulAuthentication()
+
     val refreshFuture = refreshTokenService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA1.token, Some(clientInfoA1.client_id), Some("test-secret-a1")))
 
     whenReady(refreshFuture) { token =>
-      token.expires_in should equal(1800)
+      token.expires_in should equal(validTokenZuulExpiry)
       token.user_id shouldBe userIdA.external
       token.client_id shouldBe Some(clientInfoA1.client_id)
 
@@ -33,8 +34,9 @@ class DefaultRefreshTokenServiceSpecs extends FlatSpec with Matchers with ScalaF
     }
   }
 
-  it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in new TestEnv {
-    cancel("Awaiting SSO implementation")
+  it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in new AuthenticationTestEnv {
+    ssoSuccessfulAuthentication()
+
     val refreshFuture = refreshTokenService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA2.token, Some(clientInfoA1.client_id), Some("test-secret-a2")))
 
@@ -43,8 +45,9 @@ class DefaultRefreshTokenServiceSpecs extends FlatSpec with Matchers with ScalaF
     }
   }
 
-  it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in new TestEnv {
-    cancel("Awaiting SSO implementation")
+  it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in new TestEnv with CommonResponder {
+    ssoNoInvocation()
+
     val correctClientFuture = refreshTokenService.refreshAccessToken(
       RefreshTokenCredentials("foo-token", Some(clientInfoA1.client_id), Some("test-secret-a1")))
 

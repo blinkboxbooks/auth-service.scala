@@ -47,9 +47,7 @@ class DefaultRefreshTokenService[DB <: DBTypes](
   }
 
   private def fetchClient(credentials: ClientCredentials, token: RefreshToken): Future[Option[Client]] = Future {
-    val client = db.withSession { implicit session => authenticateClient(authRepo, credentials, token.userId) }
-    checkAuthorization(token, client)
-    client
+    db.withSession { implicit session => authenticateClient(authRepo, credentials, token.userId) }
   }
 
   private def extendTokenLifetime(token: RefreshToken): Future[Unit] = Future {
@@ -63,9 +61,10 @@ class DefaultRefreshTokenService[DB <: DBTypes](
       val clientFuture = fetchClient(credentials, token)
 
       for {
+        client    <- clientFuture
+        _         <- checkAuthorization(token, client)
         ssoCreds  <- ssoFuture
         user      <- userFuture
-        client    <- clientFuture
       } yield (token, user, client, TokenBuilder.issueAccessToken(user, client, token, ssoCreds))
     }
 
