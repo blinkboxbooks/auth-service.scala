@@ -51,7 +51,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
     whenReady(clientService.deleteClient(clientIdA1)(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt.foreach { _ should equal(clientInfoA1) }
-      publisherSpy.events should equal(ClientDeregistered(clientA1.copy(isDeregistered = true)) :: Nil)
+      publisherSpy.events should equal(ClientDeregistered(userA, clientA1.copy(isDeregistered = true)) :: Nil)
 
       db.withSession { implicit session =>
         tables.refreshTokens.where(_.clientId === clientIdA1).map(_.isRevoked).foreach(_ shouldBe true)
@@ -62,8 +62,8 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
       infoOpt shouldBe defined
       infoOpt.foreach { _ should equal(clientInfoA2) }
       publisherSpy.events should equal(
-        ClientDeregistered(clientA2.copy(isDeregistered = true)) ::
-        ClientDeregistered(clientA1.copy(isDeregistered = true)) ::Nil)
+        ClientDeregistered(userA, clientA2.copy(isDeregistered = true)) ::
+        ClientDeregistered(userA, clientA1.copy(isDeregistered = true)) :: Nil)
 
       db.withSession { implicit session =>
         tables.refreshTokens.where(_.clientId === clientIdA2).map(_.isRevoked).foreach(_ shouldBe true)
@@ -91,7 +91,7 @@ class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures
         storedClient.foreach { _ should equal(fullPatchedClientA1) }
       }
 
-      publisherSpy.events should equal(ClientUpdated(clientA1, fullPatchedClientA1) :: Nil)
+      publisherSpy.events should equal(ClientUpdated(userA, clientA1, fullPatchedClientA1) :: Nil)
     }
   }
 

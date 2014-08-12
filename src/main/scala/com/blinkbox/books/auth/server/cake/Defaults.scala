@@ -107,7 +107,7 @@ trait DefaultUserServiceComponent extends UserServiceComponent {
 trait DefaultClientServiceComponent extends ClientServiceComponent {
   this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport =>
 
-  val clientService = new DefaultClientService(db, clientRepository, authRepository, publisher)
+  val clientService = new DefaultClientService(db, clientRepository, authRepository, userRepository, publisher)
 }
 
 trait DefaultSSOComponent extends SSOComponent {

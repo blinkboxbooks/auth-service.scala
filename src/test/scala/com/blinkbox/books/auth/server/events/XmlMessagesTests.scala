@@ -1,5 +1,7 @@
 package com.blinkbox.books.auth.server.events
 
+import java.net.{InetAddress, URL}
+
 import com.blinkbox.books.auth.server.data.{Client, ClientId, User, UserId}
 import com.blinkbox.books.time.StoppedClock
 import org.custommonkey.xmlunit.{Diff, XMLUnit}
@@ -187,6 +189,36 @@ class XmlMessagesTests extends FunSuite {
           <os>iOS 7.1.2</os>
         </client>
       </deregistered>
+    val diff = new Diff(expected.toString(), message.toString())
+    assert(diff.similar(), diff.toString)
+  }
+
+  test("The send email XML message is correct") {
+    val user = User(UserId(123), clock.now(), clock.now(), "newuser@example.org", "John", "Doe", "hash", allowMarketing = true)
+    val message = XmlMessages.sendEmail(user, "my_template", Map("foo" -> "bar", "link" -> new URL("http://localhost")), "my_id")
+    val expected =
+      <sendEmail
+        xmlns="http://schemas.blinkbox.com/books/emails/sending/v1"
+        xmlns:r="http://schemas.blinkbox.com/books/routing/v1"
+        r:originator="zuul" r:instance={InetAddress.getLocalHost.getHostName} r:messageId="my_id">
+        <template>my_template</template>
+        <to>
+          <recipient>
+            <name>John Doe</name>
+            <email>newuser@example.org</email>
+          </recipient>
+        </to>
+        <templateVariables>
+          <templateVariable>
+            <key>foo</key>
+            <value>bar</value>
+          </templateVariable>
+          <templateVariable>
+            <key>link</key>
+            <value>http://localhost</value>
+          </templateVariable>
+        </templateVariables>
+      </sendEmail>
     val diff = new Diff(expected.toString(), message.toString())
     assert(diff.similar(), diff.toString)
   }
