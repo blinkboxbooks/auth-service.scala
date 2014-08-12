@@ -40,16 +40,16 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
 
   private def createFromSSO(ssoCredentials: SSOCredentials): Future[User] = {
     val registrationFuture = sso.userInfo(ssoCredentials).map { u =>
-      UserRegistration(u.firstName, u.lastName, u.username, Random.nextString(32), true, false, None, None, None, None)
+      (u.userId, UserRegistration(u.firstName, u.lastName, u.username, Random.nextString(32), true, false, None, None, None, None))
     }
 
     for {
-      registration <- registrationFuture
-      user         <- registerUser(registration)
-      _            <- sso linkAccount(ssoCredentials, user.id, false, TermsVersion)
-      linkedUser   =  user.copy(ssoLinked = true)
-      _            <- updateUser(linkedUser)
-      _            <- events.publish(UserRegistered(linkedUser))
+      (ssoId, registration) <- registrationFuture
+      user                  <- registerUser(registration)
+      _                     <- sso linkAccount(ssoCredentials, user.id, false, TermsVersion)
+      linkedUser            =  user.copy(ssoId = Some(ssoId))
+      _                     <- updateUser(linkedUser)
+      _                     <- events.publish(UserRegistered(linkedUser))
     } yield linkedUser
   }
 
@@ -57,7 +57,8 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     val userFuture = sso.userInfo(ssoCredentials).map { u =>
       user.copy(
         firstName = u.firstName,
-        lastName = u.lastName)
+        lastName = u.lastName,
+        ssoId = Some(u.userId))
     }
     
     for {
@@ -69,10 +70,10 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
 
   private def ensureLinked(maybeUser: Option[User], ssoCredentials: SSOCredentials): Future[User] =
     maybeUser.fold(createFromSSO(ssoCredentials)) { user =>
-      if (user.ssoLinked) Future.successful(user)
+      if (user.ssoId.isDefined) Future.successful(user)
       else for {
         _           <- sso linkAccount(ssoCredentials, user.id, user.allowMarketing, TermsVersion)
-        updatedUser <- updateFromSSO(ssoCredentials, user.copy(ssoLinked = true))
+        updatedUser <- updateFromSSO(ssoCredentials, user)
       } yield updatedUser
     }
 

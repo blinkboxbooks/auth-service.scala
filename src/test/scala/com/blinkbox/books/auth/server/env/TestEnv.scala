@@ -80,9 +80,9 @@ class TestEnv extends
   val userIdB = UserId(2)
   val userIdC = UserId(3)
 
-  val userA = User(userIdA, now, now, "user.a@test.tst", "A First", "A Last", "a-password", true, true)
-  val userB = User(userIdB, now, now, "user.b@test.tst", "B First", "B Last", "b-password", true, true)
-  val userC = User(userIdC, now, now, "user.c@test.tst", "C First", "C Last", "c-password", true, true)
+  val userA = User(userIdA, now, now, "user.a@test.tst", "A First", "A Last", "a-password", true, Some("sso-a"))
+  val userB = User(userIdB, now, now, "user.b@test.tst", "B First", "B Last", "b-password", true, Some("sso-a"))
+  val userC = User(userIdC, now, now, "user.c@test.tst", "C First", "C Last", "c-password", true, Some("sso-a"))
 
   def fullUserPatch = UserPatch(Some("Updated First"), Some("Updated Last"), Some("updated@test.tst"), Some(false), None)
 

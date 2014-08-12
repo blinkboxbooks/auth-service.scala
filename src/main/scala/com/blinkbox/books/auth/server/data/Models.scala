@@ -49,7 +49,7 @@ case class User(id: UserId,
     lastName: String,
     passwordHash: String,
     allowMarketing: Boolean,
-    ssoLinked: Boolean = false)
+    ssoId: Option[String] = None)
 
 case class Client(id: ClientId, createdAt: DateTime, updatedAt: DateTime, userId: UserId, name: String, brand: String, model: String, os: String, secret: String, isDeregistered: Boolean)
 

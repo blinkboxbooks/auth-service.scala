@@ -5,7 +5,7 @@ import java.sql.DataTruncation
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.events.{ClientRegistered, ClientUpdated, Publisher}
+import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientRegistered, ClientUpdated, Publisher}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 
@@ -79,7 +79,7 @@ class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#
         c <- clientRepo.clientWithId(u.id, id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
         _ =  clientRepo.updateClient(c.userId, c) // TODO: Could remove userId from this method signature
         _ =  authRepo.refreshTokensByClientId(c.id).foreach(authRepo.revokeRefreshToken)
-        _ =  events.publish(ClientRegistered(u, c))
+        _ =  events.publish(ClientDeregistered(u, c))
       } yield c
     }
     client.map(clientInfo(_))

@@ -11,7 +11,7 @@ class RegistrationSpecs extends FlatSpec with Matchers with SpecBase {
 
     whenReady(sso.register(UserRegistration("A name", "A surname", "anusername@test.tst", "a-password", true, true, None, None, None, None))) { cred =>
       cred should matchPattern {
-        case SSOCredentials(_, "bearer", _, _) =>
+        case (_, SSOCredentials(_, "bearer", _, _)) =>
       }
     }
   }

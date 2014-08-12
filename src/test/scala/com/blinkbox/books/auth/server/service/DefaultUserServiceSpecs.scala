@@ -48,7 +48,7 @@ class DefaultUserServiceSpecs extends FlatSpec with Matchers with ScalaFutures {
         tables.users.where(_.id === UserId(1)).firstOption
       }
 
-      val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, true)
+      val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, Some("sso-a"))
 
       updated shouldBe defined
       updated foreach { _ shouldEqual expectedUpdatedUser}

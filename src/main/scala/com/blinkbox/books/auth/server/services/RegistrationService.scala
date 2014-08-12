@@ -51,9 +51,9 @@ class DefaultRegistrationService[DB <: DBTypes](
       }
     }
 
-  private def markLinked(user: User): Future[Unit] = Future {
+  private def markLinked(user: User, ssoId: String): Future[Unit] = Future {
     db.withSession { implicit session =>
-      userRepo.updateUser(user.copy(ssoLinked = true))
+      userRepo.updateUser(user.copy(ssoId = Some(ssoId)))
     }
   }
 
@@ -68,10 +68,10 @@ class DefaultRegistrationService[DB <: DBTypes](
   def registerUser(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[TokenInfo] = {
     val tokenInfo = for {
       reg                   <- validateRegistration(registration, clientIp)
-      cred                  <- sso register reg
+      (ssoId, cred)         <- sso register reg
       (user, client, token) <- persistDetails(reg, cred)
       _                     <- sso linkAccount(cred, user.id, registration.allowMarketing, TermsAndConditionsVersion)
-      _                     <- markLinked(user)
+      _                     <- markLinked(user, ssoId)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(user, cl)) getOrElse(Future.successful(()))
     } yield TokenBuilder.issueAccessToken(user, client, token, cred, includeRefreshToken = true, includeClientSecret = true)
