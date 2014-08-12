@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
-import com.blinkbox.books.auth.server.sso.SSO
+import com.blinkbox.books.auth.server.sso.{SSOCredentials, SSOUnauthorized, SSO}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -13,7 +13,6 @@ import scala.slick.profile.BasicProfile
 
 trait AuthService {
   def revokeRefreshToken(token: String): Future[Unit]
-  def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
 }
@@ -34,17 +33,6 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
 
   // TODO: Make this configurable
   val MaxClients = 12
-
-  override def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = Future {
-    val (user, client, token) = db.withTransaction { implicit transaction =>
-      val u = authenticateUser(credentials, clientIP)
-      val c = authenticateClient(credentials, u)
-      val t = authRepo.createRefreshToken(u.id, c.map(_.id), ???) // TODO: Put the SSO token here
-      (u, c, t)
-    }
-    events.publish(UserAuthenticated(user, client))
-    TokenBuilder.issueAccessToken(user, client, token, ???, includeRefreshToken = true) // TODO: Put SSO credentials here
-  }
 
   override def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
     val (user1, client1, token1) = db.withTransaction { implicit transaction =>

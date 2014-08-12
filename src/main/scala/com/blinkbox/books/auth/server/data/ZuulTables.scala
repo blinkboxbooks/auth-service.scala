@@ -26,7 +26,8 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def lastName = column[String]("last_name", O.NotNull)
     def passwordHash = column[String]("password_hash", O.NotNull)
     def allowMarketing = column[Boolean]("allow_marketing_communications", O.NotNull)
-    def * = (id, createdAt, updatedAt, username, firstName, lastName, passwordHash, allowMarketing) <> (User.tupled, User.unapply)
+    def ssoLinked = column[Boolean]("sso_linked", O.Default(false))
+    def * = (id, createdAt, updatedAt, username, firstName, lastName, passwordHash, allowMarketing, ssoLinked) <> (User.tupled, User.unapply)
     def indexOnUsername = index("index_users_on_username", username, unique = true)
   }
 

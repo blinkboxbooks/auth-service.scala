@@ -56,6 +56,8 @@ trait SprayClient extends Client {
     override val ec: ExecutionContext = SprayClient.this.ec
     override val system: ActorSystem = SprayClient.this.system
     override lazy val credentials = creds
+    override def unitRequest(req: HttpRequest) = SprayClient.this.unitRequest(req)
+    override def dataRequest[T: FromResponseUnmarshaller](req: HttpRequest) = SprayClient.this.dataRequest[T](req)
   }
 }
 

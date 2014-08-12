@@ -1,25 +1,31 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.{UserRegistration, SSOConfig}
+import com.blinkbox.books.auth.server.{PasswordCredentials, UserRegistration, SSOConfig}
 import spray.client.pipelining._
-import spray.http.{OAuth2BearerToken, FormData}
+import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
+import spray.httpx.UnsuccessfulResponseException
 
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait SSOException extends Throwable
-case class InvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
+case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
+case object SSOUnauthorized extends SSOException
+case object SSOConflict extends SSOException
+case class SSOUnknownException(e: Throwable) extends SSOException
 
 object SSOConstants {
   val TokenUri = "/oauth2/token"
   val LinkUri = "/link"
+  val InfoUri = "/user"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
+  val PasswordGrant = "password"
 }
 
 trait SSO {
   def register(req: UserRegistration): Future[SSOCredentials]
-  // def authenticate(credentials: AuthenticateUser): Future[TokenCredentials]
+  def authenticate(c: PasswordCredentials): Future[SSOCredentials]
   // def refresh(token: RefreshToken): Future[TokenCredentials]
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
   // def revokeToken(token: RevokeToken): Future[Unit]
@@ -29,7 +35,7 @@ trait SSO {
   // def updatePassword(update: UpdatePassword): Future[Unit]
   // def tokenStatus(req: GetTokenStatus): Future[TokenStatus]
   // def refreshSession(): Future[Unit]
-  // def userInfo(): Future[UserInformation]
+  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation]
   // def updateUser(req: PatchUser): Future[Unit]
   // // Admin
   // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
@@ -48,11 +54,16 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   private def validateToken(cred: SSOCredentials): SSOCredentials =
     if (SsoAccessToken.decode(cred.accessToken, tokenDecoder).isSuccess) cred
-    else throw new InvalidAccessToken(cred)
+    else throw new SSOInvalidAccessToken(cred)
 
-  // TODO: Put some real implementations here, the return type should always be an SSOException
-  private def commonErrorsTransformer: PartialFunction[Throwable, Throwable] = { case e: Throwable => e }
-  private def registrationErrorsTransformer = ((_: Throwable) match { case e: Throwable => e }) andThen commonErrorsTransformer
+  private def commonErrorsTransformer: Throwable => SSOException = {
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SSOUnauthorized
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
+    case e: Throwable  => SSOUnknownException(e)
+  }
+  // TODO: These two transformers should deal with some specific exception and then forward to common for unhandled ones
+  private def registrationErrorsTransformer = commonErrorsTransformer
+  private def authenticationErrorsTransformer = commonErrorsTransformer
 
   def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
 
@@ -71,4 +82,14 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion
     ))))
+
+  def authenticate(c: PasswordCredentials): Future[SSOCredentials] =
+    client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
+      "grant_type" -> C.PasswordGrant,
+      "username" -> c.username,
+      "password" -> c.password
+    )))) map validateToken transform(identity, authenticationErrorsTransformer)
+
+  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] =
+    withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri)))
 }

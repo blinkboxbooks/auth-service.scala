@@ -6,7 +6,7 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{SSO, SSOCredentials}
+import com.blinkbox.books.auth.server.sso.{SSOConflict, SSO, SSOCredentials}
 import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -51,9 +51,17 @@ class DefaultRegistrationService[DB <: DBTypes](
       }
     }
 
+  private def markLinked(user: User): Future[Unit] = Future {
+    db.withSession { implicit session =>
+      userRepo.updateUser(user.copy(ssoLinked = true))
+    }
+  }
+
   private val errorTransformer = (_: Throwable) match {
     case e: DataTruncation => Failures.requestException(e.getMessage, InvalidRequest)
-    case e: DB#ConstraintException => Failures.usernameAlreadyTaken
+    case SSOConflict => Failures.usernameAlreadyTaken
+    // TODO: Decide what to do in this case
+    case e: DB#ConstraintException => sys.error("Unexpected constraint violation when saving the user")
     case e => e
   }
 
@@ -63,6 +71,7 @@ class DefaultRegistrationService[DB <: DBTypes](
       cred                  <- sso register reg
       (user, client, token) <- persistDetails(reg, cred)
       _                     <- sso linkAccount(cred, user.id, registration.allowMarketing, TermsAndConditionsVersion)
+      _                     <- markLinked(user)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(cl)) getOrElse(Future.successful(()))
     } yield TokenBuilder.issueAccessToken(user, client, token, cred, includeRefreshToken = true, includeClientSecret = true)
