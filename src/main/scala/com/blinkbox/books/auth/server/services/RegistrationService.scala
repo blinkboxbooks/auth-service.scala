@@ -73,7 +73,7 @@ class DefaultRegistrationService[DB <: DBTypes](
       _                     <- sso linkAccount(cred, user.id, registration.allowMarketing, TermsAndConditionsVersion)
       _                     <- markLinked(user)
       _                     <- events publish UserRegistered(user)
-      _                     <- client map(cl => events publish ClientRegistered(cl)) getOrElse(Future.successful(()))
+      _                     <- client map(cl => events publish ClientRegistered(user, cl)) getOrElse(Future.successful(()))
     } yield TokenBuilder.issueAccessToken(user, client, token, cred, includeRefreshToken = true, includeClientSecret = true)
 
     tokenInfo.transform(identity, errorTransformer)

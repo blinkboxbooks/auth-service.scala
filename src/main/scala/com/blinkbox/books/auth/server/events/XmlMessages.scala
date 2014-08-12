@@ -1,11 +1,15 @@
 package com.blinkbox.books.auth.server.events
 
+import java.net.InetAddress
+import java.util.UUID
+
 import com.blinkbox.books.auth.server.data.{Client, User}
 import com.blinkbox.books.time.Clock
 
 private[events] object XmlMessages {
   private val UsersNamespace = "http://schemas.blinkboxbooks.com/events/users/v1"
   private val ClientsNamespace = "http://schemas.blinkboxbooks.com/events/clients/v1"
+  private val EmailNamespace = "http://schemas.blinkbox.com/books/emails/sending/v1"
   private val RoutingNamespace = "http://schemas.blinkboxbooks.com/messaging/routing/v1"
   private val VersionNamespace = "http://schemas.blinkboxbooks.com/messaging/versioning"
 
@@ -52,6 +56,24 @@ private[events] object XmlMessages {
       {timestampXml}
       {clientXml(client, includeId = true)}
     </deregistered>
+
+  def sendEmail(user: User, template: String, variables: Map[String, AnyRef], messageId: String = UUID.randomUUID.toString) =
+    <sendEmail xmlns={EmailNamespace} xmlns:r="http://schemas.blinkbox.com/books/routing/v1" r:originator="zuul" r:instance={InetAddress.getLocalHost.getHostName} r:messageId={messageId}>
+      <template>{template}</template>
+      <to>
+        <recipient>
+          <name>{s"${user.firstName} ${user.lastName}"}</name>
+          <email>{user.username}</email>
+        </recipient>
+      </to>
+      <templateVariables>
+        {for ((k, v) <- variables) yield
+        <templateVariable>
+          <key>{k}</key>
+          <value>{v}</value>
+        </templateVariable>}
+      </templateVariables>
+    </sendEmail>
 
   private def timestampXml(implicit clock: Clock) = <timestamp>{clock.now()}</timestamp>
 

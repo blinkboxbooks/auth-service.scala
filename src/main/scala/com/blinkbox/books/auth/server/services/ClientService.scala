@@ -4,8 +4,8 @@ import java.sql.DataTruncation
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.auth.server.data.{AuthRepository, ClientId, ClientRepository, UserId}
-import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientRegistered, ClientUpdated, Publisher}
+import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.events.{ClientRegistered, ClientUpdated, Publisher}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 
@@ -21,7 +21,7 @@ trait ClientService {
 }
 
 class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-    (db: Database, clientRepo: ClientRepository[Profile], authRepo: AuthRepository[Profile], events: Publisher)
+    (db: Database, clientRepo: ClientRepository[Profile], authRepo: AuthRepository[Profile], userRepo: UserRepository[Profile], events: Publisher)
     (implicit executionContext: ExecutionContext, clock: Clock) extends ClientService with ClientInfoFactory {
 
   // TODO: Make this configurable
@@ -30,18 +30,17 @@ class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#
   implicit def userId(implicit user: AuthenticatedUser): UserId = UserId(user.id)
 
   override def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser) = Future {
-    val client = db.withTransaction { implicit transaction =>
+    val (usr, client) = db.withTransaction { implicit transaction =>
       if (clientRepo.activeClientCount(userId) >= MaxClients) {
         throw Failures.clientLimitReached
       }
-      clientRepo.createClient(userId, registration)
+      val u = userRepo.userWithId(userId).getOrElse(throw Failures.unverifiedIdentity)
+      val c = clientRepo.createClient(userId, registration)
+      (u, c)
     }
-
-    events.publish(ClientRegistered(client))
-
+    events.publish(ClientRegistered(usr, client))
     clientInfo(client, includeClientSecret = true)
-
-  } transform(identity, _ match {
+  } transform(identity, {
     case e: DataTruncation => ZuulRequestException(e.getMessage, InvalidRequest)
     case e => e
   })
@@ -57,34 +56,34 @@ class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#
   }
 
   override def updateClient(id: ClientId, patch: ClientPatch)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val clients = db.withTransaction { implicit transaction =>
-      val clientPair = clientRepo.clientWithId(userId, id) map { oldClient =>
-        val newClient = oldClient.copy(
-          updatedAt = clock.now(),
-          name = patch.client_name.getOrElse(oldClient.name),
-          brand = patch.client_brand.getOrElse(oldClient.brand),
-          model = patch.client_model.getOrElse(oldClient.model),
-          os = patch.client_os.getOrElse(oldClient.os))
-        (oldClient, newClient)
-      }
-      clientPair foreach { case (_, c) => clientRepo.updateClient(userId, c) }
-      clientPair
+    val client = db.withTransaction { implicit transaction =>
+      val u = userRepo.userWithId(userId).getOrElse(throw Failures.unverifiedIdentity)
+      for {
+        oc <- clientRepo.clientWithId(u.id, id)
+        nc =  oc.copy(updatedAt = clock.now(),
+                      name = patch.client_name.getOrElse(oc.name),
+                      brand = patch.client_brand.getOrElse(oc.brand),
+                      model = patch.client_model.getOrElse(oc.model),
+                      os = patch.client_os.getOrElse(oc.os))
+        _  =  clientRepo.updateClient(nc.userId, nc)
+        _  =  events.publish(ClientUpdated(u, oc, nc))
+      } yield nc
     }
-
-    clients foreach { case (o, n) => events.publish(ClientUpdated(o, n)) }
-    clients map { case (_, c) => clientInfo(c) }
+    client.map(clientInfo(_))
   }
 
   override def deleteClient(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]] = Future {
-    val client = db.withSession { implicit session =>
-      val newClient = clientRepo.clientWithId(userId, id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
-      newClient.foreach { c =>
-        clientRepo.updateClient(userId, c)
-        authRepo.refreshTokensByClientId(c.id).foreach(authRepo.revokeRefreshToken)
-      }
-      newClient
+    val client = db.withTransaction { implicit transaction =>
+      val u = userRepo.userWithId(userId).getOrElse(throw Failures.unverifiedIdentity)
+      for {
+        c <- clientRepo.clientWithId(u.id, id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
+        _ =  clientRepo.updateClient(c.userId, c) // TODO: Could remove userId from this method signature
+        _ =  authRepo.refreshTokensByClientId(c.id).foreach(authRepo.revokeRefreshToken)
+        _ =  events.publish(ClientRegistered(u, c))
+      } yield c
     }
-    client.foreach(c => events.publish(ClientDeregistered(c)))
     client.map(clientInfo(_))
   }
+
+
 }
