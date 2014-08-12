@@ -9,10 +9,10 @@ import spray.httpx.UnsuccessfulResponseException
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait SSOException extends Throwable
-case class InvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
-case object Unauthorized extends SSOException
-case object Conflict extends SSOException
-case class UnknownSSOException(e: Throwable) extends SSOException
+case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
+case object SSOUnauthorized extends SSOException
+case object SSOConflict extends SSOException
+case class SSOUnknownException(e: Throwable) extends SSOException
 
 object SSOConstants {
   val TokenUri = "/oauth2/token"
@@ -54,12 +54,12 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   private def validateToken(cred: SSOCredentials): SSOCredentials =
     if (SsoAccessToken.decode(cred.accessToken, tokenDecoder).isSuccess) cred
-    else throw new InvalidAccessToken(cred)
+    else throw new SSOInvalidAccessToken(cred)
 
   private def commonErrorsTransformer: Throwable => SSOException = {
-    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => Unauthorized
-    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => Conflict
-    case e: Throwable  => UnknownSSOException(e)
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SSOUnauthorized
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
+    case e: Throwable  => SSOUnknownException(e)
   }
   // TODO: These two transformers should deal with some specific exception and then forward to common for unhandled ones
   private def registrationErrorsTransformer = commonErrorsTransformer

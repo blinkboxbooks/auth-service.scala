@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.services
 
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{UserUpdated, UserRegistered, UserAuthenticated, Publisher}
-import com.blinkbox.books.auth.server.sso.{Unauthorized, SSOCredentials, SSO}
+import com.blinkbox.books.auth.server.sso.{SSOUnauthorized, SSOCredentials, SSO}
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -101,7 +101,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     } yield TokenBuilder.issueAccessToken(user, client, token, ssoCredentials, includeRefreshToken = true)
 
   } transform(identity, {
-    case Unauthorized => Failures.invalidUsernamePassword
+    case SSOUnauthorized => Failures.invalidUsernamePassword
     case e: Throwable => e
   })
 

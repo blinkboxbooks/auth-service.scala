@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
-import com.blinkbox.books.auth.server.sso.{SSOCredentials, Unauthorized, SSO}
+import com.blinkbox.books.auth.server.sso.{SSOCredentials, SSOUnauthorized, SSO}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
