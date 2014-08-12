@@ -87,10 +87,6 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
     val ssoAuthenticationFuture = sso authenticate (credentials)
 
-    ssoAuthenticationFuture.onComplete { outcome =>
-      db.withSession { implicit session => authRepo.recordLoginAttempt(credentials.username, outcome.isSuccess, clientIP) }
-    }
-
     for {
       ssoCredentials  <- ssoAuthenticationFuture
       maybeUser       <- findUser(credentials.username)
