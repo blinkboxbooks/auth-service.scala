@@ -81,5 +81,5 @@ object Failures {
   def clientLimitReached = ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
 
   def requestException(message: String, code: ZuulRequestErrorCode, reason: Option[ZuulRequestErrorReason] = None) =
-    throw ZuulRequestException(message, code, reason)
+    ZuulRequestException(message, code, reason)
 }
