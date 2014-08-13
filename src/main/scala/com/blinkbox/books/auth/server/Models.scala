@@ -38,6 +38,10 @@ case class UserRegistration(
 trait ClientCredentials {
   val clientId: Option[String]
   val clientSecret: Option[String]
+
+  if (clientId.isDefined != clientSecret.isDefined) throw Failures.invalidClientCredentials
+
+  val asPair: Option[(String, String)] = for (id <- clientId; secret <- clientSecret) yield (id, secret)
 }
 
 case class PasswordCredentials(username: String, password: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {

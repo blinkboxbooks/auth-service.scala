@@ -71,6 +71,10 @@ trait PasswordAuthenticationServiceComponent {
   def passwordAuthenticationService: PasswordAuthenticationService
 }
 
+trait RefreshTokenServiceComponent {
+  def refreshTokenService: RefreshTokenService
+}
+
 trait SSOComponent {
   def sso: SSO
 }

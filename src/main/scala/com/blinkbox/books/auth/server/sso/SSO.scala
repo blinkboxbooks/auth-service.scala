@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.{PasswordCredentials, UserRegistration, SSOConfig}
+import com.blinkbox.books.auth.server.{RefreshTokenCredentials, PasswordCredentials, UserRegistration, SSOConfig}
 import spray.client.pipelining._
 import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
 import spray.httpx.UnsuccessfulResponseException
@@ -22,12 +22,13 @@ object SSOConstants {
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
   val PasswordGrant = "password"
+  val RefreshTokenGrant = "refresh_token"
 }
 
 trait SSO {
   def register(req: UserRegistration): Future[(String, SSOCredentials)]
   def authenticate(c: PasswordCredentials): Future[SSOCredentials]
-  // def refresh(token: RefreshToken): Future[TokenCredentials]
+  def refresh(ssoRefreshToken: String): Future[SSOCredentials]
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
   // def revokeToken(token: RevokeToken): Future[Unit]
   // // User - authenticated
@@ -94,4 +95,10 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] =
     withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri)))
+
+  def refresh(ssoRefreshToken: String): Future[SSOCredentials] =
+    client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
+      "grant_type" -> C.RefreshTokenGrant,
+      "refresh_token" -> ssoRefreshToken
+    ))))
 }

@@ -74,7 +74,7 @@ class DefaultRegistrationService[DB <: DBTypes](
       _                     <- markLinked(user, ssoId)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(user, cl)) getOrElse(Future.successful(()))
-    } yield TokenBuilder.issueAccessToken(user, client, token, cred, includeRefreshToken = true, includeClientSecret = true)
+    } yield TokenBuilder.issueAccessToken(user, client, token, Some(cred), includeRefreshToken = true, includeClientSecret = true)
 
     tokenInfo.transform(identity, errorTransformer)
   }

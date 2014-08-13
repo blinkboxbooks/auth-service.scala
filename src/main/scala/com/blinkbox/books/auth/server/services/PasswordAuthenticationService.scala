@@ -95,7 +95,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
       client          <- getClient(credentials, user)
       token           <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken)
       _               <- events.publish(UserAuthenticated(user, client))
-    } yield TokenBuilder.issueAccessToken(user, client, token, ssoCredentials, includeRefreshToken = true)
+    } yield TokenBuilder.issueAccessToken(user, client, token, Some(ssoCredentials), includeRefreshToken = true)
 
   } transform(identity, {
     case SSOUnauthorized => Failures.invalidUsernamePassword

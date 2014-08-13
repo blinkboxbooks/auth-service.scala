@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.env.{AuthenticationTestEnv, TestEnv}
+import com.blinkbox.books.auth.server.env.AuthenticationTestEnv
 import spray.http.{FormData, StatusCodes}
 
 class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
@@ -121,7 +121,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "accept a valid refresh token" in {
-    cancel("Awaiting refresh token SSO implementation")
+    env.ssoSuccessfulAuthentication()
+
     Post("/oauth2/token", FormData(validRefreshTokenCredentials)) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 
@@ -137,7 +138,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "accept a valid refresh token with valid client information" in {
-    cancel("Awaiting refresh token SSO implementation")
+    env.ssoSuccessfulAuthentication()
+
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient)) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 
@@ -154,7 +156,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "reject an invalid refresh token" in {
-    cancel("Awaiting refresh token SSO implementation")
+    env.ssoNoInvocation()
+
     Post("/oauth2/token", FormData(validRefreshTokenCredentials.updated("refresh_token", "invalid"))) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 
@@ -167,7 +170,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "reject a valid refresh token with invalid client information" in {
-    cancel("Awaiting refresh token SSO implementation")
+    env.ssoNoInvocation()
+
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient.updated("client_id", "invalid"))) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 
@@ -180,7 +184,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "reject a valid refresh token with de-registered client information" in {
-    cancel("Awaiting refresh token SSO implementation")
+    env.ssoNoInvocation()
+
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithDeregisteredClient)) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 
@@ -193,7 +198,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "reject a revoked refresh token" in {
-    cancel("Awaiting refresh token SSO implementation")
+    env.ssoNoInvocation()
+
     Post("/oauth2/token", FormData(revokedRefreshTokenCredentials)) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 
@@ -206,7 +212,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "reject a refresh token if the associated client credentials are not provided" in {
-    cancel("Awaiting refresh token SSO implementation")
+    env.ssoNoInvocation()
+
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient - "client_id" - "client_secret")) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
 

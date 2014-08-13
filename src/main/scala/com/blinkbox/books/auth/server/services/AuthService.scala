@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
-import com.blinkbox.books.auth.server.sso.{SSOCredentials, SSOUnauthorized, SSO}
+import com.blinkbox.books.auth.server.sso.SSO
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -13,7 +13,6 @@ import scala.slick.profile.BasicProfile
 
 trait AuthService {
   def revokeRefreshToken(token: String): Future[Unit]
-  def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
 }
 
@@ -29,30 +28,11 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     geoIP: GeoIP,
     events: Publisher,
     sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock)
-  extends AuthService with UserInfoFactory with ClientInfoFactory {
+  extends AuthService with UserInfoFactory with ClientInfoFactory with ClientAuthenticator[Profile] {
 
   // TODO: Make this configurable
   val MaxClients = 12
 
-  override def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = Future {
-    val (user1, client1, token1) = db.withTransaction { implicit transaction =>
-      val t = authRepo.refreshTokenWithToken(credentials.token).getOrElse(throw Failures.invalidRefreshToken)
-      val u = userRepo.userWithId(t.userId).getOrElse(throw Failures.invalidRefreshToken)
-      val c = authenticateClient(credentials, u)
-
-      (t.clientId, c) match {
-        case (None, Some(client)) => authRepo.associateRefreshTokenWithClient(t, client) // Token needs to be associated with the client
-        case (None, None) => // Do nothing: token isn't associated with a client and there is no client
-        case (Some(tId), Some(client)) if (tId == client.id) => // Do nothing: token is associated with the right client
-        case _ => throw Failures.refreshTokenNotAuthorized
-      }
-
-      authRepo.extendRefreshTokenLifetime(t)
-      (u, c, t)
-    }
-    events.publish(UserAuthenticated(user1, client1))
-    TokenBuilder.issueAccessToken(user1, client1, token1, ???) // TODO: Put SSO credentials here
-  }
 
   override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = Future {
     // TODO: This line should be re-written to avoid the `get` invocation on the option and to account for casting failure
@@ -80,12 +60,4 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
 
     user.getOrElse(throw Failures.invalidUsernamePassword)
   }
-
-  private def authenticateClient(credentials: ClientCredentials, user: User)(implicit session: authRepo.Session): Option[Client] =
-    for {
-      clientId <- credentials.clientId
-      clientSecret <- credentials.clientSecret
-    } yield authRepo.
-      authenticateClient(clientId, clientSecret, user.id).
-      getOrElse(throw Failures.invalidClientCredentials)
 }

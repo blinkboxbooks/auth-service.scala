@@ -86,7 +86,7 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
     val buf = new Array[Byte](32)
     new SecureRandom().nextBytes(buf)
     val token = Base64.encode(buf)
-    RefreshToken(RefreshTokenId.Invalid, now, now, userId, clientId, token, ssoToken, false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
+    RefreshToken(RefreshTokenId.Invalid, now, now, userId, clientId, token, Some(ssoToken), false, now.plusDays(90), now.plusHours(24), now.plusMinutes(10))
   }
 }
 
