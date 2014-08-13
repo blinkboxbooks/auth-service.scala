@@ -70,7 +70,7 @@ class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
   }
 
   it should "not allow the registration of a new user with an existing username" in {
-    env.ssoRegistrationConflict()
+    env.ssoConflict()
 
     Post("/oauth2/token", FormData(regDataSimple.updated("username", "user.a@test.tst"))) ~> route ~> check {
       import com.blinkbox.books.auth.server.Serialization._
