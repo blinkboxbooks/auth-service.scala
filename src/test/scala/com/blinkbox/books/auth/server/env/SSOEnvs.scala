@@ -11,20 +11,53 @@ trait SSOResponseFixtures {
     "expires_in":$validTokenSSOExpiry,
     "refresh_token":"tGzv3JOkF0XG5Qx2TlKWIA"
   }"""
+
+  def invalidRequestJson(description: String, error: String) = s"""{
+    "error": "$error",
+    "error_description": "$description"
+  }"""
+
+  val userInfoJson = s"""{
+    "user_id":"6E41CB9F",
+    "username":"john.doe+blinkbox@example.com",
+    "email":"john.doe@example.com",
+    "first_name":"John",
+    "last_name":"Doe",
+    "date_of_birth": "1985-04-12",
+    "gender": "M",
+    "group_allow_marketing": false,
+    "validated": true,
+    "linked_accounts": [
+      {
+        "service":"music",
+        "service_user_id":"john.doe@music.com",
+        "service_linked_on": "2012-04-12T23:20:50.52Z",
+        "service_allow_marketing": true,
+        "service_tc_accepted_version": "v2.0"
+      }
+    ]
+  }"""
 }
 
-trait CommonResponder {
+trait CommonResponder extends SSOResponseFixtures {
   this: TestSSOComponent =>
 
   def ssoNoInvocation() = ssoResponse.complete(_.failure(new IllegalStateException("No invocation for SSO was expected")))
+
+  def ssoInvalidRequest(description: String, error: String = "invalid_request"): Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.BadRequest, 
+      HttpEntity(ContentTypes.`application/json`, invalidRequestJson(description, error).getBytes)))
+  )
+
+  def ssoConflict(): Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.Conflict, HttpEntity.Empty))
+  )
+
+  def ssoNoContent(): Unit = ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent, HttpEntity.Empty)))
 }
 
-trait RegistrationResponder extends CommonResponder with SSOResponseFixtures {
+trait RegistrationResponder extends CommonResponder {
   this: TestSSOComponent =>
-
-  def ssoRegistrationConflict(): Unit = ssoResponse.complete(
-      _.success(HttpResponse(StatusCodes.Conflict, HttpEntity.Empty))
-    )
 
   def ssoSuccessfulRegistration(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes))),
@@ -32,7 +65,7 @@ trait RegistrationResponder extends CommonResponder with SSOResponseFixtures {
     )
 }
 
-trait AuthenticationResponder extends CommonResponder with SSOResponseFixtures {
+trait AuthenticationResponder extends CommonResponder {
   this: TestSSOComponent =>
 
   def ssoSuccessfulAuthentication(): Unit = ssoResponse.complete(
@@ -42,8 +75,26 @@ trait AuthenticationResponder extends CommonResponder with SSOResponseFixtures {
   def ssoUnsuccessfulAuthentication(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.Unauthorized, HttpEntity.Empty))
     )
+
+  def ssoTooManyRequests(): Unit = ssoResponse.complete(
+      _.success(HttpResponse(StatusCodes.TooManyRequests, HttpEntity.Empty))
+    )
+}
+
+trait UserInfoResponder extends CommonResponder {
+  this: TestSSOComponent =>
+
+  def ssoSuccessfulUserInfo(): Unit = ssoResponse.complete(
+      _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, userInfoJson.getBytes)))
+    )
 }
 
 class RegistrationTestEnv extends TestEnv with RegistrationResponder
 
 class AuthenticationTestEnv extends TestEnv with AuthenticationResponder
+
+class LinkTestEnv extends TestEnv with CommonResponder
+
+class RefreshTestEnv extends TestEnv with AuthenticationResponder
+
+class UserInfoTestEnv extends TestEnv with UserInfoResponder

@@ -2,6 +2,7 @@ package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.{RefreshTokenCredentials, PasswordCredentials, UserRegistration, SSOConfig}
+import org.json4s.JsonAST.{JString, JField, JObject}
 import spray.client.pipelining._
 import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
 import spray.httpx.UnsuccessfulResponseException
@@ -13,6 +14,8 @@ sealed trait SSOException extends Throwable
 case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
 case object SSOUnauthorized extends SSOException
 case object SSOConflict extends SSOException
+case object SSOTooManyRequests extends SSOException
+case class SSOInvalidRequest(message: String) extends SSOException
 case class SSOUnknownException(e: Throwable) extends SSOException
 
 object SSOConstants {
@@ -59,14 +62,29 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     case Failure(_) => throw new SSOInvalidAccessToken(cred)
   }
 
+  private def extractInvalidRequest(e: UnsuccessfulResponseException): SSOException = {
+    import org.json4s.jackson.JsonMethods._
+    parseOpt(e.response.entity.asString).collect {
+      case JObject(
+        JField("error", JString("invalid_request")) ::
+        JField("error_description", JString(s)) :: Nil) => SSOInvalidRequest(s)
+    } getOrElse(SSOUnknownException(e))
+  }
+
   private def commonErrorsTransformer: Throwable => SSOException = {
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SSOUnauthorized
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => SSOTooManyRequests
     case e: Throwable  => SSOUnknownException(e)
   }
-  // TODO: These two transformers should deal with some specific exception and then forward to common for unhandled ones
+
+  // TODO: These transformers should deal with some specific exception and then forward to common for unhandled ones
   private def registrationErrorsTransformer = commonErrorsTransformer
   private def authenticationErrorsTransformer = commonErrorsTransformer
+  private def linkErrorsTransformer = commonErrorsTransformer
+  private def refreshErrorsTransformer = commonErrorsTransformer
+  private def userInfoErrorsTransformer = commonErrorsTransformer
 
   def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
 
@@ -84,7 +102,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion
-    ))))
+    )))) transform(identity, linkErrorsTransformer)
 
   def authenticate(c: PasswordCredentials): Future[SSOCredentials] =
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
@@ -94,11 +112,11 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) map extractUserId transform(_._2, authenticationErrorsTransformer)
 
   def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] =
-    withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri)))
+    withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri))) transform(identity, userInfoErrorsTransformer)
 
   def refresh(ssoRefreshToken: String): Future[SSOCredentials] =
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RefreshTokenGrant,
       "refresh_token" -> ssoRefreshToken
-    ))))
+    )))) transform(identity, refreshErrorsTransformer)
 }
