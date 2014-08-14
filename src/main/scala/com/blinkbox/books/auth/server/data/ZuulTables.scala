@@ -26,7 +26,7 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def lastName = column[String]("last_name", O.NotNull)
     def passwordHash = column[String]("password_hash", O.NotNull)
     def allowMarketing = column[Boolean]("allow_marketing_communications", O.NotNull)
-    def ssoId = column[Option[String]]("sso_linked", O.Default(None))
+    def ssoId = column[Option[String]]("sso_id", O.Default(None))
     def * = (id, createdAt, updatedAt, username, firstName, lastName, passwordHash, allowMarketing, ssoId) <> (User.tupled, User.unapply)
     def indexOnUsername = index("index_users_on_username", username, unique = true)
   }
@@ -53,7 +53,7 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def userId = column[UserId]("user_id", O.NotNull)
     def clientId = column[Option[ClientId]]("client_id")
     def token = column[String]("token", O.NotNull)
-    def ssoToken = column[Option[String]]("sso_refresh_token", O.NotNull)
+    def ssoToken = column[Option[String]]("sso_refresh_token")
     def isRevoked = column[Boolean]("revoked", O.NotNull)
     def expiresAt = column[DateTime]("expires_at", O.NotNull)
     def elevationExpiresAt = column[DateTime]("elevation_expires_at", O.NotNull)

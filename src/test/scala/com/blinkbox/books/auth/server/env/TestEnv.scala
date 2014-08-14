@@ -100,7 +100,8 @@ class TestEnv extends
   val clientA3 = Client(clientIdA3, now, now, userIdA, "Client A3", "Test brand A3", "Test model A3", "Test OS A3", "test-secret-a3", true)
 
   val exp = now.withDurationAdded(Duration.standardHours(1), 1)
-  val refreshTokenClientA1 = RefreshToken(RefreshTokenId(1), now, now, userIdA, Some(clientIdA1), "some-token-a1", Some("some-sso-token-a1"), false, exp, exp, exp)
+  val refreshTokenClientA1Id = RefreshTokenId(1)
+  val refreshTokenClientA1 = RefreshToken(refreshTokenClientA1Id, now, now, userIdA, Some(clientIdA1), "some-token-a1", Some("some-sso-token-a1"), false, exp, exp, exp)
   val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", Some("some-sso-token-a2"), false, exp, exp, exp)
   val refreshTokenClientA3 = RefreshToken(RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", Some("some-sso-token-a3"), true, now, now, now)
   val refreshTokenNoClientA = RefreshToken(RefreshTokenId(3), now, now, userIdA, None, "some-token-a", Some("some-sso-token-a"), false, now, now, now)

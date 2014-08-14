@@ -107,6 +107,18 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     }
   }
 
+  it should "return a TooManyRequest response if SSO is throttling the user" in {
+    env.ssoTooManyRequests(20)
+    Post("/oauth2/token", FormData(validCredentials)) ~> route ~> check {
+
+      status should equal(StatusCodes.TooManyRequests)
+
+      val retryAfter = headers.find(_.lowercaseName == "retry-after")
+      retryAfter shouldBe defined
+      retryAfter.foreach { r => r.value should equal("20") }
+    }
+  }
+
   it should "reject credentials for a de-registerd client" in {
     env.ssoSuccessfulAuthentication()
     Post("/oauth2/token", FormData(validCredentialsWithDeregisteredClient)) ~> route ~> check {

@@ -4,15 +4,16 @@ import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.services._
+import com.blinkbox.books.auth.server.sso.SSOUnknownException
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
 import com.blinkbox.books.spray.Directives
 import com.wordnik.swagger.annotations._
 import org.slf4j.LoggerFactory
-import spray.http.HttpHeaders.`WWW-Authenticate`
+import spray.http.HttpHeaders.{RawHeader, `WWW-Authenticate`}
 import spray.http.StatusCodes._
-import spray.http.HttpChallenge
+import spray.http.{HttpEntity, HttpChallenge}
 import spray.routing._
 import spray.httpx.unmarshalling.FormDataUnmarshallers
 import com.blinkbox.books.auth.User
@@ -268,6 +269,13 @@ class AuthApi(
       }
 
       respondWithHeader(`WWW-Authenticate`.apply(challenges)) { complete(Unauthorized, None) }
+    case ZuulTooManyRequestException(_, retryAfter) =>
+      respondWithHeader(RawHeader("Retry-After", retryAfter.toSeconds.toString)) {
+        complete(TooManyRequests, HttpEntity.Empty)
+      }
+    case SSOUnknownException(e) =>
+      log.error("Unknown SSO error", e)
+      complete(InternalServerError, HttpEntity.Empty)
   }
 
   def rejectionHandler = RejectionHandler {

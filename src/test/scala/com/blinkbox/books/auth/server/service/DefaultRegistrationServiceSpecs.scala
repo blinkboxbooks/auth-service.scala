@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.env.RegistrationTestEnv
-import com.blinkbox.books.auth.server.{TokenInfo, UserRegistration}
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Span}
@@ -58,5 +58,19 @@ class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaF
       token.client_model shouldBe Some("New Model")
       token.client_os shouldBe Some("New OS")
     }
+  }
+
+  it should "correctly signal when an username is already registered with the SSO service" in new RegistrationTestEnv {
+    ssoConflict()
+
+    failingWith[ZuulRequestException](registrationService.registerUser(clientReg, None)) should equal(Failures.usernameAlreadyTaken)
+  }
+
+  it should "correctly signal when the SSO service returns validation errors" in new RegistrationTestEnv {
+    val err = "Validation errors"
+    ssoInvalidRequest(err)
+
+    failingWith[ZuulRequestException](registrationService.registerUser(clientReg, None)) should equal(
+      Failures.requestException(err, ZuulRequestErrorCode.InvalidRequest))
   }
 }

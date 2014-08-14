@@ -33,12 +33,14 @@ class SSOResponseMocker {
     for (c <- completions) {
       val p = Promise[HttpResponse]
       c(p)
-      ssoResponse = p :: ssoResponse
+      ssoResponse = ssoResponse :+ p
     }
   }
 
-  def nextResponse(): Future[HttpResponse] = ssoResponse.reverse match {
-    case p :: ps => p.future
+  def nextResponse(): Future[HttpResponse] = ssoResponse match {
+    case p :: ps =>
+      ssoResponse = ps
+      p.future
     case _ => sys.error("Expected SSO response mock, got nothing")
   }
 }

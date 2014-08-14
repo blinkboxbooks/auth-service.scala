@@ -1,6 +1,7 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidGrant, InvalidClient}
+import com.blinkbox.books.auth.server.data.RefreshTokenId
 import com.blinkbox.books.auth.server.{ZuulRequestException, RefreshTokenCredentials}
 import com.blinkbox.books.auth.server.env.{CommonResponder, AuthenticationTestEnv, TestEnv}
 import com.blinkbox.books.testkit.FailHelper
@@ -20,6 +21,33 @@ class DefaultRefreshTokenServiceSpecs extends FlatSpec with Matchers with ScalaF
 
     whenReady(refreshFuture) { token =>
       token.expires_in should equal(validTokenZuulExpiry)
+      token.user_id shouldBe userIdA.external
+      token.client_id shouldBe Some(clientInfoA1.client_id)
+
+      import tables._
+      import tables.driver.simple._
+      val updatedToken = db.withSession { implicit session =>
+        tables.refreshTokens.where(_.id === refreshTokenClientA1.id).firstOption
+      }
+
+      updatedToken shouldBe defined
+      updatedToken.foreach(_.expiresAt should equal(now.plusDays(90)))
+    }
+  }
+
+  it should "refresh a valid refresh token even if we don't have an SSO token for that" in new AuthenticationTestEnv {
+    ssoNoInvocation()
+
+    import driver.simple._
+    db.withSession { implicit session =>
+      tables.refreshTokens.map(_.ssoToken).update(None)
+    }
+
+    val refreshFuture = refreshTokenService.refreshAccessToken(
+      RefreshTokenCredentials(refreshTokenClientA1.token, Some(clientInfoA1.client_id), Some("test-secret-a1")))
+
+    whenReady(refreshFuture) { token =>
+      token.expires_in should equal(1800) // Please note that in this case this value is not bound to SSO at all
       token.user_id shouldBe userIdA.external
       token.client_id shouldBe Some(clientInfoA1.client_id)
 

@@ -2,11 +2,14 @@ package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.{RefreshTokenCredentials, PasswordCredentials, UserRegistration, SSOConfig}
+import com.typesafe.scalalogging.slf4j.StrictLogging
 import org.json4s.JsonAST.{JString, JField, JObject}
+import org.slf4j.LoggerFactory
 import spray.client.pipelining._
-import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
+import spray.http.{HttpCredentials, StatusCodes, OAuth2BearerToken, FormData}
 import spray.httpx.UnsuccessfulResponseException
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -14,7 +17,7 @@ sealed trait SSOException extends Throwable
 case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
 case object SSOUnauthorized extends SSOException
 case object SSOConflict extends SSOException
-case object SSOTooManyRequests extends SSOException
+case class SSOTooManyRequests(retryAfter: FiniteDuration) extends SSOException
 case class SSOInvalidRequest(message: String) extends SSOException
 case class SSOUnknownException(e: Throwable) extends SSOException
 
@@ -50,7 +53,7 @@ trait SSO {
   // def systemStatus(): Future[SystemStatus]
 }
 
-class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends SSO {
+class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends SSO with StrictLogging {
   import com.blinkbox.books.auth.server.sso.Serialization.json4sUnmarshaller
 
   private def versioned(uri: String) = s"/${config.version}$uri"
@@ -71,11 +74,22 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     } getOrElse(SSOUnknownException(e))
   }
 
+  private def extractTooManyRequests(e: UnsuccessfulResponseException): SSOException = try {
+    import scala.concurrent.duration._
+    e.response.
+      headers.
+      find(_.lowercaseName == "retry-after").
+      map(r => SSOTooManyRequests(r.value.toInt.seconds)).
+      getOrElse(SSOUnknownException(e))
+  } catch {
+    case e: NumberFormatException => SSOUnknownException(e)
+  }
+
   private def commonErrorsTransformer: Throwable => SSOException = {
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SSOUnauthorized
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
-    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => SSOTooManyRequests
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => extractTooManyRequests(e)
     case e: Throwable  => SSOUnknownException(e)
   }
 
@@ -86,9 +100,10 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def refreshErrorsTransformer = commonErrorsTransformer
   private def userInfoErrorsTransformer = commonErrorsTransformer
 
-  def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
+  def oauthCredentials(ssoCredentials: SSOCredentials): HttpCredentials = new OAuth2BearerToken(ssoCredentials.accessToken)
 
-  def register(req: UserRegistration): Future[(String, SSOCredentials)] =
+  def register(req: UserRegistration): Future[(String, SSOCredentials)] = {
+    logger.debug("Registering user")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RegistrationGrant,
       "first_name" -> req.firstName,
@@ -96,27 +111,36 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "username" -> req.username,
       "password" -> req.password
     )))) map extractUserId transform(identity, registrationErrorsTransformer)
+  }
 
-  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] =
-    withCredentials(ssoCredentials).unitRequest(Post(versioned(C.LinkUri), FormData(Map(
+  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] = {
+    logger.debug("Linking account", id)
+    client.unitRequest(Post(versioned(C.LinkUri), FormData(Map(
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion
-    )))) transform(identity, linkErrorsTransformer)
+    ))), oauthCredentials(ssoCredentials)) transform(identity, linkErrorsTransformer)
+  }
 
-  def authenticate(c: PasswordCredentials): Future[SSOCredentials] =
+  def authenticate(c: PasswordCredentials): Future[SSOCredentials] = {
+    logger.debug("Authenticating via password credentials")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.PasswordGrant,
       "username" -> c.username,
       "password" -> c.password
     )))) map extractUserId transform(_._2, authenticationErrorsTransformer)
+  }
 
-  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] =
-    withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri))) transform(identity, userInfoErrorsTransformer)
+  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] = {
+    logger.debug("Fetching user info")
+    client.dataRequest[UserInformation](Get(versioned(C.InfoUri)), oauthCredentials(ssoCredentials)) transform(identity, userInfoErrorsTransformer)
+  }
 
-  def refresh(ssoRefreshToken: String): Future[SSOCredentials] =
+  def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
+    logger.debug("Authenticating via refresth token")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RefreshTokenGrant,
       "refresh_token" -> ssoRefreshToken
     )))) transform(identity, refreshErrorsTransformer)
+  }
 }
