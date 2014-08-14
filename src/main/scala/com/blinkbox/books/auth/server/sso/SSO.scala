@@ -137,7 +137,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   }
 
   def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
-    logger.debug("Authenticating via refresth token")
+    logger.debug("Authenticating via refresh token")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RefreshTokenGrant,
       "refresh_token" -> ssoRefreshToken
