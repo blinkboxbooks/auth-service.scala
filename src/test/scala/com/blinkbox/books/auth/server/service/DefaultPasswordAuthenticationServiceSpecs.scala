@@ -12,6 +12,8 @@ import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import spray.http.{HttpEntity, StatusCodes, HttpResponse}
 
+import scala.concurrent.duration.FiniteDuration
+
 class DefaultPasswordAuthenticationServiceSpecs  extends FlatSpec with Matchers with ScalaFutures with FailHelper {
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
@@ -83,7 +85,7 @@ class DefaultPasswordAuthenticationServiceSpecs  extends FlatSpec with Matchers 
     ssoTooManyRequests(10)
 
     failingWith[ZuulTooManyRequestException](passwordAuthenticationService.authenticate(dummyCreds, None)) should matchPattern {
-      case ZuulTooManyRequestException(_, 10) =>
+      case ZuulTooManyRequestException(_, d) if d.toSeconds == 10 =>
     }
   }
 

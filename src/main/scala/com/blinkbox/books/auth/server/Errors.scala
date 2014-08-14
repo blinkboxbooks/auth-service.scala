@@ -1,5 +1,7 @@
 package com.blinkbox.books.auth.server
 
+import scala.concurrent.duration.FiniteDuration
+
 sealed trait ZuulErrorCode
 sealed trait ZuulRequestErrorCode extends ZuulErrorCode
 sealed trait ZuulRequestErrorReason extends ZuulErrorCode
@@ -63,7 +65,7 @@ case class ZuulRequestException(
 case class ZuulAuthorizationException(
   message: String, code: ZuulAuthorizationErrorCode, reason: Option[ZuulAuthorizationErrorReason] = None) extends ZuulException
 
-case class ZuulTooManyRequestException(message: String, retryAfter: Int) extends ZuulException
+case class ZuulTooManyRequestException(message: String, retryAfter: FiniteDuration) extends ZuulException
 
 object Failures {
   import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode._
@@ -82,7 +84,8 @@ object Failures {
   def invalidClientCredentials = ZuulRequestException("Invalid client credentials.", InvalidClient)
   def clientLimitReached = ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
 
-  def tooManyRequests(retryAfter: Int) = ZuulTooManyRequestException(s"Too many login attempts, please retry after $retryAfter seconds", retryAfter)
+  def tooManyRequests(retryAfter: FiniteDuration) =
+    ZuulTooManyRequestException(s"Too many login attempts, please retry after ${retryAfter.toSeconds} seconds", retryAfter)
 
   def requestException(message: String, code: ZuulRequestErrorCode, reason: Option[ZuulRequestErrorReason] = None) =
     ZuulRequestException(message, code, reason)

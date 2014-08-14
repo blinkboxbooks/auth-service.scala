@@ -8,6 +8,7 @@ import spray.client.pipelining._
 import spray.http.{HttpCredentials, StatusCodes, OAuth2BearerToken, FormData}
 import spray.httpx.UnsuccessfulResponseException
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -15,7 +16,7 @@ sealed trait SSOException extends Throwable
 case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
 case object SSOUnauthorized extends SSOException
 case object SSOConflict extends SSOException
-case class SSOTooManyRequests(retryAfter: Int) extends SSOException
+case class SSOTooManyRequests(retryAfter: FiniteDuration) extends SSOException
 case class SSOInvalidRequest(message: String) extends SSOException
 case class SSOUnknownException(e: Throwable) extends SSOException
 
@@ -75,10 +76,11 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   }
 
   private def extractTooManyRequests(e: UnsuccessfulResponseException): SSOException = try {
+    import scala.concurrent.duration._
     e.response.
       headers.
       find(_.lowercaseName == "retry-after").
-      map(r => SSOTooManyRequests(r.value.toInt)).
+      map(r => SSOTooManyRequests(r.value.toInt.seconds)).
       getOrElse(SSOUnknownException(e))
   } catch {
     case e: NumberFormatException => SSOUnknownException(e)

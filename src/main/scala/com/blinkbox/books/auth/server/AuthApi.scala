@@ -270,7 +270,7 @@ class AuthApi(
 
       respondWithHeader(`WWW-Authenticate`.apply(challenges)) { complete(Unauthorized, None) }
     case ZuulTooManyRequestException(_, retryAfter) =>
-      respondWithHeader(RawHeader("Retry-After", retryAfter.toString)) {
+      respondWithHeader(RawHeader("Retry-After", retryAfter.toSeconds.toString)) {
         complete(TooManyRequests, HttpEntity.Empty)
       }
     case SSOUnknownException(e) =>

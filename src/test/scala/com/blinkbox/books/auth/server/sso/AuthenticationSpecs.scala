@@ -38,7 +38,7 @@ class AuthenticationSpecs extends FlatSpec with Matchers with SpecBase with Fail
     ssoTooManyRequests(10)
 
     failingWith[SSOTooManyRequests](sso.authenticate(credentials)) should matchPattern {
-      case SSOTooManyRequests(10) =>
+      case SSOTooManyRequests(d) if d.toSeconds == 10 =>
     }
   }
 }
