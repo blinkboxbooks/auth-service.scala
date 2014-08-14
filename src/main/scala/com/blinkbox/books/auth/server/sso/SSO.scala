@@ -5,7 +5,7 @@ import com.blinkbox.books.auth.server.{RefreshTokenCredentials, PasswordCredenti
 import org.json4s.JsonAST.{JString, JField, JObject}
 import org.slf4j.LoggerFactory
 import spray.client.pipelining._
-import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
+import spray.http.{HttpCredentials, StatusCodes, OAuth2BearerToken, FormData}
 import spray.httpx.UnsuccessfulResponseException
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -99,7 +99,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def refreshErrorsTransformer = commonErrorsTransformer
   private def userInfoErrorsTransformer = commonErrorsTransformer
 
-  def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
+  def oauthCredentials(ssoCredentials: SSOCredentials): HttpCredentials = new OAuth2BearerToken(ssoCredentials.accessToken)
 
   def register(req: UserRegistration): Future[(String, SSOCredentials)] = {
     log.debug("Registering user", req)
@@ -114,11 +114,11 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] = {
     log.debug("Linking account", ssoCredentials, id)
-    withCredentials(ssoCredentials).unitRequest(Post(versioned(C.LinkUri), FormData(Map(
+    client.unitRequest(Post(versioned(C.LinkUri), FormData(Map(
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion
-    )))) transform(identity, linkErrorsTransformer)
+    ))), oauthCredentials(ssoCredentials)) transform(identity, linkErrorsTransformer)
   }
 
   def authenticate(c: PasswordCredentials): Future[SSOCredentials] = {
@@ -132,7 +132,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] = {
     log.debug("Fetching user info", ssoCredentials)
-    withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri))) transform(identity, userInfoErrorsTransformer)
+    client.dataRequest[UserInformation](Get(versioned(C.InfoUri)), oauthCredentials(ssoCredentials)) transform(identity, userInfoErrorsTransformer)
   }
 
   def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {

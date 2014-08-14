@@ -14,16 +14,15 @@ import spray.httpx.unmarshalling.FromResponseUnmarshaller
 import scala.concurrent.{ExecutionContext, Future}
 
 trait Client {
-  def unitRequest(req: HttpRequest): Future[Unit]
-  def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T]
-  def withCredentials(credentials: HttpCredentials): Client
+  def defaultCredentials: HttpCredentials
+  def unitRequest(req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[Unit]
+  def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[T]
 }
 
 trait SprayClient extends Client {
   val config: SSOConfig
   val system: ActorSystem
   val ec: ExecutionContext
-  lazy val credentials: HttpCredentials = config.credentials
 
   implicit lazy val _timeout = Timeout(config.timeout)
   implicit lazy val _system = system
@@ -35,7 +34,7 @@ trait SprayClient extends Client {
     if (resp.status.isSuccess) () else throw new UnsuccessfulResponseException(resp)
   }
 
-  protected lazy val basePipeline: Future[SendReceive] = for {
+  protected def basePipeline(credentials: HttpCredentials): Future[SendReceive] = for {
     Http.HostConnectorInfo(connector, _) <- IO(Http) ? Http.HostConnectorSetup(config.host, port = config.port, sslEncryption = true)
   } yield {
     addCredentials(credentials) ~>
@@ -43,21 +42,18 @@ trait SprayClient extends Client {
     doSendReceive(connector)
   }
 
-  protected lazy val unitPipeline = basePipeline map { _ ~> unitIfSuccessful }
+  protected def unitPipeline(credentials: HttpCredentials) = basePipeline(credentials) map { _ ~> unitIfSuccessful }
 
-  protected def dataPipeline[T : FromResponseUnmarshaller] = basePipeline map { _ ~> unmarshal[T] }
+  protected def dataPipeline[T : FromResponseUnmarshaller](credentials: HttpCredentials) =
+    basePipeline(credentials) map { _ ~> unmarshal[T] }
 
-  def unitRequest(req: HttpRequest): Future[Unit] = unitPipeline.flatMap(_(req))
+  override val defaultCredentials = config.credentials
 
-  def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T] = dataPipeline[T].flatMap(_(req))
+  override def unitRequest(req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[Unit] =
+    unitPipeline(credentials).flatMap(_(req))
 
-  // TODO: Refactor this in a better way
-  def withCredentials(creds: HttpCredentials): Client = new SprayClient {
-    override val config: SSOConfig = SprayClient.this.config
-    override val ec: ExecutionContext = SprayClient.this.ec
-    override val system: ActorSystem = SprayClient.this.system
-    override lazy val credentials = creds
-  }
+  override def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[T] =
+    dataPipeline[T](credentials).flatMap(_(req))
 }
 
 class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient
