@@ -86,9 +86,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => extractTooManyRequests(e)
-    case e: Throwable  =>
-      println(e)
-      SSOUnknownException(e)
+    case e: Throwable  => SSOUnknownException(e)
   }
 
   // TODO: These transformers should deal with some specific exception and then forward to common for unhandled ones

@@ -20,7 +20,7 @@ object TestH2 {
 
   def db = {
     val threadId = Thread.currentThread().getId()
-    val database = Database.forURL(s"jdbc:h2:mem:auth$threadId;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
+    val database = Database.forURL(s"jdbc:h2:mem:auth$threadId;DB_CLOSE_DELAY=-1;MODE=MYSQL;DATABASE_TO_UPPER=FALSE", driver = "org.h2.Driver")
 
     import tables.driver.simple._
 

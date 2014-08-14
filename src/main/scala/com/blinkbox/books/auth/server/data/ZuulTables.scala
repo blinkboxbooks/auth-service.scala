@@ -53,7 +53,7 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def userId = column[UserId]("user_id", O.NotNull)
     def clientId = column[Option[ClientId]]("client_id")
     def token = column[String]("token", O.NotNull)
-    def ssoToken = column[Option[String]]("sso_refresh_token", O.NotNull)
+    def ssoToken = column[Option[String]]("sso_refresh_token")
     def isRevoked = column[Boolean]("revoked", O.NotNull)
     def expiresAt = column[DateTime]("expires_at", O.NotNull)
     def elevationExpiresAt = column[DateTime]("elevation_expires_at", O.NotNull)
