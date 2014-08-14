@@ -7,7 +7,7 @@ import com.blinkbox.books.auth.server.data
 import com.blinkbox.books.logging._
 import com.blinkbox.books.messaging.{EventBody, JsonEventBody}
 import com.blinkbox.books.schemas.events.client.v2.{Client, ClientId}
-import com.blinkbox.books.schemas.events.user.v2.{MarketingPreferences, UserProfile, User, UserId}
+import com.blinkbox.books.schemas.events.user.v2._
 import com.blinkbox.books.time.Clock
 import com.rabbitmq.client.{AMQP, Channel}
 import com.typesafe.scalalogging.slf4j.StrictLogging
@@ -134,7 +134,7 @@ class RabbitMqPublisher(channel: Channel)(implicit executionContext: ExecutionCo
   private implicit def userId2eventUserId(id: data.UserId) = UserId(id.value)
   private implicit def client2eventClient(c: data.Client) = Client(c.id, c.name, c.brand, c.model, c.os)
   private implicit def user2eventUser(u: data.User) = User(u.id, u.username, u.firstName, u.lastName)
-  private implicit def user2eventUserProfile(u: data.User) = UserProfile(u, "1.0", MarketingPreferences(u.allowMarketing))
+  private implicit def user2eventUserProfile(u: data.User) = UserProfile(u, AccountInfo("1.0", ssoUserId = u.ssoId), MarketingPreferences(u.allowMarketing))
 
   private def eventBody(event: Event): EventBody = event match {
     case ClientDeregistered(user, client) => JsonEventBody(Client.Deregistered(client.updatedAt, user, client))
