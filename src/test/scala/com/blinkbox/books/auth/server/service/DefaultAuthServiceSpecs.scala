@@ -8,9 +8,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}
 
-class DefaultAuthServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
+class DefaultAuthServiceSpecs extends SpecBase {
 
   "The authentication service" should "revoke a valid refresh token" in new TestEnv {
     whenReady(authService.revokeRefreshToken(refreshTokenClientA1.token)) { _ =>  }

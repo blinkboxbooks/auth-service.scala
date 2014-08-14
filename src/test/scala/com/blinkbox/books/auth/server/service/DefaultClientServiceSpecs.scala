@@ -11,9 +11,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time._
 import org.scalatest.{FlatSpec, Matchers}
 
-class DefaultClientServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
+class DefaultClientServiceSpecs extends SpecBase {
 
   import com.blinkbox.books.testkit.TestH2.tables._
   import driver.simple._

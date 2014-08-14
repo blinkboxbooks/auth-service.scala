@@ -11,5 +11,5 @@ class SSOTestEnv
     with TestSSOComponent
 
 trait SpecBase extends ScalaFutures {
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
+  implicit override val patienceConfig = PatienceConfig(timeout = Span(3000, Millis), interval = Span(100, Millis))
 }
