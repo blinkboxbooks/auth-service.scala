@@ -14,7 +14,7 @@ sealed trait SSOException extends Throwable
 case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
 case object SSOUnauthorized extends SSOException
 case object SSOConflict extends SSOException
-case object SSOTooManyRequests extends SSOException
+case class SSOTooManyRequests(retryAfter: Int) extends SSOException
 case class SSOInvalidRequest(message: String) extends SSOException
 case class SSOUnknownException(e: Throwable) extends SSOException
 
@@ -71,12 +71,24 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     } getOrElse(SSOUnknownException(e))
   }
 
+  private def extractTooManyRequests(e: UnsuccessfulResponseException): SSOException = try {
+    e.response.
+      headers.
+      find(_.lowercaseName == "retry-after").
+      map(r => SSOTooManyRequests(r.value.toInt)).
+      getOrElse(SSOUnknownException(e))
+  } catch {
+    case e: NumberFormatException => SSOUnknownException(e)
+  }
+
   private def commonErrorsTransformer: Throwable => SSOException = {
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SSOUnauthorized
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
-    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => SSOTooManyRequests
-    case e: Throwable  => SSOUnknownException(e)
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => extractTooManyRequests(e)
+    case e: Throwable  =>
+      println(e)
+      SSOUnknownException(e)
   }
 
   // TODO: These transformers should deal with some specific exception and then forward to common for unhandled ones

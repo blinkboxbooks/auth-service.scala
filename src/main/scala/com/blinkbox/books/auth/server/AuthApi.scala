@@ -10,9 +10,9 @@ import com.blinkbox.books.spray._
 import com.blinkbox.books.spray.Directives
 import com.wordnik.swagger.annotations._
 import org.slf4j.LoggerFactory
-import spray.http.HttpHeaders.`WWW-Authenticate`
+import spray.http.HttpHeaders.{RawHeader, `WWW-Authenticate`}
 import spray.http.StatusCodes._
-import spray.http.HttpChallenge
+import spray.http.{HttpEntity, HttpChallenge}
 import spray.routing._
 import spray.httpx.unmarshalling.FormDataUnmarshallers
 import com.blinkbox.books.auth.User
@@ -268,6 +268,10 @@ class AuthApi(
       }
 
       respondWithHeader(`WWW-Authenticate`.apply(challenges)) { complete(Unauthorized, None) }
+    case ZuulTooManyRequestException(_, retryAfter) =>
+      respondWithHeader(RawHeader("Retry-After", retryAfter.toString)) {
+        complete(TooManyRequests, HttpEntity.Empty)
+      }
   }
 
   def rejectionHandler = RejectionHandler {

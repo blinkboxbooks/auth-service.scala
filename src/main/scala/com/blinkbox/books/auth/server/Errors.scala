@@ -63,6 +63,8 @@ case class ZuulRequestException(
 case class ZuulAuthorizationException(
   message: String, code: ZuulAuthorizationErrorCode, reason: Option[ZuulAuthorizationErrorReason] = None) extends ZuulException
 
+case class ZuulTooManyRequestException(message: String, retryAfter: Int) extends ZuulException
+
 object Failures {
   import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode._
   import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason._
@@ -79,6 +81,8 @@ object Failures {
   def invalidUsernamePassword = ZuulRequestException("The username and/or password is incorrect.", InvalidGrant)
   def invalidClientCredentials = ZuulRequestException("Invalid client credentials.", InvalidClient)
   def clientLimitReached = ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
+
+  def tooManyRequests(retryAfter: Int) = ZuulTooManyRequestException(s"Too many login attempts, please retry after $retryAfter seconds", retryAfter)
 
   def requestException(message: String, code: ZuulRequestErrorCode, reason: Option[ZuulRequestErrorReason] = None) =
     ZuulRequestException(message, code, reason)

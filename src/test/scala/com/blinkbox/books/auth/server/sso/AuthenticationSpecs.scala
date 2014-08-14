@@ -35,8 +35,10 @@ class AuthenticationSpecs extends FlatSpec with Matchers with SpecBase with Fail
   }
 
   it should "correctly signal when password throttling errors are returned from the SSO service" in new AuthenticationTestEnv {
-    ssoTooManyRequests()
+    ssoTooManyRequests(10)
 
-    failingWith[SSOTooManyRequests.type](sso.authenticate(credentials))
+    failingWith[SSOTooManyRequests](sso.authenticate(credentials)) should matchPattern {
+      case SSOTooManyRequests(10) =>
+    }
   }
 }

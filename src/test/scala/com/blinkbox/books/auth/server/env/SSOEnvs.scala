@@ -1,6 +1,7 @@
 package com.blinkbox.books.auth.server.env
 
-import spray.http.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
+import spray.http.HttpHeaders.RawHeader
+import spray.http._
 
 trait SSOResponseFixtures {
   val validTokenSSOExpiry = 600
@@ -76,8 +77,8 @@ trait AuthenticationResponder extends CommonResponder {
       _.success(HttpResponse(StatusCodes.Unauthorized, HttpEntity.Empty))
     )
 
-  def ssoTooManyRequests(): Unit = ssoResponse.complete(
-      _.success(HttpResponse(StatusCodes.TooManyRequests, HttpEntity.Empty))
+  def ssoTooManyRequests(retryAfter: Int): Unit = ssoResponse.complete(
+      _.success(HttpResponse(StatusCodes.TooManyRequests, HttpEntity.Empty, RawHeader("Retry-After", retryAfter.toString) :: Nil))
     )
 }
 

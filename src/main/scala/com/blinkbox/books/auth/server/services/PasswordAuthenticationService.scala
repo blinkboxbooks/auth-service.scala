@@ -1,9 +1,10 @@
 package com.blinkbox.books.auth.server.services
 
-import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.events.{UserUpdated, UserRegistered, UserAuthenticated, Publisher}
-import com.blinkbox.books.auth.server.sso.{SSOUnauthorized, SSOCredentials, SSO}
+import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data.{Client, _}
+import com.blinkbox.books.auth.server.events.{Publisher, UserAuthenticated, UserRegistered, UserUpdated}
+import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 
@@ -63,7 +64,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     
     for {
       updatedUser <- userFuture
-      _           <- updateUser(user)
+      _           <- updateUser(updatedUser)
       _           <- events.publish(UserUpdated(user, updatedUser))
     } yield updatedUser
   }
@@ -99,6 +100,8 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
 
   } transform(identity, {
     case SSOUnauthorized => Failures.invalidUsernamePassword
+    case SSOInvalidRequest(msg) => Failures.requestException(msg, InvalidRequest)
+    case SSOTooManyRequests(retryAfter) => Failures.tooManyRequests(retryAfter)
     case e: Throwable => e
   })
 
