@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import com.blinkbox.books.auth.server.data
 import com.blinkbox.books.schemas.events.client.v2.{Client, ClientId}
-import com.blinkbox.books.schemas.events.user.v2.{MarketingPreferences, UserProfile, User, UserId}
+import com.blinkbox.books.schemas.events.user.v2._
 import com.blinkbox.books.test.MockitoSyrup
 import com.blinkbox.books.time.StoppedClock
 import com.rabbitmq.client.{AMQP, Channel}
@@ -19,7 +19,7 @@ import org.scalatest.{BeforeAndAfter, FlatSpec}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object RabbitMqPublisherTests {
+object RabbitMqPublisherSpecs {
 
   trait TestEnv extends MockitoSyrup {
     implicit val clock = StoppedClock()
@@ -28,7 +28,7 @@ object RabbitMqPublisherTests {
     val clientData = data.Client(data.ClientId(456), clock.now().minusDays(29), clock.now().minusDays(14), userData.id, "Test Client", "Apple", "iPhone", "iOS", "secret", isDeregistered = false)
 
     val eventUser = User(UserId(userData.id.value), userData.username, userData.firstName, userData.lastName)
-    val eventUserProfile = UserProfile(eventUser, "1.0", MarketingPreferences(userData.allowMarketing))
+    val eventUserProfile = UserProfile(eventUser, AccountInfo("1.0"), MarketingPreferences(userData.allowMarketing))
     val eventClient = Client(ClientId(clientData.id.value), clientData.name, clientData.brand, clientData.model, clientData.os)
 
     val channel = mock[Channel]
@@ -36,8 +36,8 @@ object RabbitMqPublisherTests {
   }
 }
 
-class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutures with MockitoSyrup {
-  import RabbitMqPublisherTests._
+class RabbitMqPublisherSpecs extends FlatSpec with BeforeAndAfter with ScalaFutures with MockitoSyrup {
+  import RabbitMqPublisherSpecs._
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
   implicit val formats = DefaultFormats
@@ -46,7 +46,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
     verify(channel).exchangeDeclare("Agora", "headers", true)
   }
 
-  "The publisher" should "send a client deregistered message with the correct media type and payload" in new TestEnv {
+  it should "send a client deregistered message with the correct media type and payload" in new TestEnv {
     whenReady(publisher.publish(ClientDeregistered(userData, clientData))) { _ => verify(channel).basicPublish(
       shopExchange,
       noRoutingKey,
@@ -58,7 +58,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
     }
   }
 
-  "The publisher" should "send a client registered message with the correct media type and payload" in new TestEnv {
+  it should "send a client registered message with the correct media type and payload" in new TestEnv {
     whenReady(publisher.publish(ClientRegistered(userData, clientData))) { _ => verify(channel).basicPublish(
       shopExchange,
       noRoutingKey,
@@ -70,7 +70,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
     }
   }
 
-  "The publisher" should "send a client updated message with the correct media type and payload" in new TestEnv {
+  it should "send a client updated message with the correct media type and payload" in new TestEnv {
     val newClientData = clientData.copy(updatedAt = clock.now().minusSeconds(1), name = "New Client")
     whenReady(publisher.publish(ClientUpdated(userData, clientData, newClientData))) { _ => verify(channel).basicPublish(
       shopExchange,
@@ -84,7 +84,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
     }
   }
 
-  "The publisher" should "send a user authenticated message with the correct media type and payload, when there is no client" in new TestEnv {
+  it should "send a user authenticated message with the correct media type and payload, when there is no client" in new TestEnv {
     whenReady(publisher.publish(UserAuthenticated(userData, None))) { _ => verify(channel).basicPublish(
       shopExchange,
       noRoutingKey,
@@ -93,7 +93,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
     }
   }
 
-  "The publisher" should "send a user authenticated message with the correct media type and payload, when there is a client" in new TestEnv {
+  it should "send a user authenticated message with the correct media type and payload, when there is a client" in new TestEnv {
     whenReady(publisher.publish(UserAuthenticated(userData, Some(clientData)))) { _ => verify(channel).basicPublish(
       shopExchange,
       noRoutingKey,
@@ -102,7 +102,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
     }
   }
 
-  "The publisher" should "send a user registered message with the correct media type and payload" in new TestEnv {
+  it should "send a user registered message with the correct media type and payload" in new TestEnv {
     whenReady(publisher.publish(UserRegistered(userData))) { _ => verify(channel).basicPublish(
       shopExchange,
       noRoutingKey,
@@ -111,7 +111,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
     }
   }
 
-  "The publisher" should "send a user updated message with the correct media type and payload" in new TestEnv {
+  it should "send a user updated message with the correct media type and payload" in new TestEnv {
     val newUserData = userData.copy(updatedAt = clock.now().minusSeconds(1), username = "fred@example.org", firstName = "Fred", lastName = "Bloggs")
     whenReady(publisher.publish(UserUpdated(userData, newUserData))) { _ => verify(channel).basicPublish(
       shopExchange,
@@ -119,7 +119,7 @@ class RabbitMqPublisherTests extends FlatSpec with BeforeAndAfter with ScalaFutu
       propertiesFor("application/vnd.blinkbox.books.events.user.updated.v2+json"),
       messageOfType[User.Updated] { msg =>
         msg.timestamp == newUserData.updatedAt &&
-        msg.user == UserProfile(User(UserId(newUserData.id.value), newUserData.username, newUserData.firstName, newUserData.lastName), "1.0", MarketingPreferences(newUserData.allowMarketing)) &&
+        msg.user == UserProfile(User(UserId(newUserData.id.value), newUserData.username, newUserData.firstName, newUserData.lastName), AccountInfo("1.0"), MarketingPreferences(newUserData.allowMarketing)) &&
         msg.previousDetails == eventUserProfile })
     }
   }
