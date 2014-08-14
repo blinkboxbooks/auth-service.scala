@@ -39,7 +39,7 @@ trait SprayClient extends Client {
     Http.HostConnectorInfo(connector, _) <- IO(Http) ? Http.HostConnectorSetup(config.host, port = config.port, sslEncryption = true)
   } yield {
     addCredentials(credentials) ~>
-    addHeader("X-CSRF-Protection", "Foobar") ~> // This is needed for some obscure reason (see SSO API doc.)
+    addHeader("X-CSRF-Protection", "Foobar") ~> // see SSO API doc.
     doSendReceive(connector)
   }
 
@@ -51,13 +51,12 @@ trait SprayClient extends Client {
 
   def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest): Future[T] = dataPipeline[T].flatMap(_(req))
 
+  // TODO: Refactor this in a better way
   def withCredentials(creds: HttpCredentials): Client = new SprayClient {
     override val config: SSOConfig = SprayClient.this.config
     override val ec: ExecutionContext = SprayClient.this.ec
     override val system: ActorSystem = SprayClient.this.system
     override lazy val credentials = creds
-    override def unitRequest(req: HttpRequest) = SprayClient.this.unitRequest(req)
-    override def dataRequest[T: FromResponseUnmarshaller](req: HttpRequest) = SprayClient.this.dataRequest[T](req)
   }
 }
 

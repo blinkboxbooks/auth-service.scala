@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server.sso
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.{RefreshTokenCredentials, PasswordCredentials, UserRegistration, SSOConfig}
 import org.json4s.JsonAST.{JString, JField, JObject}
+import org.slf4j.LoggerFactory
 import spray.client.pipelining._
 import spray.http.{StatusCodes, OAuth2BearerToken, FormData}
 import spray.httpx.UnsuccessfulResponseException
@@ -53,6 +54,8 @@ trait SSO {
 class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends SSO {
   import com.blinkbox.books.auth.server.sso.Serialization.json4sUnmarshaller
 
+  val log = LoggerFactory.getLogger(getClass)
+
   private def versioned(uri: String) = s"/${config.version}$uri"
 
   private val C = SSOConstants
@@ -98,7 +101,8 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   def withCredentials(ssoCredentials: SSOCredentials): Client = client.withCredentials(new OAuth2BearerToken(ssoCredentials.accessToken))
 
-  def register(req: UserRegistration): Future[(String, SSOCredentials)] =
+  def register(req: UserRegistration): Future[(String, SSOCredentials)] = {
+    log.debug("Registering user", req)
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RegistrationGrant,
       "first_name" -> req.firstName,
@@ -106,27 +110,36 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "username" -> req.username,
       "password" -> req.password
     )))) map extractUserId transform(identity, registrationErrorsTransformer)
+  }
 
-  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] =
+  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] = {
+    log.debug("Linking account", ssoCredentials, id)
     withCredentials(ssoCredentials).unitRequest(Post(versioned(C.LinkUri), FormData(Map(
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion
     )))) transform(identity, linkErrorsTransformer)
+  }
 
-  def authenticate(c: PasswordCredentials): Future[SSOCredentials] =
+  def authenticate(c: PasswordCredentials): Future[SSOCredentials] = {
+    log.debug("Authenticating via password credentials", c)
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.PasswordGrant,
       "username" -> c.username,
       "password" -> c.password
     )))) map extractUserId transform(_._2, authenticationErrorsTransformer)
+  }
 
-  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] =
+  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] = {
+    log.debug("Fetching user info", ssoCredentials)
     withCredentials(ssoCredentials).dataRequest[UserInformation](Get(versioned(C.InfoUri))) transform(identity, userInfoErrorsTransformer)
+  }
 
-  def refresh(ssoRefreshToken: String): Future[SSOCredentials] =
+  def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
+    log.debug("Authenticating via refresth token", ssoRefreshToken)
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RefreshTokenGrant,
       "refresh_token" -> ssoRefreshToken
     )))) transform(identity, refreshErrorsTransformer)
+  }
 }
