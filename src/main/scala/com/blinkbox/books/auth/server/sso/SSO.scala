@@ -2,6 +2,7 @@ package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.{RefreshTokenCredentials, PasswordCredentials, UserRegistration, SSOConfig}
+import com.typesafe.scalalogging.slf4j.StrictLogging
 import org.json4s.JsonAST.{JString, JField, JObject}
 import org.slf4j.LoggerFactory
 import spray.client.pipelining._
@@ -52,10 +53,8 @@ trait SSO {
   // def systemStatus(): Future[SystemStatus]
 }
 
-class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends SSO {
+class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends SSO with StrictLogging {
   import com.blinkbox.books.auth.server.sso.Serialization.json4sUnmarshaller
-
-  val log = LoggerFactory.getLogger(getClass)
 
   private def versioned(uri: String) = s"/${config.version}$uri"
 
@@ -104,7 +103,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   def oauthCredentials(ssoCredentials: SSOCredentials): HttpCredentials = new OAuth2BearerToken(ssoCredentials.accessToken)
 
   def register(req: UserRegistration): Future[(String, SSOCredentials)] = {
-    log.debug("Registering user", req)
+    logger.debug("Registering user")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RegistrationGrant,
       "first_name" -> req.firstName,
@@ -115,7 +114,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   }
 
   def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] = {
-    log.debug("Linking account", ssoCredentials, id)
+    logger.debug("Linking account", id)
     client.unitRequest(Post(versioned(C.LinkUri), FormData(Map(
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,
@@ -124,7 +123,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   }
 
   def authenticate(c: PasswordCredentials): Future[SSOCredentials] = {
-    log.debug("Authenticating via password credentials", c)
+    logger.debug("Authenticating via password credentials")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.PasswordGrant,
       "username" -> c.username,
@@ -133,12 +132,12 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   }
 
   def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] = {
-    log.debug("Fetching user info", ssoCredentials)
+    logger.debug("Fetching user info")
     client.dataRequest[UserInformation](Get(versioned(C.InfoUri)), oauthCredentials(ssoCredentials)) transform(identity, userInfoErrorsTransformer)
   }
 
   def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
-    log.debug("Authenticating via refresth token", ssoRefreshToken)
+    logger.debug("Authenticating via refresth token")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RefreshTokenGrant,
       "refresh_token" -> ssoRefreshToken
