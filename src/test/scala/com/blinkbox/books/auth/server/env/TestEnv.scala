@@ -19,6 +19,15 @@ trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
 }
 
+trait TestConfigComponent extends ConfigComponent {
+  Option(getClass.getResource("/sso_public.key")).map(_.getFile) match {
+    case Some(uri) => System.setProperty("SSO_KEYSTORE", uri)
+    case None => sys.error("Cannot find test key resource")
+  }
+
+  override val config = AppConfig.default
+}
+
 class TestDBTypes extends DBTypes {
   type Profile = JdbcProfile
   type ConstraintException = org.h2.jdbc.JdbcSQLException
@@ -56,7 +65,7 @@ trait TestSSOComponent extends SSOComponent {
 }
 
 class TestEnv extends
-    DefaultConfigComponent with
+    TestConfigComponent with
     DefaultAsyncComponent with
     StoppedClockSupport with
     TestSSOComponent with
