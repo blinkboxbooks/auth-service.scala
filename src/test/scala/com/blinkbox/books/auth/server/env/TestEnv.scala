@@ -136,6 +136,13 @@ class TestEnv extends
 
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
+  def removeSSOTokens(): Unit = {
+    import driver.simple._
+    db.withSession { implicit session =>
+      tables.refreshTokens.map(_.ssoToken).update(None)
+    }
+  }
+
   db.withSession { implicit session =>
     tables.users ++= Seq(userA, userB, userC)
     tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC

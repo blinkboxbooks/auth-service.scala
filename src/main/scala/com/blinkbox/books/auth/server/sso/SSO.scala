@@ -25,6 +25,7 @@ object SSOConstants {
   val TokenUri = "/oauth2/token"
   val LinkUri = "/link"
   val InfoUri = "/user"
+  val RevokeTokenUri = "/tokens/revoke"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
   val PasswordGrant = "password"
@@ -36,7 +37,7 @@ trait SSO {
   def authenticate(c: PasswordCredentials): Future[SSOCredentials]
   def refresh(ssoRefreshToken: String): Future[SSOCredentials]
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
-  // def revokeToken(token: RevokeToken): Future[Unit]
+  def revokeToken(ssoRefreshToken: String): Future[Unit]
   // // User - authenticated
   def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
@@ -99,6 +100,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def linkErrorsTransformer = commonErrorsTransformer
   private def refreshErrorsTransformer = commonErrorsTransformer
   private def userInfoErrorsTransformer = commonErrorsTransformer
+  private def revokeTokenErrorsTransformer = commonErrorsTransformer
 
   def oauthCredentials(ssoCredentials: SSOCredentials): HttpCredentials = new OAuth2BearerToken(ssoCredentials.accessToken)
 
@@ -142,5 +144,12 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "grant_type" -> C.RefreshTokenGrant,
       "refresh_token" -> ssoRefreshToken
     )))) transform(identity, refreshErrorsTransformer)
+  }
+
+  def revokeToken(ssoRefreshToken: String): Future[Unit] = {
+    logger.debug("Revoking refresh token")
+    client.unitRequest(Post(versioned(C.RevokeTokenUri), FormData(Map(
+      "token" -> ssoRefreshToken
+    )))) transform(identity, revokeTokenErrorsTransformer)
   }
 }

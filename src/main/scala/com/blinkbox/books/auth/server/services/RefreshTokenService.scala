@@ -78,10 +78,19 @@ class DefaultRefreshTokenService[DB <: DBTypes](
     tokenFuture.map(_._4)
   }
 
-  override def revokeRefreshToken(token: String): Future[Unit] = Future {
-    db.withSession { implicit session =>
-      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(throw Failures.invalidRefreshToken)
-      authRepo.revokeRefreshToken(retrievedToken)
+  override def revokeRefreshToken(token: String): Future[Unit] = {
+    val zuulToken = Future {
+      db.withSession { implicit session =>
+        authRepo.refreshTokenWithToken(token).getOrElse(throw Failures.invalidRefreshToken)
+      }
+    }
+
+    val ssoRevocation = zuulToken flatMap { r => r.ssoRefreshToken.fold(Future.successful())(ssoT => sso.revokeToken(ssoT)) }
+
+    ssoRevocation flatMap { _ =>
+      zuulToken.map { zt =>
+        db.withSession { implicit session => authRepo.revokeRefreshToken(zt)}
+      }
     }
   }
 }

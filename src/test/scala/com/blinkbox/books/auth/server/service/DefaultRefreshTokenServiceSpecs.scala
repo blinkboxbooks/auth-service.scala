@@ -2,12 +2,14 @@ package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidGrant, InvalidClient}
 import com.blinkbox.books.auth.server.data.RefreshTokenId
+import com.blinkbox.books.auth.server.sso.{SSOUnknownException, SSOUnauthorized}
 import com.blinkbox.books.auth.server.{ZuulRequestException, RefreshTokenCredentials}
 import com.blinkbox.books.auth.server.env.{CommonResponder, AuthenticationTestEnv, TestEnv}
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.concurrent.ScalaFutures
+import spray.http.StatusCodes
 
 class DefaultRefreshTokenServiceSpecs extends SpecBase {
 
@@ -35,11 +37,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
 
   it should "refresh a valid refresh token even if we don't have an SSO token for that" in new AuthenticationTestEnv {
     ssoNoInvocation()
-
-    import driver.simple._
-    db.withSession { implicit session =>
-      tables.refreshTokens.map(_.ssoToken).update(None)
-    }
+    removeSSOTokens()
 
     val refreshFuture = refreshTokenService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA1.token, Some(clientInfoA1.client_id), Some("test-secret-a1")))
@@ -87,20 +85,44 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
     }
   }
 
-  "The authentication service" should "revoke a valid refresh token" in new TestEnv {
+  it should "revoke a valid refresh token" in new TestEnv with CommonResponder {
+    ssoNoContent()
+
     whenReady(refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token)) { _ =>  }
   }
 
-  it should "signal an error when revoking an invalid refresh token" in new TestEnv {
+  it should "signal an error when revoking an invalid refresh token" in new TestEnv with CommonResponder {
+    ssoNoInvocation()
+
     failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken("foo-token")) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
-  it should "signal an error when revoking an already revoked refresh token" in new TestEnv {
+  it should "signal an error when revoking an already revoked refresh token" in new TestEnv with CommonResponder {
+    ssoNoInvocation()
+
     failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken(refreshTokenClientA3.token)) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
+  }
+
+  it should "revoke a zuul token even if it doesn't have a corresponding SSO token" in new TestEnv with CommonResponder {
+    ssoNoInvocation()
+    removeSSOTokens()
+
+    whenReady(refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token)) { _ => }
+  }
+
+  it should "fail with an exception and not revoke a zuul token if SSO signals an error removing the corresponding SSO token" in new TestEnv with CommonResponder {
+    ssoResponse(StatusCodes.BadRequest)
+    failingWith[SSOUnknownException](refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token))
+
+    val token = db.withSession { implicit session =>
+      authRepository.refreshTokenWithId(refreshTokenClientA1Id)
+    }
+
+    token map (_.isRevoked) should equal(Some(false))
   }
 }
 
