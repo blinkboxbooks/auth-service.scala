@@ -15,10 +15,6 @@ trait SessionService {
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
 }
 
-trait GeoIP {
-  def countryCode(address: RemoteAddress): String
-}
-
 class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend#Database](
     db: Database,
     authRepo: AuthRepository[Profile],
