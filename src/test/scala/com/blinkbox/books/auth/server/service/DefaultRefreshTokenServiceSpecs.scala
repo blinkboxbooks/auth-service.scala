@@ -9,9 +9,7 @@ import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.concurrent.ScalaFutures
 
-class DefaultRefreshTokenServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
+class DefaultRefreshTokenServiceSpecs extends SpecBase {
 
   it should "refresh a valid refresh token given the associated client credentials" in new AuthenticationTestEnv {
     ssoSuccessfulAuthentication()

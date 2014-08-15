@@ -14,9 +14,7 @@ import spray.http.{HttpEntity, StatusCodes, HttpResponse}
 
 import scala.concurrent.duration.FiniteDuration
 
-class DefaultPasswordAuthenticationServiceSpecs  extends FlatSpec with Matchers with ScalaFutures with FailHelper {
-
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
+class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
 
   val dummyCreds = PasswordCredentials("foo", "bar", None, None)
 

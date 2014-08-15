@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.blinkbox.books.config.{Configuration, _}
 import com.blinkbox.books.rabbitmq.RabbitMqConfig
-import com.typesafe.config.Config
+import com.typesafe.config.{ConfigFactory, Config}
 import java.nio.file.{Files, Paths}
 import spray.http.{BasicHttpCredentials, HttpCredentials}
 

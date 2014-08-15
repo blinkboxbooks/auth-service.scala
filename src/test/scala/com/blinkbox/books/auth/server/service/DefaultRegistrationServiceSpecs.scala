@@ -9,8 +9,7 @@ import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FlatSpec, Matchers}
 
 // TODO: IP-related scenarios and scenarios with failures from SSO are not being tested at the moment, add those tests
-class DefaultRegistrationServiceSpecs extends FlatSpec with Matchers with ScalaFutures with FailHelper {
-  implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
+class DefaultRegistrationServiceSpecs extends SpecBase {
 
   val simpleReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true, None, None, None, None)
   val clientReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true,
