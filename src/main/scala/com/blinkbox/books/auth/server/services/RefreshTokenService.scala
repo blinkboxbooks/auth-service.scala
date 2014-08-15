@@ -11,6 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 trait RefreshTokenService {
+  def revokeRefreshToken(token: String): Future[Unit]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
 }
 
@@ -75,5 +76,12 @@ class DefaultRefreshTokenService[DB <: DBTypes](
     }
 
     tokenFuture.map(_._4)
+  }
+
+  override def revokeRefreshToken(token: String): Future[Unit] = Future {
+    db.withSession { implicit session =>
+      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(throw Failures.invalidRefreshToken)
+      authRepo.revokeRefreshToken(retrievedToken)
+    }
   }
 }

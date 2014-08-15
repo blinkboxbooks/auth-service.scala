@@ -82,7 +82,7 @@ class AuthApi(
     config: ApiConfig,
     userService: UserService,
     clientService: ClientService,
-    authService: AuthService,
+    authService: SessionService,
     registrationService: RegistrationService,
     passwordAuthenticationService: PasswordAuthenticationService,
     refreshTokenService: RefreshTokenService,
@@ -241,7 +241,7 @@ class AuthApi(
   val revokeRefreshToken: Route = post {
     path("tokens" / "revoke") {
       formFields('refresh_token) { token =>
-        onSuccess(authService.revokeRefreshToken(token)) { _ =>
+        onSuccess(refreshTokenService.revokeRefreshToken(token)) { _ =>
           complete(OK, None)
         }
       }

@@ -83,7 +83,7 @@ trait DefaultAuthServiceComponent extends AuthServiceComponent {
     with TimeSupport
     with SSOComponent =>
 
-  val authService = new DefaultAuthService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
+  val authService = new DefaultSessionService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
 }
 
 trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {

@@ -52,7 +52,7 @@ trait GeoIPComponent {
 }
 
 trait AuthServiceComponent {
-  def authService: AuthService
+  def authService: SessionService
 }
 
 trait ClientServiceComponent {

@@ -86,5 +86,21 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
       }
     }
   }
+
+  "The authentication service" should "revoke a valid refresh token" in new TestEnv {
+    whenReady(refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token)) { _ =>  }
+  }
+
+  it should "signal an error when revoking an invalid refresh token" in new TestEnv {
+    failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken("foo-token")) should matchPattern {
+      case ZuulRequestException(_, InvalidGrant, None) =>
+    }
+  }
+
+  it should "signal an error when revoking an already revoked refresh token" in new TestEnv {
+    failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken(refreshTokenClientA3.token)) should matchPattern {
+      case ZuulRequestException(_, InvalidGrant, None) =>
+    }
+  }
 }
 
