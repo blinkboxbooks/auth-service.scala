@@ -27,6 +27,7 @@ val dependencySettings = Seq(
       "com.blinkbox.books"        %%  "common-config"         % "1.0.0",
       "com.blinkbox.books"        %%  "common-spray"          % "0.15.0",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.5.0",
+      "com.blinkbox.books"        %%  "common-json"           % "0.1.1",
       "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "5.0.0",
       "com.blinkbox.books.hermes" %%  "message-schemas"       % "0.5.0",
       "mysql"                     %   "mysql-connector-java"  % "5.1.31",

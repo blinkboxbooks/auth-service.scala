@@ -2,12 +2,19 @@ package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.auth.Elevation.Elevation
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidClient
+import com.blinkbox.books.auth.server.sso.SSOTokenStatus
+import com.blinkbox.books.auth.server.sso.SSOTokenStatus.{Revoked, Expired}
 import org.joda.time.DateTime
 
 object RefreshTokenStatus extends Enumeration {
   type RefreshTokenStatus = Value
   val Valid = Value("VALID")
   val Invalid = Value("INVALID")
+
+  def fromSSOValidity(v: SSOTokenStatus) = v match {
+    case SSOTokenStatus.Invalid | Expired | Revoked => Invalid
+    case SSOTokenStatus.Valid => Valid
+  }
 }
 
 import com.blinkbox.books.auth.server.RefreshTokenStatus._

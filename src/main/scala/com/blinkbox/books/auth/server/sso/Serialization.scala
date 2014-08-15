@@ -1,7 +1,13 @@
 package com.blinkbox.books.auth.server.sso
 
+import com.blinkbox.books.auth.Elevation
+import com.blinkbox.books.auth.server.EnumContainer
+import com.blinkbox.books.json
 import org.json4s._
+import org.json4s.ext.EnumNameSerializer
 import spray.httpx.Json4sJacksonSupport
+
+import scala.reflect.ClassTag
 
 object Serialization extends Json4sJacksonSupport {
 
@@ -18,6 +24,19 @@ object Serialization extends Json4sJacksonSupport {
     serializer = { case (name, v) => Some(camelToUnderscores(name), v) }
   )
 
-  implicit val json4sJacksonFormats: Formats = DefaultFormats + snakeizer
+  class EnumSerializer[T: ClassTag](container: EnumContainer[T]) extends Serializer[T] {
+    val cl = implicitly[ClassTag[T]].runtimeClass
+
+    override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), T] = {
+      case (TypeInfo(c, _), JString(v)) if c == cl => container.fromString(v)
+    }
+
+    override def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
+      case v: T => JString(container.toString(v))
+    }
+  }
+
+  implicit val json4sJacksonFormats: Formats = json.DefaultFormats + new EnumSerializer(SSOTokenElevation) + new EnumSerializer(SSOTokenStatus) +
+    new EnumNameSerializer(Elevation) + snakeizer
 }
 

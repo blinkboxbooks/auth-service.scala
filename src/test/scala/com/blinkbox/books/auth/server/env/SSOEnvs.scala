@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.env
 
+import com.blinkbox.books.auth.server.sso.{SSOTokenElevation, SSOTokenStatus}
 import spray.http.HttpHeaders.RawHeader
 import spray.http._
 
@@ -37,6 +38,15 @@ trait SSOResponseFixtures {
         "service_tc_accepted_version": "v2.0"
       }
     ]
+  }"""
+
+  def sessionInfoJson(status: SSOTokenStatus, elevation: SSOTokenElevation) = s"""{
+    "status": "${SSOTokenStatus.toString(status)}",
+    "issued_at": "2000-01-01T01:01:01.01Z",
+    "expires_at": "2020-01-01T01:01:01.01Z",
+    "token_type": "refresh",
+    "session_elevation": "${SSOTokenElevation.toString(elevation)}",
+    "session_elevation_expires_in": 300
   }"""
 }
 
@@ -92,6 +102,14 @@ trait UserInfoResponder extends CommonResponder {
     )
 }
 
+trait TokenStatusResponder extends CommonResponder {
+  this: TestSSOComponent =>
+
+  def ssoSessionInfo(status: SSOTokenStatus, elevation: SSOTokenElevation): Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, sessionInfoJson(status, elevation).getBytes)))
+  )
+}
+
 class RegistrationTestEnv extends TestEnv with RegistrationResponder
 
 class AuthenticationTestEnv extends TestEnv with AuthenticationResponder
@@ -101,3 +119,5 @@ class LinkTestEnv extends TestEnv with CommonResponder
 class RefreshTestEnv extends TestEnv with AuthenticationResponder
 
 class UserInfoTestEnv extends TestEnv with UserInfoResponder
+
+class TokenStatusEnv extends TestEnv with TokenStatusResponder
