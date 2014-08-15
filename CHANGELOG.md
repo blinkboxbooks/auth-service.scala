@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.13.2 ([#18](https://git.mobcastdev.com/Zuul/auth-service/pull/18) 2014-08-14 15:28:19)
+
+Make test not depending on the sso key path
+
+Improvements
+
+This should make tests runnable on TeamCity.
+
 ## 0.13.1 ([#105](https://git.mobcastdev.com/Zuul/zuul-server/pull/105) 2014-07-21 08:25:22)
 
 Use percent
