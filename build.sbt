@@ -5,7 +5,7 @@ val testSettings = Seq(
 )
 
 val buildSettings = Seq(
-  name := "auth-server",
+  name := "auth-service-public",
   organization := "com.blinkbox.books.zuul",
   version := scala.util.Try(scala.io.Source.fromFile("VERSION").mkString.trim).getOrElse("0.0.0"),
   scalaVersion  := "2.10.4",
