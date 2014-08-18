@@ -1,5 +1,17 @@
 # Zuul Server Change Log
 
+## 0.15.0 ([#21](https://git.mobcastdev.com/Zuul/auth-service/pull/21) 2014-08-18 14:55:00)
+
+CP-1667 Implement query-session endpoint
+
+New feature
+
+This PR implements the endpoint that queries the current session status. Please note that on SSO there are only two possible elevations (critical and none) while we have three. 
+
+It's also worth having a look at how we deal with the cases where we don't have an SSO token for the provided Zuul token. 
+
+Finally there is something strange going on with spray-tests for endpoints that need authentication: I marked them as cancelled at the moment, if you have any idea about why the endpoint answers with a 401 when I try to run them it will be very welcome.
+
 ## 0.14.1 ([#20](https://git.mobcastdev.com/Zuul/auth-service/pull/20) 2014-08-18 12:37:56)
 
 Changed project name to match convention
