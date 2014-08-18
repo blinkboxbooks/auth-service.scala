@@ -11,7 +11,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
   override def newEnv = new TokenStatusEnv
 
   "The service" should "return session information for a valid and critically elevated token" in {
-    cancel("This test needs fixing on the authenticator")
     env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
@@ -26,7 +25,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
   }
 
   it should "return session information for a valid non elevated token" in {
-    cancel("This test needs fixing on the authenticator")
     env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.None)
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
@@ -41,7 +39,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
   }
 
   it should "return session information for a valid token that doesn't have a corresponding SSO token" in {
-    cancel("This test needs fixing on the authenticator")
     env.ssoNoInvocation()
     env.removeSSOTokens()
 
