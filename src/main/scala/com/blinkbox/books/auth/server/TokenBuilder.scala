@@ -25,7 +25,7 @@ object TokenBuilder {
 
     val claims = new java.util.LinkedHashMap[String, AnyRef]
     claims.put("sub", user.id.external)
-    claims.put("exp", DateTime.now(DateTimeZone.UTC).plusSeconds(expiresIn))
+    claims.put("exp", Long.box(DateTime.now(DateTimeZone.UTC).plusSeconds(expiresIn).getMillis / 1000L))
 
     // Stores the SSO access token within the Zuul one if provided
     ssoCredentials.foreach(c => claims.put("sso/at", c.accessToken))
