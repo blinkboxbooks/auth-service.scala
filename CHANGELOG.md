@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.14.1 ([#20](https://git.mobcastdev.com/Zuul/auth-service/pull/20) 2014-08-18 12:37:56)
+
+Changed project name to match convention
+
+Tiny patch to change the name of this to match our usual conventions.
+
 ## 0.14.0 ([#19](https://git.mobcastdev.com/Zuul/auth-service/pull/19) 2014-08-15 14:02:02)
 
 Integrate refresh token revocation endpoint with SSO
