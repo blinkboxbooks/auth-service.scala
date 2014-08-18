@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.14.0 ([#19](https://git.mobcastdev.com/Zuul/auth-service/pull/19) 2014-08-15 14:02:02)
+
+Integrate refresh token revocation endpoint with SSO
+
+New feature
+
+The title explains it all.
+
 ## 0.13.2 ([#18](https://git.mobcastdev.com/Zuul/auth-service/pull/18) 2014-08-14 15:28:19)
 
 Make test not depending on the sso key path
