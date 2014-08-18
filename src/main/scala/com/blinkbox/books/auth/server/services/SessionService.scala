@@ -11,16 +11,11 @@ import spray.http.RemoteAddress
 import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.profile.BasicProfile
 
-trait AuthService {
-  def revokeRefreshToken(token: String): Future[Unit]
+trait SessionService {
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
 }
 
-trait GeoIP {
-  def countryCode(address: RemoteAddress): String
-}
-
-class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Database](
+class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend#Database](
     db: Database,
     authRepo: AuthRepository[Profile],
     userRepo: UserRepository[Profile],
@@ -28,7 +23,7 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     geoIP: GeoIP,
     events: Publisher,
     sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock)
-  extends AuthService with UserInfoFactory with ClientInfoFactory with ClientAuthenticator[Profile] {
+  extends SessionService with UserInfoFactory with ClientInfoFactory with ClientAuthenticator[Profile] {
 
   // TODO: Make this configurable
   val MaxClients = 12
@@ -45,13 +40,6 @@ class DefaultAuthService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       token_elevation_expires_in = if (token.isValid) Some(token.elevationDropsIn.toSeconds) else None
       // TODO: Roles
     )
-  }
-
-  override def revokeRefreshToken(token: String): Future[Unit] = Future {
-    db.withSession { implicit session =>
-      val retrievedToken = authRepo.refreshTokenWithToken(token).getOrElse(throw Failures.invalidRefreshToken)
-      authRepo.revokeRefreshToken(retrievedToken)
-    }
   }
 
   private def authenticateUser(credentials: PasswordCredentials, clientIP: Option[RemoteAddress])(implicit session: authRepo.Session): User = {

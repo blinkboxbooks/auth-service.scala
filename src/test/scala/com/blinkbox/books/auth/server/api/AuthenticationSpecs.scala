@@ -238,6 +238,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   }
 
   it should "revoke a valid refresh token and not allow its usage any more" in {
+    env.ssoNoContent()
+
     Post("/tokens/revoke", FormData(validRefreshTokenCredentials - "grant_type")) ~> route ~> check {
       status should equal(StatusCodes.OK)
     }

@@ -2,6 +2,7 @@ package com.blinkbox.books.auth.server.services
 
 import com.blinkbox.books.auth.server.data.{UserId, AuthRepository, Client, User}
 import com.blinkbox.books.auth.server.{ClientInfo, UserInfo, ClientCredentials, Failures}
+import spray.http.RemoteAddress
 
 import scala.slick.profile.BasicProfile
 
@@ -40,3 +41,8 @@ trait ClientInfoFactory {
     client_secret = if (includeClientSecret) Some(client.secret) else None,
     last_used_date = client.createdAt)
 }
+
+trait GeoIP {
+  def countryCode(address: RemoteAddress): String
+}
+
