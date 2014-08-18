@@ -71,7 +71,8 @@ case class RefreshToken(
   def isElevated(implicit clock: Clock) = !elevationExpiresAt.isBefore(clock.now())
   def isCriticallyElevated(implicit clock: Clock) = !criticalElevationExpiresAt.isBefore(clock.now())
   def elevation(implicit clock: Clock) =
-    if (isCriticallyElevated) Elevation.Critical
+    if (ssoRefreshToken.isEmpty) Elevation.Unelevated
+    else if (isCriticallyElevated) Elevation.Critical
     else if (isElevated) Elevation.Elevated
     else Elevation.Unelevated
   def elevationDropsAt(implicit clock: Clock) = if (isCriticallyElevated) criticalElevationExpiresAt else elevationExpiresAt

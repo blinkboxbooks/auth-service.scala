@@ -26,6 +26,7 @@ object SSOConstants {
   val LinkUri = "/link"
   val InfoUri = "/user"
   val RevokeTokenUri = "/tokens/revoke"
+  val TokenStatusUri = "/tokens/status"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
   val PasswordGrant = "password"
@@ -42,7 +43,7 @@ trait SSO {
   def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
   // def updatePassword(update: UpdatePassword): Future[Unit]
-  // def tokenStatus(req: GetTokenStatus): Future[TokenStatus]
+  def tokenStatus(ssoRefreshToken : String): Future[TokenStatus]
   // def refreshSession(): Future[Unit]
   def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation]
   // def updateUser(req: PatchUser): Future[Unit]
@@ -91,7 +92,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => extractTooManyRequests(e)
-    case e: Throwable  => SSOUnknownException(e)
+    case e: Throwable => SSOUnknownException(e)
   }
 
   // TODO: These transformers should deal with some specific exception and then forward to common for unhandled ones
@@ -101,6 +102,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def refreshErrorsTransformer = commonErrorsTransformer
   private def userInfoErrorsTransformer = commonErrorsTransformer
   private def revokeTokenErrorsTransformer = commonErrorsTransformer
+  private def tokenStatusErrorsTransformer = commonErrorsTransformer
 
   def oauthCredentials(ssoCredentials: SSOCredentials): HttpCredentials = new OAuth2BearerToken(ssoCredentials.accessToken)
 
@@ -151,5 +153,12 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     client.unitRequest(Post(versioned(C.RevokeTokenUri), FormData(Map(
       "token" -> ssoRefreshToken
     )))) transform(identity, revokeTokenErrorsTransformer)
+  }
+
+  def tokenStatus(ssoRefreshToken : String): Future[TokenStatus] = {
+    logger.debug("Fetching token status")
+    client.dataRequest[TokenStatus](Post(versioned(C.TokenStatusUri), FormData(Map(
+      "token" -> ssoRefreshToken
+    )))) transform(identity, tokenStatusErrorsTransformer)
   }
 }
