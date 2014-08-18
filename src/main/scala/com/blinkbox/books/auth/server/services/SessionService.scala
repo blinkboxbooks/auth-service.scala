@@ -27,7 +27,7 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   // TODO: Make this configurable
   val MaxClients = 12
 
-  private def querySessionWithoutSSO(token: RefreshToken) = SessionInfo(
+  private def sessionInfoFromRefreshToken(token: RefreshToken) = SessionInfo(
     token_status = token.status,
     token_elevation = if (token.isValid) Some(token.elevation) else None,
     token_elevation_expires_in = if (token.isValid && token.elevation != Elevation.Unelevated) Some(token.elevationDropsIn.toSeconds) else None
@@ -63,7 +63,7 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   }
 
   override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = for {
-    rt <-fetchRefreshToken(user)
-    si <- rt.ssoRefreshToken.fold(Future.successful(querySessionWithoutSSO(rt)))(t => querySessionWithSSO(t))
+    rt <- fetchRefreshToken(user)
+    si <- rt.ssoRefreshToken.fold(Future.successful(sessionInfoFromRefreshToken(rt)))(t => querySessionWithSSO(t))
   } yield si
 }
