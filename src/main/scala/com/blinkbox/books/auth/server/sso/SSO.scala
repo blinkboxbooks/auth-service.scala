@@ -163,7 +163,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) transform(identity, tokenStatusErrorsTransformer)
   }
 
-  override def extendSession(token: SSOAccessToken, ssoToken: String): Future[Unit] = {
+  def extendSession(token: SSOAccessToken, refreshToken: String): Future[Unit] = {
     logger.debug("Refreshing session")
     client.unitRequest(
       Post(versioned(C.ExtendSessionUri), FormData(Map.empty[String, String])),

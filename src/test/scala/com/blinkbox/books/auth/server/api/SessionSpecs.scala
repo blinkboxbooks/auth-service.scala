@@ -4,6 +4,7 @@ import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.auth.server.env.TokenStatusEnv
 import com.blinkbox.books.auth.server.sso.{SSOTokenElevation, SSOTokenStatus}
 import com.blinkbox.books.auth.server.{RefreshTokenStatus, SessionInfo}
+import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http.{HttpEntity, OAuth2BearerToken, StatusCodes}
 
 class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
@@ -68,7 +69,7 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
 
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
-      headers.find(_.lowercaseName == "www-authenticate") shouldBe defined
+      header[`WWW-Authenticate`] shouldBe defined
     }
   }
 
@@ -77,7 +78,7 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
 
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1WithoutSSO.access_token)) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
-      headers.find(_.lowercaseName == "www-authenticate") shouldBe defined
+      header[`WWW-Authenticate`] shouldBe defined
     }
   }
 
@@ -86,7 +87,7 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
 
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
-      headers.find(_.lowercaseName == "www-authenticate") shouldBe defined
+      header[`WWW-Authenticate`] shouldBe defined
     }
   }
 }
