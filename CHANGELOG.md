@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.15.2 ([#23](https://git.mobcastdev.com/Zuul/auth-service/pull/23) 2014-08-19 09:52:47)
+
+CP-1667 Introduce json serializer for Elevation
+
+Bugfix
+
+The reason for failing tests is that the session wasn't being correctly de-serialized because the `Elevation` serializer was missing.
+
 ## 0.15.1 ([#22](https://git.mobcastdev.com/Zuul/auth-service/pull/22) 2014-08-18 17:44:16)
 
 Fixed expiry date of token
