@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server
 
+import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.json.DefaultFormats
 import org.joda.time.DateTime
 import org.json4s.JsonAST.{JField, JObject, JString}
@@ -36,7 +37,7 @@ class Serialization extends Json4sJacksonSupport {
   )
 
   implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer +
-    new EnumNameSerializer(RefreshTokenStatus) + clientInfoSerializer
+    new EnumNameSerializer(RefreshTokenStatus) + new EnumNameSerializer(Elevation) + clientInfoSerializer
 }
 
 object Serialization extends Serialization
