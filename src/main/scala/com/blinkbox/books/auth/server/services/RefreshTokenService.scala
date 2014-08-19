@@ -51,8 +51,8 @@ class DefaultRefreshTokenService[DB <: DBTypes](
     db.withSession { implicit session => authenticateClient(authRepo, credentials, token.userId) }
   }
 
-  private def extendTokenLifetime(token: RefreshToken): Future[Unit] = Future {
-    db.withSession { implicit session => authRepo.extendRefreshTokenLifetime(token)}
+  private def extendTokenLifetime(token: RefreshToken, ssoRefreshToken: Option[String]): Future[Unit] = Future {
+    db.withSession { implicit session => authRepo.extendRefreshTokenLifetime(token, ssoRefreshToken)}
   }
 
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = {
@@ -66,16 +66,17 @@ class DefaultRefreshTokenService[DB <: DBTypes](
         _         <- checkAuthorization(token, client)
         ssoCreds  <- ssoFuture
         user      <- userFuture
-      } yield (token, user, client, TokenBuilder.issueAccessToken(user, client, token, ssoCreds))
+      } yield (token, user, client, ssoCreds, TokenBuilder.issueAccessToken(user, client, token, ssoCreds))
     }
 
     tokenFuture.onSuccess {
-      case (token, user, client, _) =>
-        extendTokenLifetime(token)
+      case (token, user, client, ssoCreds, _) =>
+        // TODO: The result of this Future is just discarded, there should be better tracking of errors
+        extendTokenLifetime(token, ssoCreds.map(_.refreshToken))
         events.publish(UserAuthenticated(user, client))
     }
 
-    tokenFuture.map(_._4)
+    tokenFuture.map(_._5)
   }
 
   override def revokeRefreshToken(token: String): Future[Unit] = {
