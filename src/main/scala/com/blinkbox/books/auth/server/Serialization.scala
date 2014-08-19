@@ -37,7 +37,7 @@ class Serialization extends Json4sJacksonSupport {
   )
 
   implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer +
-    new EnumNameSerializer(RefreshTokenStatus) + new EnumNameSerializer(Elevation) + clientInfoSerializer
+    new EnumNameSerializer(TokenStatus) + new EnumNameSerializer(Elevation) + clientInfoSerializer
 }
 
 object Serialization extends Serialization

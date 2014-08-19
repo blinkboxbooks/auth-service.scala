@@ -1,12 +1,11 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.{RefreshTokenCredentials, PasswordCredentials, UserRegistration, SSOConfig}
+import com.blinkbox.books.auth.server.{PasswordCredentials, SSOConfig, UserRegistration}
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import org.json4s.JsonAST.{JString, JField, JObject}
-import org.slf4j.LoggerFactory
+import org.json4s.JsonAST.{JField, JObject, JString}
 import spray.client.pipelining._
-import spray.http.{HttpCredentials, StatusCodes, OAuth2BearerToken, FormData}
+import spray.http.{FormData, HttpCredentials, OAuth2BearerToken, StatusCodes}
 import spray.httpx.UnsuccessfulResponseException
 
 import scala.concurrent.duration.FiniteDuration
@@ -27,6 +26,7 @@ object SSOConstants {
   val InfoUri = "/user"
   val RevokeTokenUri = "/tokens/revoke"
   val TokenStatusUri = "/tokens/status"
+  val ExtendSessionUri = "/session"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
   val PasswordGrant = "password"
@@ -40,12 +40,12 @@ trait SSO {
   // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
   def revokeToken(ssoRefreshToken: String): Future[Unit]
   // // User - authenticated
-  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
+  def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
   // def updatePassword(update: UpdatePassword): Future[Unit]
-  def tokenStatus(ssoRefreshToken : String): Future[TokenStatus]
-  // def refreshSession(): Future[Unit]
-  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation]
+  def sessionStatus(token: SSOAccessToken): Future[TokenStatus]
+  def extendSession(token: SSOAccessToken): Future[Unit]
+  def userInfo(token: SSOAccessToken): Future[UserInformation]
   // def updateUser(req: PatchUser): Future[Unit]
   // // Admin
   // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
@@ -62,7 +62,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   private val C = SSOConstants
 
-  private def extractUserId(cred: SSOCredentials): (String, SSOCredentials) = SsoAccessToken.decode(cred.accessToken, tokenDecoder) match {
+  private def extractUserId(cred: SSOCredentials): (String, SSOCredentials) = SsoAccessToken.decode(cred.accessToken.value, tokenDecoder) match {
     case Success(token) => (token.subject, cred)
     case Failure(_) => throw new SSOInvalidAccessToken(cred)
   }
@@ -103,8 +103,9 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def userInfoErrorsTransformer = commonErrorsTransformer
   private def revokeTokenErrorsTransformer = commonErrorsTransformer
   private def tokenStatusErrorsTransformer = commonErrorsTransformer
+  private def extendSessionErrorTransformer = commonErrorsTransformer
 
-  def oauthCredentials(ssoCredentials: SSOCredentials): HttpCredentials = new OAuth2BearerToken(ssoCredentials.accessToken)
+  def oauthCredentials(token: SSOAccessToken): HttpCredentials = new OAuth2BearerToken(token.value)
 
   def register(req: UserRegistration): Future[(String, SSOCredentials)] = {
     logger.debug("Registering user")
@@ -117,13 +118,13 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) map extractUserId transform(identity, registrationErrorsTransformer)
   }
 
-  def linkAccount(ssoCredentials: SSOCredentials, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] = {
+  def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] = {
     logger.debug("Linking account", id)
     client.unitRequest(Post(versioned(C.LinkUri), FormData(Map(
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,
       "service_tc_accepted_version" -> termsVersion
-    ))), oauthCredentials(ssoCredentials)) transform(identity, linkErrorsTransformer)
+    ))), oauthCredentials(token)) transform(identity, linkErrorsTransformer)
   }
 
   def authenticate(c: PasswordCredentials): Future[SSOCredentials] = {
@@ -135,9 +136,9 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) map extractUserId transform(_._2, authenticationErrorsTransformer)
   }
 
-  def userInfo(ssoCredentials: SSOCredentials): Future[UserInformation] = {
+  def userInfo(token: SSOAccessToken): Future[UserInformation] = {
     logger.debug("Fetching user info")
-    client.dataRequest[UserInformation](Get(versioned(C.InfoUri)), oauthCredentials(ssoCredentials)) transform(identity, userInfoErrorsTransformer)
+    client.dataRequest[UserInformation](Get(versioned(C.InfoUri)), oauthCredentials(token)) transform(identity, userInfoErrorsTransformer)
   }
 
   def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
@@ -155,10 +156,17 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) transform(identity, revokeTokenErrorsTransformer)
   }
 
-  def tokenStatus(ssoRefreshToken : String): Future[TokenStatus] = {
+  def sessionStatus(token: SSOAccessToken): Future[TokenStatus] = {
     logger.debug("Fetching token status")
     client.dataRequest[TokenStatus](Post(versioned(C.TokenStatusUri), FormData(Map(
-      "token" -> ssoRefreshToken
+      "token" -> token.value
     )))) transform(identity, tokenStatusErrorsTransformer)
+  }
+
+  def extendSession(token: SSOAccessToken): Future[Unit] = {
+    logger.debug("Refreshing session")
+    client.unitRequest(
+      Post(versioned(C.ExtendSessionUri), FormData(Map.empty[String, String])),
+      oauthCredentials(token)) transform(identity, extendSessionErrorTransformer)
   }
 }

@@ -39,29 +39,29 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     db.withSession { implicit session => userRepo.updateUser(user) }
   }
 
-  private def createFromSSO(ssoCredentials: SSOCredentials): Future[User] = {
-    val registrationFuture = sso.userInfo(ssoCredentials).map { u =>
+  private def createFromSSO(ssoAccessToken: SSOAccessToken): Future[User] = {
+    val registrationFuture = sso.userInfo(ssoAccessToken).map { u =>
       (u.userId, UserRegistration(u.firstName, u.lastName, u.username, Random.nextString(32), true, false, None, None, None, None))
     }
 
     for {
       (ssoId, registration) <- registrationFuture
       user                  <- registerUser(registration)
-      _                     <- sso linkAccount(ssoCredentials, user.id, false, TermsVersion)
+      _                     <- sso linkAccount(ssoAccessToken, user.id, false, TermsVersion)
       linkedUser            =  user.copy(ssoId = Some(ssoId))
       _                     <- updateUser(linkedUser)
       _                     <- events.publish(UserRegistered(linkedUser))
     } yield linkedUser
   }
 
-  private def updateFromSSO(ssoCredentials: SSOCredentials, user: User): Future[User] = {
-    val userFuture = sso.userInfo(ssoCredentials).map { u =>
+  private def updateFromSSO(ssoAccessToken: SSOAccessToken, user: User): Future[User] = {
+    val userFuture = sso.userInfo(ssoAccessToken).map { u =>
       user.copy(
         firstName = u.firstName,
         lastName = u.lastName,
         ssoId = Some(u.userId))
     }
-    
+
     for {
       updatedUser <- userFuture
       _           <- updateUser(updatedUser)
@@ -69,12 +69,12 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     } yield updatedUser
   }
 
-  private def ensureLinked(maybeUser: Option[User], ssoCredentials: SSOCredentials): Future[User] =
-    maybeUser.fold(createFromSSO(ssoCredentials)) { user =>
+  private def ensureLinked(maybeUser: Option[User], ssoAccessToken: SSOAccessToken): Future[User] =
+    maybeUser.fold(createFromSSO(ssoAccessToken)) { user =>
       if (user.ssoId.isDefined) Future.successful(user)
       else for {
-        _           <- sso linkAccount(ssoCredentials, user.id, user.allowMarketing, TermsVersion)
-        updatedUser <- updateFromSSO(ssoCredentials, user)
+        _           <- sso linkAccount(ssoAccessToken, user.id, user.allowMarketing, TermsVersion)
+        updatedUser <- updateFromSSO(ssoAccessToken, user)
       } yield updatedUser
     }
 
@@ -92,7 +92,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     for {
       ssoCredentials  <- ssoAuthenticationFuture
       maybeUser       <- findUser(credentials.username)
-      user            <- ensureLinked(maybeUser, ssoCredentials)
+      user            <- ensureLinked(maybeUser, ssoCredentials.accessToken)
       client          <- getClient(credentials, user)
       token           <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken)
       _               <- events.publish(UserAuthenticated(user, client))

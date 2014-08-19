@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.data
 import java.util.concurrent.TimeUnit
 
 import com.blinkbox.books.auth.Elevation
-import com.blinkbox.books.auth.server.RefreshTokenStatus
+import com.blinkbox.books.auth.server.TokenStatus
 import com.blinkbox.books.time.Clock
 import org.joda.time.DateTime
 
@@ -67,7 +67,7 @@ case class RefreshToken(
     criticalElevationExpiresAt: DateTime) {
   def isExpired(implicit clock: Clock) = expiresAt.isBefore(clock.now())
   def isValid(implicit clock: Clock) = !isExpired && !isRevoked
-  def status(implicit clock: Clock) = if (isValid) RefreshTokenStatus.Valid else RefreshTokenStatus.Invalid
+  def status(implicit clock: Clock) = if (isValid) TokenStatus.Valid else TokenStatus.Invalid
   def isElevated(implicit clock: Clock) = !elevationExpiresAt.isBefore(clock.now())
   def isCriticallyElevated(implicit clock: Clock) = !criticalElevationExpiresAt.isBefore(clock.now())
   def elevation(implicit clock: Clock) =

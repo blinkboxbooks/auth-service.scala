@@ -18,7 +18,7 @@ trait AuthRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
   def refreshTokensByClientId(clientId: ClientId)(implicit session: Session): List[RefreshToken]
   def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session)
-  def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session): Unit
+  def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[String])(implicit session: Session): Unit
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
 }
 
@@ -72,10 +72,10 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
     refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.clientId)).update(clock.now(), Some(c.id))
   }
 
-  override def extendRefreshTokenLifetime(t: RefreshToken)(implicit session: Session) = {
+  override def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[String])(implicit session: Session) = {
     // TODO: Make lifetime extension configurable
     val now = clock.now()
-    refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.expiresAt)).update(now, now.plusDays(90))
+    refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.expiresAt, t.ssoToken)).update(now, now.plusDays(90), ssoRefreshToken)
   }
 
   override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =

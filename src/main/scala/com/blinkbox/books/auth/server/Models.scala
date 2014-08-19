@@ -6,8 +6,8 @@ import com.blinkbox.books.auth.server.sso.SSOTokenStatus
 import com.blinkbox.books.auth.server.sso.SSOTokenStatus.{Revoked, Expired}
 import org.joda.time.DateTime
 
-object RefreshTokenStatus extends Enumeration {
-  type RefreshTokenStatus = Value
+object TokenStatus extends Enumeration {
+  type TokenStatus = Value
   val Valid = Value("VALID")
   val Invalid = Value("INVALID")
 
@@ -17,7 +17,7 @@ object RefreshTokenStatus extends Enumeration {
   }
 }
 
-import com.blinkbox.books.auth.server.RefreshTokenStatus._
+import com.blinkbox.books.auth.server.TokenStatus._
 
 case class UserRegistration(
   firstName: String,
@@ -122,7 +122,7 @@ case class ClientPatch(
 case class ClientList(clients: List[ClientInfo])
 
 case class SessionInfo(
-  token_status: RefreshTokenStatus,
+  token_status: TokenStatus,
   token_elevation: Option[Elevation],
   token_elevation_expires_in: Option[Long],
   user_roles: Option[List[String]] = None)
