@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.15.1 ([#22](https://git.mobcastdev.com/Zuul/auth-service/pull/22) 2014-08-18 17:44:16)
+
+Fixed expiry date of token
+
+### Bug fixes
+
+- The `exp` claim in a JWT should be an `IntDate` not an offset.
+- The `zl/rti` claim is an `Int` not a `String`.
+
 ## 0.15.0 ([#21](https://git.mobcastdev.com/Zuul/auth-service/pull/21) 2014-08-18 14:55:00)
 
 CP-1667 Implement query-session endpoint
