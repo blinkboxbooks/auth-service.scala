@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.16.1 ([#25](https://git.mobcastdev.com/Zuul/auth-service/pull/25) 2014-08-19 17:28:28)
+
+Use the fat jar RPM specs rather than the ruby ones
+
+Patch to make the RPM build properly.
+
 ## 0.16.0 ([#24](https://git.mobcastdev.com/Zuul/auth-service/pull/24) 2014-08-19 11:04:50)
 
 CP-1668 Implement session extension endpoint
