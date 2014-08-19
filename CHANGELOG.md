@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.16.0 ([#24](https://git.mobcastdev.com/Zuul/auth-service/pull/24) 2014-08-19 11:04:50)
+
+CP-1668 Implement session extension endpoint
+
+New feature
+
+One of the last endpoints that have integration with SSO. Almost there...
+
 ## 0.15.2 ([#23](https://git.mobcastdev.com/Zuul/auth-service/pull/23) 2014-08-19 09:52:47)
 
 CP-1667 Introduce json serializer for Elevation
