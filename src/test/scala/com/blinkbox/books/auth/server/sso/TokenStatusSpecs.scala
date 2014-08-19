@@ -14,7 +14,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
   "The SSO client" should "return session info for a valid, critically elevated SSO token" in new TokenStatusEnv {
     ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
 
-    whenReady(sso.tokenStatus("a-refresh-token"))(_ should matchPattern {
+    whenReady(sso.sessionStatus(SSOAccessToken("an-acces-token")))(_ should matchPattern {
       case TokenStatus(SSOTokenStatus.Valid, issued, expiry, "refresh", SSOTokenElevation.Critical, 300) if checkDates(issued, expiry) =>
     })
   }
@@ -22,7 +22,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
   it should "return session info for a valid non-elevated SSO token" in new TokenStatusEnv {
     ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.None)
 
-    whenReady(sso.tokenStatus("a-refresh-token"))(_ should matchPattern {
+    whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
       case TokenStatus(SSOTokenStatus.Valid, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }
@@ -30,7 +30,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
   it should "return session info for a revoked SSO token" in new TokenStatusEnv {
     ssoSessionInfo(SSOTokenStatus.Revoked, SSOTokenElevation.None)
 
-    whenReady(sso.tokenStatus("a-refresh-token"))(_ should matchPattern {
+    whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
       case TokenStatus(SSOTokenStatus.Revoked, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }
@@ -38,7 +38,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
   it should "return session info for an expired SSO token" in new TokenStatusEnv {
     ssoSessionInfo(SSOTokenStatus.Expired, SSOTokenElevation.None)
 
-    whenReady(sso.tokenStatus("a-refresh-token"))(_ should matchPattern {
+    whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
       case TokenStatus(SSOTokenStatus.Expired, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }
@@ -46,7 +46,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
   it should "return session info for an invalid SSO token" in new TokenStatusEnv {
     ssoSessionInfo(SSOTokenStatus.Invalid, SSOTokenElevation.None)
 
-    whenReady(sso.tokenStatus("a-refresh-token"))(_ should matchPattern {
+    whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
       case TokenStatus(SSOTokenStatus.Invalid, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }

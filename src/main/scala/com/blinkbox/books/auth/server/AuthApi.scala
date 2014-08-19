@@ -185,8 +185,8 @@ class AuthApi(
   val renewSession: Route = post {
     path("session") {
       authenticate(authenticator) { implicit user =>
-        onSuccess(sessionService.extendSession) { _ =>
-          uncacheable(NoContent, None)
+        onSuccess(sessionService.extendSession) { sessionInfo =>
+          uncacheable(OK, sessionInfo)
         }
       }
     }

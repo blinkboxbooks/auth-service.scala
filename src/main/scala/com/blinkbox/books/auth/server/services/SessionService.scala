@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.profile.BasicProfile
 
 trait SessionService {
-  def extendSession()(implicit user: AuthenticatedUser): Future[Unit]
+  def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo]
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
 }
 
@@ -29,21 +29,29 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   // TODO: Make this configurable
   val MaxClients = 12
 
-  private def sessionInfoFromRefreshToken(token: RefreshToken) = SessionInfo(
-    token_status = token.status,
-    token_elevation = if (token.isValid) Some(token.elevation) else None,
-    token_elevation_expires_in = if (token.isValid && token.elevation != Elevation.Unelevated) Some(token.elevationDropsIn.toSeconds) else None
-    // TODO: Roles
-  )
+  private def sessionInfoFromUser(user: AuthenticatedUser) = fetchRefreshToken(user).map { token =>
+    val elevation = (token.isValid, user.claims.isDefinedAt("sso/at")) match {
+      case (false, _) => None
+      case (true, true) => Some(token.elevation)
+      case (true, false) => Some(Elevation.Unelevated)
+    }
+
+    SessionInfo(
+      token_status = token.status,
+      token_elevation = elevation,
+      token_elevation_expires_in = if (token.isValid && elevation != Some(Elevation.Unelevated)) Some(token.elevationDropsIn.toSeconds) else None
+      // TODO: Roles
+    )
+  }
 
   private def elevationFromSessionElevation(e: SSOTokenElevation) = e match {
     case SSOTokenElevation.Critical => Elevation.Critical
     case SSOTokenElevation.None => Elevation.Unelevated
   }
 
-  private def querySessionWithSSO(ssoToken: String) = sso.tokenStatus(ssoToken).map { s =>
-    val status = RefreshTokenStatus.fromSSOValidity(s.status)
-    val elevation = if (status == RefreshTokenStatus.Valid) Some(elevationFromSessionElevation(s.sessionElevation)) else None
+  private def querySessionWithSSO(token: SSOAccessToken) = sso.sessionStatus(token).map { s =>
+    val status = TokenStatus.fromSSOValidity(s.status)
+    val elevation = if (status == TokenStatus.Valid) Some(elevationFromSessionElevation(s.sessionElevation)) else None
 
     SessionInfo(
       token_status = status,
@@ -64,15 +72,18 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(throw Failures.unverifiedIdentity)
   }
 
-  override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = for {
-    rt <- fetchRefreshToken(user)
-    si <- rt.ssoRefreshToken.fold(Future.successful(sessionInfoFromRefreshToken(rt)))(t => querySessionWithSSO(t))
-  } yield si
+  override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = user.claims.get("sso/at").
+    flatMap(_.cast[String]).
+    map(SSOAccessToken.apply).
+    fold(sessionInfoFromUser(user))(querySessionWithSSO)
 
-  override def extendSession()(implicit user: AuthenticatedUser): Future[Unit] = (for {
+  override def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo] = (for {
     raw <- user.claims.get("sso/at")
     at  <- raw.cast[String]
   } yield {
-    sso.extendSession(SSOAccessToken(at)).transform(identity, { case SSOUnauthorized => Failures.unverifiedIdentity })
+    sso
+      .extendSession(SSOAccessToken(at))
+      .flatMap(_ => querySession())
+      .transform(identity, { case SSOUnauthorized => Failures.unverifiedIdentity })
   }).getOrElse(Future.failed(Failures.unverifiedIdentity))
 }

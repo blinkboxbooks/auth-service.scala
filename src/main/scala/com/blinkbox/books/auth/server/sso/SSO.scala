@@ -43,7 +43,7 @@ trait SSO {
   def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
   // def updatePassword(update: UpdatePassword): Future[Unit]
-  def tokenStatus(ssoRefreshToken : String): Future[TokenStatus]
+  def sessionStatus(token: SSOAccessToken): Future[TokenStatus]
   def extendSession(token: SSOAccessToken): Future[Unit]
   def userInfo(token: SSOAccessToken): Future[UserInformation]
   // def updateUser(req: PatchUser): Future[Unit]
@@ -156,10 +156,10 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) transform(identity, revokeTokenErrorsTransformer)
   }
 
-  def tokenStatus(ssoRefreshToken : String): Future[TokenStatus] = {
+  def sessionStatus(token: SSOAccessToken): Future[TokenStatus] = {
     logger.debug("Fetching token status")
     client.dataRequest[TokenStatus](Post(versioned(C.TokenStatusUri), FormData(Map(
-      "token" -> ssoRefreshToken
+      "token" -> token.value
     )))) transform(identity, tokenStatusErrorsTransformer)
   }
 
