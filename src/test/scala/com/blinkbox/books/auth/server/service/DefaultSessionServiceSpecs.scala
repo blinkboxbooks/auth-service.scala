@@ -7,9 +7,9 @@ import com.blinkbox.books.auth.server.env.TokenStatusEnv
 
 class DefaultSessionServiceSpecs extends SpecBase {
 
-  implicit val user = User(Map[String, AnyRef](
+  implicit val user = User(Map(
     "sub" -> "urn:blinkbox:zuul:user:1",
-    "zl/rti" -> "1"
+    "zl/rti" -> Int.box(1)
   ))
 
   "The session service" should "report the status of a refresh token bound to a critically elevated SSO token" in new TokenStatusEnv {

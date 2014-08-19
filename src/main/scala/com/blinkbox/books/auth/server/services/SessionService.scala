@@ -56,7 +56,7 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     val tokenId = user.
       claims.
       get("zl/rti").
-      map(i => RefreshTokenId(i.asInstanceOf[String].toInt)).
+      map(i => RefreshTokenId(i.asInstanceOf[Int])).
       getOrElse(throw Failures.invalidRefreshToken)
 
     db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(throw Failures.unverifiedIdentity)

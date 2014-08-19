@@ -1,10 +1,10 @@
 package com.blinkbox.books.auth.server
 
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths}
 import java.security.KeyFactory
-import java.security.spec.{X509EncodedKeySpec, PKCS8EncodedKeySpec}
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
-import com.blinkbox.books.auth.server.data.{RefreshToken, Client, User}
+import com.blinkbox.books.auth.server.data.{Client, RefreshToken, User}
 import com.blinkbox.books.auth.server.sso.SSOCredentials
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
@@ -20,14 +20,12 @@ object TokenBuilder {
 
     // TODO: Do this properly with configurable keys etc.
 
-    // Expires in 30 minutes if no SSO credentials are provided
-    val expiresIn = ssoCredentials.map(c => Long.box(c.expiresIn - 60)).getOrElse(Long.box(1800L))
+    // Expires our token 1 minute before the SSO ones, or in 30 minutes if no SSO credentials are provided
+    val expiresIn = ssoCredentials.map(_.expiresIn - 60).getOrElse(1800)
 
     val claims = new java.util.LinkedHashMap[String, AnyRef]
     claims.put("sub", user.id.external)
-
-    // Expires our token 1 minute before the SSO ones
-    claims.put("exp", expiresIn)
+    claims.put("exp", Long.box(DateTime.now(DateTimeZone.UTC).plusSeconds(expiresIn).getMillis / 1000L))
 
     // Stores the SSO access token within the Zuul one if provided
     ssoCredentials.foreach(c => claims.put("sso/at", c.accessToken))
