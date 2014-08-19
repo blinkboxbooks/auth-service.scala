@@ -28,7 +28,7 @@ object TokenBuilder {
     claims.put("exp", Long.box(DateTime.now(DateTimeZone.UTC).plusSeconds(expiresIn).getMillis / 1000L))
 
     // Stores the SSO access token within the Zuul one if provided
-    ssoCredentials.foreach(c => claims.put("sso/at", c.accessToken))
+    ssoCredentials.foreach(c => claims.put("sso/at", c.accessToken.value))
 
     client.foreach(c => claims.put("bb/cid", c.id.external))
     // TODO: Roles

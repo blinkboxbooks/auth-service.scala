@@ -4,8 +4,9 @@ import java.util.Date
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
+import com.blinkbox.books.auth.server.data.Client
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.sso.{SsoAccessTokenDecoder, DefaultSSO, SSOResponseMocker, TestSSOClient}
+import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.slick.DBTypes
 import com.blinkbox.books.spray.ZuulTokenAuthenticator
@@ -137,7 +138,10 @@ class TestEnv extends
 
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
-  val tokenInfoA1 = TokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
+  val tokenInfoA1 = TokenBuilder.issueAccessToken(
+    userA, None, refreshTokenNoClientA, Some(SSOCredentials(SSOAccessToken("some-access-token"), "bearer", 300, "some-refresh-token")))
+
+  val tokenInfoA1WithoutSSO = TokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 
   def removeSSOTokens(): Unit = {
     import driver.simple._

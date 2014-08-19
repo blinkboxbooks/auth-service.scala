@@ -3,14 +3,16 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
-import com.blinkbox.books.auth.server.sso.{SSOTokenElevation, SSO}
-import com.blinkbox.books.auth.{User => AuthenticatedUser, Elevation}
+import com.blinkbox.books.auth.server.sso.{SSOUnauthorized, SSO, SSOAccessToken, SSOTokenElevation}
+import com.blinkbox.books.auth.{Elevation, User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
+import shapeless.Typeable._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.profile.BasicProfile
 
 trait SessionService {
+  def extendSession()(implicit user: AuthenticatedUser): Future[Unit]
   def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo]
 }
 
@@ -52,11 +54,11 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   }
 
   private def fetchRefreshToken(user: AuthenticatedUser): Future[RefreshToken] = Future {
-    // TODO: Account for casting failure
     val tokenId = user.
       claims.
       get("zl/rti").
-      map(i => RefreshTokenId(i.asInstanceOf[Int])).
+      flatMap(_.cast[Int]).
+      map(RefreshTokenId.apply).
       getOrElse(throw Failures.invalidRefreshToken)
 
     db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(throw Failures.unverifiedIdentity)
@@ -66,4 +68,15 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     rt <- fetchRefreshToken(user)
     si <- rt.ssoRefreshToken.fold(Future.successful(sessionInfoFromRefreshToken(rt)))(t => querySessionWithSSO(t))
   } yield si
+
+  override def extendSession()(implicit user: AuthenticatedUser): Future[Unit] = fetchRefreshToken(user).flatMap { t =>
+    val f = for {
+      rt <- t.ssoRefreshToken
+      at <- user.claims.get("sso/at").flatMap(_.cast[String])
+    } yield sso.extendSession(SSOAccessToken(at), rt)
+
+    f.
+      map(_.transform(identity, { case SSOUnauthorized => Failures.unverifiedIdentity })).
+      getOrElse(Future.failed(Failures.unverifiedIdentity))
+  }
 }

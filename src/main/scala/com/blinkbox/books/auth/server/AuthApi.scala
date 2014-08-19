@@ -82,7 +82,7 @@ class AuthApi(
     config: ApiConfig,
     userService: UserService,
     clientService: ClientService,
-    authService: SessionService,
+    sessionService: SessionService,
     registrationService: RegistrationService,
     passwordAuthenticationService: PasswordAuthenticationService,
     refreshTokenService: RefreshTokenService,
@@ -175,8 +175,18 @@ class AuthApi(
   val querySession: Route = get {
     path("session") {
       authenticate(authenticator) { implicit user =>
-        onSuccess(authService.querySession) { sessionInfo =>
+        onSuccess(sessionService.querySession) { sessionInfo =>
           uncacheable(OK, sessionInfo)
+        }
+      }
+    }
+  }
+
+  val renewSession: Route = post {
+    path("session") {
+      authenticate(authenticator) { implicit user =>
+        onSuccess(sessionService.extendSession) { _ =>
+          uncacheable(NoContent, None)
         }
       }
     }
@@ -251,7 +261,7 @@ class AuthApi(
   val routes: Route = monitor() {
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
-        querySession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
+        querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
           updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo
       }
     }

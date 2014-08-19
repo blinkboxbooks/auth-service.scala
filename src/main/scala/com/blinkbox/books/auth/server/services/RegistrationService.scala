@@ -71,7 +71,7 @@ class DefaultRegistrationService[DB <: DBTypes](
       reg                   <- validateRegistration(registration, clientIp)
       (ssoId, cred)         <- sso register reg
       (user, client, token) <- persistDetails(reg, cred)
-      _                     <- sso linkAccount(cred, user.id, registration.allowMarketing, TermsAndConditionsVersion)
+      _                     <- sso linkAccount(cred.accessToken, user.id, registration.allowMarketing, TermsAndConditionsVersion)
       _                     <- markLinked(user, ssoId)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(user, cl)) getOrElse(Future.successful(()))

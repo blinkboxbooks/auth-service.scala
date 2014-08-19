@@ -3,7 +3,9 @@ package com.blinkbox.books.auth.server.sso
 import com.blinkbox.books.auth.server.EnumContainer
 import org.joda.time.DateTime
 
-case class SSOCredentials(accessToken: String, tokenType: String, expiresIn: Int, refreshToken: String) {
+case class SSOAccessToken(value: String) extends AnyVal
+
+case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: String) {
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
 }
 
