@@ -71,15 +71,6 @@ class DefaultSessionServiceSpecs extends SpecBase {
     whenReady(sessionService.extendSession()) { _ => }
   }
 
-  it should "not extend an user session if the SSO refresh token is not available" in new TestEnv with CommonResponder {
-    ssoNoInvocation()
-    removeSSOTokens()
-
-    failingWith[ZuulAuthorizationException](sessionService.extendSession()) should matchPattern {
-      case ZuulAuthorizationException(_, InvalidToken, Some(UnverifiedIdentity)) =>
-    }
-  }
-
   it should "not extend an user session if the authenticated user doesn't have an SSO token" in new TestEnv with CommonResponder {
     ssoNoInvocation()
 

@@ -69,14 +69,10 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     si <- rt.ssoRefreshToken.fold(Future.successful(sessionInfoFromRefreshToken(rt)))(t => querySessionWithSSO(t))
   } yield si
 
-  override def extendSession()(implicit user: AuthenticatedUser): Future[Unit] = fetchRefreshToken(user).flatMap { t =>
-    val f = for {
-      rt <- t.ssoRefreshToken
-      at <- user.claims.get("sso/at").flatMap(_.cast[String])
-    } yield sso.extendSession(SSOAccessToken(at), rt)
-
-    f.
-      map(_.transform(identity, { case SSOUnauthorized => Failures.unverifiedIdentity })).
-      getOrElse(Future.failed(Failures.unverifiedIdentity))
-  }
+  override def extendSession()(implicit user: AuthenticatedUser): Future[Unit] = (for {
+    raw <- user.claims.get("sso/at")
+    at  <- raw.cast[String]
+  } yield {
+    sso.extendSession(SSOAccessToken(at)).transform(identity, { case SSOUnauthorized => Failures.unverifiedIdentity })
+  }).getOrElse(Future.failed(Failures.unverifiedIdentity))
 }

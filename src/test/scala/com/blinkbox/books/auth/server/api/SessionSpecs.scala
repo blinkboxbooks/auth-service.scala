@@ -63,16 +63,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
     }
   }
 
-  it should "not extend an user session if the SSO refresh token is not available" in {
-    env.ssoNoInvocation()
-    env.removeSSOTokens()
-
-    Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
-      status should equal(StatusCodes.Unauthorized)
-      header[`WWW-Authenticate`] shouldBe defined
-    }
-  }
-
   it should "not extend an user session if the authenticated user doesn't have an SSO token" in {
     env.ssoNoInvocation()
 

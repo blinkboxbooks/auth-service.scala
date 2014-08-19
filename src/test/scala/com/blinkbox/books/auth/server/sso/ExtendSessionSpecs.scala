@@ -10,12 +10,12 @@ class ExtendSessionSpecs extends FlatSpec with Matchers with SpecBase with FailH
   "The SSO client" should "extend a given SSO session" in new SSOTestEnv with CommonResponder {
     ssoNoContent()
 
-    whenReady(sso.extendSession(SSOAccessToken("some-access-token"), "a-refresh-token")) { _ => }
+    whenReady(sso.extendSession(SSOAccessToken("some-access-token"))) { _ => }
   }
 
   it should "return an Unauthorized exception if the SSO service signals invalid credentials" in new SSOTestEnv with CommonResponder {
     ssoResponse(StatusCodes.Unauthorized)
 
-    failingWith[SSOUnauthorized.type](sso.extendSession(SSOAccessToken("some-access-token"), "a-refresh-token")) should equal(SSOUnauthorized)
+    failingWith[SSOUnauthorized.type](sso.extendSession(SSOAccessToken("some-access-token"))) should equal(SSOUnauthorized)
   }
 }

@@ -44,7 +44,7 @@ trait SSO {
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
   // def updatePassword(update: UpdatePassword): Future[Unit]
   def tokenStatus(ssoRefreshToken : String): Future[TokenStatus]
-  def extendSession(token: SSOAccessToken, ssoToken: String): Future[Unit]
+  def extendSession(token: SSOAccessToken): Future[Unit]
   def userInfo(token: SSOAccessToken): Future[UserInformation]
   // def updateUser(req: PatchUser): Future[Unit]
   // // Admin
@@ -163,7 +163,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) transform(identity, tokenStatusErrorsTransformer)
   }
 
-  def extendSession(token: SSOAccessToken, refreshToken: String): Future[Unit] = {
+  def extendSession(token: SSOAccessToken): Future[Unit] = {
     logger.debug("Refreshing session")
     client.unitRequest(
       Post(versioned(C.ExtendSessionUri), FormData(Map.empty[String, String])),
