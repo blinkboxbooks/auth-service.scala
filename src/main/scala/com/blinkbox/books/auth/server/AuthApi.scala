@@ -164,7 +164,7 @@ class AuthApi(
           complete(NotFound, None)
         else
           formFields('first_name.?, 'last_name.?, 'username.?, 'allow_marketing_communications.?, 'accepted_terms_and_conditions.?).as(UserPatch) { patch =>
-            onSuccess(userService.updateUser(userId, patch)) { info =>
+            onSuccess(userService.updateUser(patch)) { info =>
               info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
             }
           }
@@ -285,6 +285,9 @@ class AuthApi(
       }
     case SSOUnknownException(e) =>
       log.error("Unknown SSO error", e)
+      complete(InternalServerError, HttpEntity.Empty)
+    case ZuulUnknownException(msg, inner) =>
+      log.error(s"Unknown error: $msg", inner)
       complete(InternalServerError, HttpEntity.Empty)
   }
 

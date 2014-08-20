@@ -34,7 +34,7 @@ class DefaultUserServiceSpecs extends SpecBase {
     }
   }
 
-  it should "signal an unverified identity if an user doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
+  it should "signal an unverified identity when retrieving an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
     ssoSuccessfulUserInfo()
 
     db.withSession { implicit session =>
@@ -45,20 +45,23 @@ class DefaultUserServiceSpecs extends SpecBase {
     failingWith[ZuulAuthorizationException](userService.getUserInfo()(authenticatedUserA)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity if the user doesn't have an SSO access token" in new TestEnv with CommonResponder {
+  it should "signal an unverified identity when retrieving an user that doesn't have an SSO access token" in new TestEnv with CommonResponder {
     ssoNoInvocation()
 
     failingWith[ZuulAuthorizationException](userService.getUserInfo()(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "not return any information if the user doesn't exist on SSO" in new TestEnv with CommonResponder {
+  it should "signal an unverified identity when retrieving an user that doesn't exist on SSO" in new TestEnv with CommonResponder {
     ssoResponse(StatusCodes.Unauthorized, HttpEntity.Empty)
 
     failingWith[ZuulUnknownException](userService.getUserInfo()(authenticatedUserA))
   }
 
-  it should "update an user given new details" in new TestEnv {
-    whenReady(userService.updateUser(UserId(1), fullUserPatch)) { infoOpt =>
+  it should "update an user given new details and return updated user information" in new TestEnv with UserInfoResponder {
+    ssoSuccessfulUserInfo()
+    ssoNoContent()
+
+    whenReady(userService.updateUser(fullUserPatch)(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt foreach { info =>
         info.user_first_name should equal("Updated First")
@@ -72,11 +75,39 @@ class DefaultUserServiceSpecs extends SpecBase {
         tables.users.where(_.id === UserId(1)).firstOption
       }
 
-      val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, Some("sso-a"))
+      val ssoSynced = User(userIdA, now, now, "john.doe+blinkbox@example.com", "John", "Doe", "a-password", true, Some("6E41CB9F"))
+
+      val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, Some("6E41CB9F"))
 
       updated should equal(Some(expectedUpdatedUser))
 
-      publisherSpy.events shouldEqual(UserUpdated(userA, expectedUpdatedUser) :: Nil)
+      publisherSpy.events shouldEqual(
+        UserUpdated(ssoSynced, expectedUpdatedUser) ::
+        UserUpdated(userA, ssoSynced) ::
+        Nil)
     }
+  }
+
+  it should "signal an unverified identity when updating an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
+    ssoSuccessfulUserInfo()
+
+    db.withSession { implicit session =>
+      tables.refreshTokens.filter(_.userId === userIdA).mutate(_.delete)
+      tables.users.filter(_.id === userIdA).mutate(_.delete)
+    }
+
+    failingWith[ZuulAuthorizationException](userService.updateUser(fullUserPatch)(authenticatedUserA)) should equal(Failures.unverifiedIdentity)
+  }
+
+  it should "signal an unverified identity when updating an user that doesn't have an SSO access token" in new TestEnv with CommonResponder {
+    ssoNoInvocation()
+
+    failingWith[ZuulAuthorizationException](userService.updateUser(fullUserPatch)(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
+  }
+
+  it should "signal an unverified identity when updating an user that doesn't exist on SSO" in new TestEnv with CommonResponder {
+    ssoResponse(StatusCodes.Unauthorized, HttpEntity.Empty)
+
+    failingWith[ZuulUnknownException](userService.updateUser(fullUserPatch)(authenticatedUserA))
   }
 }
