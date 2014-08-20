@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.16.2 ([#27](https://git.mobcastdev.com/Zuul/auth-service/pull/27) 2014-08-20 15:16:13)
+
+Fix submodule commit
+
+Patch to fix the submodule commit (the last PR broke it)
+
 ## 0.16.1 ([#25](https://git.mobcastdev.com/Zuul/auth-service/pull/25) 2014-08-19 17:28:28)
 
 Use the fat jar RPM specs rather than the ruby ones
