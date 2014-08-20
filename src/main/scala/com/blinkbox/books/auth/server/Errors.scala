@@ -67,6 +67,8 @@ case class ZuulAuthorizationException(
 
 case class ZuulTooManyRequestException(message: String, retryAfter: FiniteDuration) extends ZuulException
 
+case class ZuulUnknownException(message: String, ex: Option[Throwable] = None) extends ZuulException
+
 object Failures {
   import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode._
   import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason._
