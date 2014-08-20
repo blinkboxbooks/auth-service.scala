@@ -62,7 +62,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   private val C = SSOConstants
 
-  private def extractUserId(cred: SSOCredentials): (String, SSOCredentials) = SsoAccessToken.decode(cred.accessToken.value, tokenDecoder) match {
+  private def extractUserId(cred: SSOCredentials): (String, SSOCredentials) = SsoDecodedAccessToken.decode(cred.accessToken.value, tokenDecoder) match {
     case Success(token) => (token.subject, cred)
     case Failure(_) => throw new SSOInvalidAccessToken(cred)
   }

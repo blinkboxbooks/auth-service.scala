@@ -24,7 +24,7 @@ class SsoAccessTokenTests extends FunSuite {
     val decoder: SsoAccessTokenDecoder = new SsoAccessTokenDecoder(TestKeyStore) {
       override def validateExpirationTime(expirationTime: Date) = {} // allow expired token for test purposes
     }
-    SsoAccessToken.decode(token, decoder) match {
+    SsoDecodedAccessToken.decode(token, decoder) match {
       case Failure(e) => fail(e)
       case Success(t) =>
         assert(t.token == token)
@@ -35,7 +35,7 @@ class SsoAccessTokenTests extends FunSuite {
   test("Fails to decode a token with an invalid signature") {
     // note: just the last letter of the token has been changed
     val token = "eyJhbGciOiJFUzI1NiJ9.eyJzY3AiOlsic3NvOmJvb2tzIl0sImV4cCI6MTQwNjU1NjU5OSwic3ViIjoiQjBFODQyOEUtN0RFQi00MEJGLUJGQkUtNUQwOTI3QTU0RjY1IiwicmlkIjoiNEY3N0M1RkEtNTJCQy00RDY0LUI0OUItOTMyNUY3ODE1NEYwIiwibG5rIjpbXSwic3J2IjoiYm9va3MiLCJyb2wiOltdLCJ0a3QiOiJhY2Nlc3MiLCJpYXQiOjE0MDY1NTQ3OTl9.lTtM96tL9ALtZPd8Ct28dt4BinWuru6L-nXqMANro14N0SKcOJhJppfEOC2y8CUEQ_XN55WA2IdTm1ebIUV9gD"
-    val result = SsoAccessToken.decode(token, new SsoAccessTokenDecoder(TestKeyStore))
+    val result = SsoDecodedAccessToken.decode(token, new SsoAccessTokenDecoder(TestKeyStore))
     result match {
       case Success(_) => fail("Should not decode a token with an invalid signature")
       case Failure(e) =>
