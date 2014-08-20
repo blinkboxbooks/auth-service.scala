@@ -98,7 +98,7 @@ class TestEnv extends
 
   def fullUserPatch = UserPatch(Some("Updated First"), Some("Updated Last"), Some("updated@test.tst"), Some(false), None)
 
-  val authenticatedUserA = AuthenticatedUser(userIdA.value, None, Map.empty)
+  val authenticatedUserA = AuthenticatedUser(userIdA.value, None, Map[String, AnyRef]("sso/at" -> "some-access-token"))
   val authenticatedUserB = AuthenticatedUser(userIdB.value, None, Map.empty)
   val authenticatedUserC = AuthenticatedUser(userIdC.value, None, Map.empty)
 

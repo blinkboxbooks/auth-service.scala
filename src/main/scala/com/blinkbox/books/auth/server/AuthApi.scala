@@ -150,7 +150,7 @@ class AuthApi(
         if (user.id != userId.value)
           complete(NotFound, None)
         else
-          onSuccess(userService.getUserInfo(userId)) { info =>
+          onSuccess(userService.getUserInfo()) { info =>
             info.fold(complete(NotFound, None))(i => uncacheable(OK, i))
           }
       }
