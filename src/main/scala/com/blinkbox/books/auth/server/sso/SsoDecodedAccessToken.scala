@@ -42,17 +42,17 @@ class SsoAccessTokenDecoder(keyStore: KeyStore) extends TokenDecoder {
     else super.getVerifier(header)
 }
 
-case class SsoAccessToken(token: String, claims: Map[String, AnyRef]) {
+case class SsoDecodedAccessToken(token: String, claims: Map[String, AnyRef]) {
   val subject: String = claims.get("sub") match {
     case Some(s: String) => s
     case _ => throw new InvalidTokenException("The 'sub' claim is missing or invalid.")
   }
 }
 
-object SsoAccessToken {
-  def decode(token: String, decoder: TokenDecoder): Try[SsoAccessToken] = Try {
+object SsoDecodedAccessToken {
+  def decode(token: String, decoder: TokenDecoder): Try[SsoDecodedAccessToken] = Try {
     val claims = extractClaims[String, AnyRef](decoder.decode(token))
-    SsoAccessToken(token, claims)
+    SsoDecodedAccessToken(token, claims)
   }
   private def extractClaims[K: ClassTag, V: ClassTag](payload: Any): Map[K, V] = payload match {
     case claims: java.util.Map[K, V] => claims.asScala.toMap
