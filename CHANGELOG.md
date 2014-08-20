@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.16.3 ([#28](https://git.mobcastdev.com/Zuul/auth-service/pull/28) 2014-08-20 15:44:08)
+
+Rename SsoAccessToken -> SsoDecodedAccessToken
+
+Improvement
+
+This is necessary to avoid potential name clashes in case-insensitive filesystems.
+
 ## 0.16.2 ([#27](https://git.mobcastdev.com/Zuul/auth-service/pull/27) 2014-08-20 15:16:13)
 
 Fix submodule commit
