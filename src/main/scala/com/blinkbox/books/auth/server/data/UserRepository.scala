@@ -24,10 +24,10 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
   import driver.simple._
 
   override def userWithUsername(username: String)(implicit session: Session): Option[User] =
-    users.where(_.username === username).firstOption
+    users.filter(_.username === username).firstOption
 
   override def userWithUsernameAndPassword(username: String, password: String)(implicit session: Session): Option[User] = {
-    val user = users.where(_.username === username).firstOption
+    val user = users.filter(_.username === username).firstOption
 
     // even if the user isn't found we still need to perform an scrypt hash of something to help
     // prevent timing attacks as this hashing process is the bulk of the request time
@@ -46,8 +46,8 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
     user.copy(id = id)
   }
 
-  override def userWithId(id: UserId)(implicit session: Session) = users.where(_.id === id).list.headOption
-  override def updateUser(user: User)(implicit session: Session): Unit = users.where(_.id === user.id).update(user)
+  override def userWithId(id: UserId)(implicit session: Session) = users.filter(_.id === id).list.headOption
+  override def updateUser(user: User)(implicit session: Session): Unit = users.filter(_.id === user.id).update(user)
 }
 
 class DefaultUserRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile], val passwordHasher: PasswordHasher)(implicit val clock: Clock)

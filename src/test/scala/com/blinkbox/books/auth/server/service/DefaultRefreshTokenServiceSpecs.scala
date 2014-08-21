@@ -27,7 +27,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
       import tables._
       import tables.driver.simple._
       val updatedToken = db.withSession { implicit session =>
-        tables.refreshTokens.where(_.id === refreshTokenClientA1.id).firstOption
+        tables.refreshTokens.filter(_.id === refreshTokenClientA1.id).firstOption
       }
 
       updatedToken shouldBe defined
@@ -50,7 +50,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
       import tables._
       import tables.driver.simple._
       val updatedToken = db.withSession { implicit session =>
-        tables.refreshTokens.where(_.id === refreshTokenClientA1.id).firstOption
+        tables.refreshTokens.filter(_.id === refreshTokenClientA1.id).firstOption
       }
 
       updatedToken shouldBe defined

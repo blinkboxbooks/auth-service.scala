@@ -40,9 +40,9 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
       case _ => None
     }
 
-    val client = numericId.flatMap(nid => clients.where(c => c.id === nid && c.secret === secret && c.userId === userId && c.isDeregistered === false).firstOption)
+    val client = numericId.flatMap(nid => clients.filter(c => c.id === nid && c.secret === secret && c.userId === userId && c.isDeregistered === false).firstOption)
     if (client.isDefined) {
-      clients.where(_.id === client.get.id).map(_.updatedAt).update(clock.now())
+      clients.filter(_.id === client.get.id).map(_.updatedAt).update(clock.now())
     }
 
     client
@@ -55,31 +55,31 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
   }
 
   override def refreshTokenWithId(id: RefreshTokenId)(implicit session: Session) = {
-    val refreshToken = refreshTokens.where(rt => rt.id === id && !rt.isRevoked).list.headOption
+    val refreshToken = refreshTokens.filter(rt => rt.id === id && !rt.isRevoked).list.headOption
     refreshToken.filter(_.isValid)
   }
 
   override def refreshTokenWithToken(token: String)(implicit session: Session) = {
-    val refreshToken = refreshTokens.where(rt => rt.token === token && !rt.isRevoked).list.headOption
+    val refreshToken = refreshTokens.filter(rt => rt.token === token && !rt.isRevoked).list.headOption
     refreshToken.filter(_.isValid)
   }
 
   override def refreshTokensByClientId(clientId: ClientId)(implicit session: Session): List[RefreshToken] = {
-    refreshTokens.where(_.clientId === clientId).list
+    refreshTokens.filter(_.clientId === clientId).list
   }
 
   override def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session) = {
-    refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.clientId)).update(clock.now(), Some(c.id))
+    refreshTokens.filter(_.id === t.id).map(t => (t.updatedAt, t.clientId)).update(clock.now(), Some(c.id))
   }
 
   override def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[String])(implicit session: Session) = {
     // TODO: Make lifetime extension configurable
     val now = clock.now()
-    refreshTokens.where(_.id === t.id).map(t => (t.updatedAt, t.expiresAt, t.ssoToken)).update(now, now.plusDays(90), ssoRefreshToken)
+    refreshTokens.filter(_.id === t.id).map(t => (t.updatedAt, t.expiresAt, t.ssoToken)).update(now, now.plusDays(90), ssoRefreshToken)
   }
 
   override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
-    refreshTokens.where(_.id === t.id).map(_.isRevoked).update(true)
+    refreshTokens.filter(_.id === t.id).map(_.isRevoked).update(true)
 
   private def newRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: String) = {
     val now = clock.now()

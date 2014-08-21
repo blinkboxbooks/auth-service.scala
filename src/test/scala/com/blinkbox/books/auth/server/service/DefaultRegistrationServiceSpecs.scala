@@ -30,7 +30,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
 
     whenReady(registrationService.registerUser(simpleReg, None)) { token =>
 
-      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first().value }
+      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first.value }
 
       assertUserRegistered(token, regId)
       token.refresh_token shouldBe defined
@@ -48,7 +48,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
 
       import driver.simple._
 
-      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first().value }
+      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first.value }
 
       assertUserRegistered(token, regId)
       token.refresh_token shouldBe defined
