@@ -24,7 +24,7 @@ class DefaultUserServiceSpecs extends SpecBase {
         info.user_allow_marketing_communications should equal(true)
       }
 
-      val updated = db.withSession { implicit session => tables.users.where(_.id === userIdA).firstOption }
+      val updated = db.withSession { implicit session => tables.users.filter(_.id === userIdA).firstOption }
 
       val expected = User(userIdA, now, now, "john.doe+blinkbox@example.com", "John", "Doe", "a-password", true, Some("6E41CB9F"))
 
@@ -72,7 +72,7 @@ class DefaultUserServiceSpecs extends SpecBase {
       }
 
       val updated = db.withSession { implicit session =>
-        tables.users.where(_.id === UserId(1)).firstOption
+        tables.users.filter(_.id === UserId(1)).firstOption
       }
 
       val ssoSynced = User(userIdA, now, now, "john.doe+blinkbox@example.com", "John", "Doe", "a-password", true, Some("6E41CB9F"))

@@ -48,7 +48,7 @@ class DefaultClientServiceSpecs extends SpecBase {
       publisherSpy.events should equal(ClientDeregistered(userA, clientA1.copy(isDeregistered = true)) :: Nil)
 
       db.withSession { implicit session =>
-        tables.refreshTokens.where(_.clientId === clientIdA1).map(_.isRevoked).foreach(_ shouldBe true)
+        tables.refreshTokens.filter(_.clientId === clientIdA1).map(_.isRevoked).foreach(_ shouldBe true)
       }
     }
 
@@ -60,7 +60,7 @@ class DefaultClientServiceSpecs extends SpecBase {
         ClientDeregistered(userA, clientA1.copy(isDeregistered = true)) :: Nil)
 
       db.withSession { implicit session =>
-        tables.refreshTokens.where(_.clientId === clientIdA2).map(_.isRevoked).foreach(_ shouldBe true)
+        tables.refreshTokens.filter(_.clientId === clientIdA2).map(_.isRevoked).foreach(_ shouldBe true)
       }
     }
   }
@@ -80,7 +80,7 @@ class DefaultClientServiceSpecs extends SpecBase {
       infoOpt.foreach { _ should equal(fullPatchedClientInfoA1) }
 
       db.withSession { implicit session =>
-        val storedClient = tables.clients.where(_.id === clientIdA1).firstOption
+        val storedClient = tables.clients.filter(_.id === clientIdA1).firstOption
         storedClient shouldBe defined
         storedClient.foreach { _ should equal(fullPatchedClientA1) }
       }
@@ -101,7 +101,7 @@ class DefaultClientServiceSpecs extends SpecBase {
   it should "allow creating a new client for users below their limits" in new TestEnv {
     whenReady(clientService.registerClient(clientRegistration)(authenticatedUserB)) { info =>
       val lastClient = db.withSession { implicit session =>
-        tables.clients.sortBy(_.id.desc).first()
+        tables.clients.sortBy(_.id.desc).first
       }
 
       lastClient.name should equal("Test name")
@@ -124,7 +124,7 @@ class DefaultClientServiceSpecs extends SpecBase {
     }
 
     db.withSession { implicit session =>
-      tables.clients.where(_.id === ClientId(4)).map(_.isDeregistered).update(true)
+      tables.clients.filter(_.id === ClientId(4)).map(_.isDeregistered).update(true)
     }
 
     whenReady(clientService.registerClient(clientRegistration)(authenticatedUserC)) { _ => }

@@ -25,16 +25,16 @@ trait JdbcClientRepository[Profile <: JdbcProfile] extends ClientRepository[Prof
   import driver.simple._
 
   override def activeClients(userId: UserId)(implicit session: Session): List[Client] =
-    clients.where(c => c.userId === userId && !c.isDeregistered).list
+    clients.filter(c => c.userId === userId && !c.isDeregistered).list
 
   override def activeClientCount(userId: UserId)(implicit session: Session): Int =
-    clients.where(c => c.userId === userId && !c.isDeregistered).length.run
+    clients.filter(c => c.userId === userId && !c.isDeregistered).length.run
 
   override def updateClient(userId: UserId, client: Client)(implicit session: Session): Unit =
-    clients.where(c => c.id === client.id && c.userId === userId).update(client)
+    clients.filter(c => c.id === client.id && c.userId === userId).update(client)
 
   override def clientWithId(userId: UserId, id: ClientId)(implicit session: Session): Option[Client] =
-    clients.where(c => c.id === id && c.userId === userId && !c.isDeregistered).firstOption
+    clients.filter(c => c.id === id && c.userId === userId && !c.isDeregistered).firstOption
 
   override def createClient(userId: UserId, registration: ClientRegistration)(implicit session: Session): Client = {
     val client = newClient(userId, registration)
