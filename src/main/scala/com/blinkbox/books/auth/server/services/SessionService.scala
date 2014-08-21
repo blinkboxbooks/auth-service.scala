@@ -30,7 +30,7 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   val MaxClients = 12
 
   private def sessionInfoFromUser(user: AuthenticatedUser) = fetchRefreshToken(user).map { token =>
-    val elevation = (token.isValid, user.claims.isDefinedAt("sso/at")) match {
+    val elevation = (token.isValid, user.ssoAccessToken.isDefined)match {
       case (false, _) => None
       case (true, true) => Some(token.elevation)
       case (true, false) => Some(Elevation.Unelevated)
@@ -62,28 +62,17 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   }
 
   private def fetchRefreshToken(user: AuthenticatedUser): Future[RefreshToken] = Future {
-    val tokenId = user.
-      claims.
-      get("zl/rti").
-      flatMap(_.cast[Int]).
-      map(RefreshTokenId.apply).
-      getOrElse(throw Failures.invalidRefreshToken)
+    val tokenId = user.refreshTokenId.getOrElse(throw Failures.invalidRefreshToken)
 
     db.withSession(implicit session => authRepo.refreshTokenWithId(tokenId)).getOrElse(throw Failures.unverifiedIdentity)
   }
 
-  override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] = user.claims.get("sso/at").
-    flatMap(_.cast[String]).
-    map(SSOAccessToken.apply).
-    fold(sessionInfoFromUser(user))(querySessionWithSSO)
+  override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] =
+    user.ssoAccessToken.fold(sessionInfoFromUser(user))(querySessionWithSSO)
 
-  override def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo] = (for {
-    raw <- user.claims.get("sso/at")
-    at  <- raw.cast[String]
-  } yield {
-    sso
-      .extendSession(SSOAccessToken(at))
+  override def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo] = user.ssoAccessToken.map { at =>
+    sso.extendSession(at)
       .flatMap(_ => querySession())
       .transform(identity, { case SSOUnauthorized => Failures.unverifiedIdentity })
-  }).getOrElse(Future.failed(Failures.unverifiedIdentity))
+  } getOrElse(Future.failed(Failures.unverifiedIdentity))
 }

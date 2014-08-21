@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.{PasswordCredentials, SSOConfig, UserRegistration}
+import com.blinkbox.books.auth.server.{UserPatch, PasswordCredentials, SSOConfig, UserRegistration}
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import org.json4s.JsonAST.{JField, JObject, JString}
 import spray.client.pipelining._
@@ -23,7 +23,7 @@ case class SSOUnknownException(e: Throwable) extends SSOException
 object SSOConstants {
   val TokenUri = "/oauth2/token"
   val LinkUri = "/link"
-  val InfoUri = "/user"
+  val UserInfoUri = "/user"
   val RevokeTokenUri = "/tokens/revoke"
   val TokenStatusUri = "/tokens/status"
   val ExtendSessionUri = "/session"
@@ -46,7 +46,7 @@ trait SSO {
   def sessionStatus(token: SSOAccessToken): Future[TokenStatus]
   def extendSession(token: SSOAccessToken): Future[Unit]
   def userInfo(token: SSOAccessToken): Future[UserInformation]
-  // def updateUser(req: PatchUser): Future[Unit]
+  def updateUser(token: SSOAccessToken, req: UserPatch): Future[Unit]
   // // Admin
   // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
   // def adminUserDetails(req: GetUserDetails): Future[UserDetail]
@@ -104,6 +104,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def revokeTokenErrorsTransformer = commonErrorsTransformer
   private def tokenStatusErrorsTransformer = commonErrorsTransformer
   private def extendSessionErrorTransformer = commonErrorsTransformer
+  private def updateUserErrorTransformer = commonErrorsTransformer
 
   def oauthCredentials(token: SSOAccessToken): HttpCredentials = new OAuth2BearerToken(token.value)
 
@@ -138,7 +139,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   def userInfo(token: SSOAccessToken): Future[UserInformation] = {
     logger.debug("Fetching user info")
-    client.dataRequest[UserInformation](Get(versioned(C.InfoUri)), oauthCredentials(token)) transform(identity, userInfoErrorsTransformer)
+    client.dataRequest[UserInformation](Get(versioned(C.UserInfoUri)), oauthCredentials(token)) transform(identity, userInfoErrorsTransformer)
   }
 
   def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
@@ -168,5 +169,19 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     client.unitRequest(
       Post(versioned(C.ExtendSessionUri), FormData(Map.empty[String, String])),
       oauthCredentials(token)) transform(identity, extendSessionErrorTransformer)
+  }
+
+  def updateUser(token: SSOAccessToken, req: UserPatch): Future[Unit] = {
+    logger.debug("Updating user")
+
+    val formData = Seq(
+      req.username.map("username" -> _),
+      req.first_name.map("first_name" -> _),
+      req.last_name.map("last_name" -> _),
+      req.allow_marketing_communications.map("service_allow_marketing" -> _.toString)
+    ).flatten
+
+    client.unitRequest(
+      Patch(versioned(C.UserInfoUri), FormData(formData)), oauthCredentials(token)) transform(identity, updateUserErrorTransformer)
   }
 }
