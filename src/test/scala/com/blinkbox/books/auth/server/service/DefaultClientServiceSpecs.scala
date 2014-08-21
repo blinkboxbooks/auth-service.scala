@@ -6,10 +6,6 @@ import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientUpdated}
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time._
-import org.scalatest.{FlatSpec, Matchers}
 
 class DefaultClientServiceSpecs extends SpecBase {
 
@@ -117,7 +113,7 @@ class DefaultClientServiceSpecs extends SpecBase {
       val secret = lastClient.secret
 
       info should equal(ClientInfo(
-        ClientId(id).external, s"/clients/$id", "Test name", "Test brand", "Test model", "Test OS", Some(secret), now))
+        ClientId(id).external, s"/clients/$id", "Test name", "Test brand", "Test model", "Test OS", Some(secret), now.toLocalDate))
     }
 
   }

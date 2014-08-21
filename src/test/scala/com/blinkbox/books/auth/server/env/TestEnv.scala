@@ -4,12 +4,10 @@ import java.util.Date
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
-import com.blinkbox.books.auth.server.data.Client
-import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.data.{Client, _}
 import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.slick.DBTypes
-import com.blinkbox.books.spray.ZuulTokenAuthenticator
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
@@ -122,8 +120,8 @@ class TestEnv extends
     for (id <- 4 until 16)
     yield Client(ClientId(id), now, now, userIdC, s"Client C$id", s"Test brand C$id", s"Test model C$id", s"Test OS C$id", s"test-secret-c$id", false)
 
-  val clientInfoA1 = ClientInfo(clientIdA1.external, "/clients/1", "Client A1", "Test brand A1", "Test model A1", "Test OS A1", None, now)
-  val clientInfoA2 = ClientInfo(clientIdA2.external, "/clients/2", "Client A2", "Test brand A2", "Test model A2", "Test OS A2", None, now)
+  val clientInfoA1 = ClientInfo(clientIdA1.external, "/clients/1", "Client A1", "Test brand A1", "Test model A1", "Test OS A1", None, now.toLocalDate)
+  val clientInfoA2 = ClientInfo(clientIdA2.external, "/clients/2", "Client A2", "Test brand A2", "Test model A2", "Test OS A2", None, now.toLocalDate)
 
   val fullClientPatch = ClientPatch(Some("Patched name"), Some("Patched brand"), Some("Patched model"), Some("Patched OS"))
   val fullPatchedClientA1 = clientA1.copy(name = "Patched name", brand = "Patched brand", model = "Patched model", os = "Patched OS")
