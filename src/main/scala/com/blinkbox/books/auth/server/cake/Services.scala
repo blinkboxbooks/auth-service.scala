@@ -32,8 +32,6 @@ trait EventsComponent {
 
 trait DatabaseComponent extends BaseDatabaseComponent {
   type Tables = ZuulTables[Types.Profile]
-
-  implicit val constraintExceptionTag: ClassTag[Types.ConstraintException]
 }
 
 trait PasswordHasherComponent {

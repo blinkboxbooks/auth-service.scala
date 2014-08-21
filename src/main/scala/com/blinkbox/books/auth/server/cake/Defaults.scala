@@ -4,21 +4,19 @@ import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.{FileKeyStore, SsoAccessTokenDecoder, DefaultClient, DefaultSSO}
+import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO, FileKeyStore, SsoAccessTokenDecoder}
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
-import com.blinkbox.books.slick.DBTypes
+import com.blinkbox.books.slick.MySQLDBTypes
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
-import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException
 import com.rabbitmq.client.Connection
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
-import scala.slick.driver.{JdbcProfile, MySQLDriver}
+import scala.slick.driver.MySQLDriver
 import scala.slick.jdbc.JdbcBackend.Database
 
 trait DefaultConfigComponent extends ConfigComponent {
@@ -36,16 +34,10 @@ trait DefaultEventsComponent extends EventsComponent {
   override val publisher: Publisher = new RabbitMqPublisher(rabbitConnection.createChannel) ~ new LegacyRabbitMqPublisher(rabbitConnection.createChannel)
 }
 
-class DefaultDBTypes extends DBTypes {
-  type Profile = JdbcProfile
-  type ConstraintException = MySQLIntegrityConstraintViolationException
-  val constraintExceptionTag = implicitly[ClassTag[ConstraintException]]
-}
-
 trait DefaultDatabaseComponent extends DatabaseComponent {
   this: ConfigComponent =>
 
-  val Types = new DefaultDBTypes
+  val Types = new MySQLDBTypes
 
   override val driver = MySQLDriver
 
@@ -95,7 +87,7 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
     with TimeSupport
     with SSOComponent =>
 
-  val registrationService = new DefaultRegistrationService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
+  val registrationService = new DefaultRegistrationService(db, authRepository, userRepository, clientRepository, exceptionTransformer, geoIp, publisher, sso)
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {

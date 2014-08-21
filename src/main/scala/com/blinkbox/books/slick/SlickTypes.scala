@@ -1,10 +1,18 @@
 package com.blinkbox.books.slick
 
+import java.sql.SQLException
+
+import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException
 import org.joda.time.{DateTime, DateTimeZone}
 
-import scala.reflect.ClassTag
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile._
+
+sealed trait DatabaseException[T <: SQLException] extends Throwable {
+  val inner: T
+}
+case class ConstraintException[T <: SQLException](inner: T) extends DatabaseException[T]
+case class UnknownDatabaseException[T <: SQLException](inner: T) extends DatabaseException[T]
 
 /**
  * Utility to mix in to get type alias for classes depending on a specific slick profile
@@ -39,9 +47,9 @@ trait TablesSupport[Profile <: JdbcProfile, Tables <: TablesContainer[Profile]] 
  */
 trait DBTypes {
   type Profile <: JdbcProfile
-  type ConstraintException <: Throwable
   type Database = Profile#Backend#Database
-  val constraintExceptionTag: ClassTag[ConstraintException]
+  type ExceptionTransformer = PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
+  def exceptionTransformer: PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
 }
 
 /**
@@ -55,8 +63,9 @@ trait BaseDatabaseComponent {
   def driver: Types.Profile
   def db: Types.Database
   def tables: Tables
-
-  implicit lazy val constraintExceptionTag: ClassTag[Types.ConstraintException] = Types.constraintExceptionTag
+  def exceptionTransformer: Types.ExceptionTransformer = Types.exceptionTransformer orElse {
+    case ex: SQLException => UnknownDatabaseException(ex)
+  }
 }
 
 /**
@@ -64,4 +73,20 @@ trait BaseDatabaseComponent {
  */
 trait BaseRepositoriesComponent {
   this: BaseDatabaseComponent =>
+}
+
+class MySQLDBTypes extends DBTypes {
+  type Profile = JdbcProfile
+
+  override def exceptionTransformer = {
+    case ex: MySQLIntegrityConstraintViolationException => ConstraintException(ex)
+  }
+}
+
+class H2DBTypes extends DBTypes {
+  type Profile = JdbcProfile
+
+  override def exceptionTransformer = {
+    case ex: org.h2.jdbc.JdbcSQLException => ConstraintException(ex)
+  }
 }

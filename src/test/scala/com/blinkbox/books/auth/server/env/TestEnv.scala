@@ -7,13 +7,12 @@ import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data.{Client, _}
 import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.slick.DBTypes
+import com.blinkbox.books.slick.H2DBTypes
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
 
-import scala.reflect.ClassTag
-import scala.slick.driver.{H2Driver, JdbcProfile}
+import scala.slick.driver.H2Driver
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
@@ -28,14 +27,8 @@ trait TestConfigComponent extends ConfigComponent {
   override val config = AppConfig.default
 }
 
-class TestDBTypes extends DBTypes {
-  type Profile = JdbcProfile
-  type ConstraintException = org.h2.jdbc.JdbcSQLException
-  val constraintExceptionTag = implicitly[ClassTag[ConstraintException]]
-}
-
 trait TestDatabaseComponent extends DatabaseComponent {
-  val Types = new TestDBTypes
+  val Types = new H2DBTypes
 
   override val db = TestH2.db
   override val driver = H2Driver

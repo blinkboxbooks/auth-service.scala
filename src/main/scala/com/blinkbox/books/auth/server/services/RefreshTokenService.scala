@@ -21,7 +21,7 @@ class DefaultRefreshTokenService[DB <: DBTypes](
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock, tag: ClassTag[DB#ConstraintException])
+    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock)
   extends RefreshTokenService with ClientAuthenticator[DB#Profile] {
 
   private def fetchRefreshToken(c: RefreshTokenCredentials): Future[RefreshToken] = Future {
