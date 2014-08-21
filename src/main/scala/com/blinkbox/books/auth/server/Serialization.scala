@@ -2,7 +2,6 @@ package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.json.DefaultFormats
-import org.joda.time.DateTime
 import org.json4s.JsonAST.{JField, JObject, JString}
 import org.json4s.JsonDSL._
 import org.json4s._
@@ -30,14 +29,8 @@ object ZuulRequestExceptionSerializer extends Serializer[ZuulRequestException] {
 }
 
 class Serialization extends Json4sJacksonSupport {
-  val clientInfoSerializer = FieldSerializer[ClientInfo](
-    serializer = {
-      case ("last_used_date", d) => Some("last_used_date", d.asInstanceOf[DateTime].toString("yyyy-MM-dd"))
-    }
-  )
-
   implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer +
-    new EnumNameSerializer(TokenStatus) + new EnumNameSerializer(Elevation) + clientInfoSerializer
+    new EnumNameSerializer(TokenStatus) + new EnumNameSerializer(Elevation)
 }
 
 object Serialization extends Serialization

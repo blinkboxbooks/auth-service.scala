@@ -4,7 +4,7 @@ import com.blinkbox.books.auth.Elevation.Elevation
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidClient
 import com.blinkbox.books.auth.server.sso.SSOTokenStatus
 import com.blinkbox.books.auth.server.sso.SSOTokenStatus.{Revoked, Expired}
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, LocalDate}
 
 object TokenStatus extends Enumeration {
   type TokenStatus = Value
@@ -107,7 +107,7 @@ case class ClientInfo(
   client_model: String,
   client_os: String,
   client_secret: Option[String],
-  last_used_date: DateTime)
+  last_used_date: LocalDate)
 
 case class ClientPatch(
   client_name: Option[String] = None,

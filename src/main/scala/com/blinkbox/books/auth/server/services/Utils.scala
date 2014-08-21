@@ -39,7 +39,7 @@ trait ClientInfoFactory {
     client_model = client.model,
     client_os = client.os,
     client_secret = if (includeClientSecret) Some(client.secret) else None,
-    last_used_date = client.createdAt)
+    last_used_date = client.createdAt.toLocalDate)
 }
 
 trait GeoIP {
