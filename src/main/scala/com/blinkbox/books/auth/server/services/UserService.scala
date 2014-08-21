@@ -7,7 +7,6 @@ import com.blinkbox.books.auth.server.{ZuulUnknownException, Failures, UserInfo,
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 
-import shapeless.Typeable._
 import scala.concurrent.{Promise, ExecutionContext, Future}
 import scala.slick.profile.BasicProfile
 import scala.util.{Failure, Success}
@@ -37,7 +36,7 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     userInfoFromUser(updatedUser)
   }
 
-  override def updateUser(patch: UserPatch)(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = ssoAccessToken(user) map { at =>
+  override def updateUser(patch: UserPatch)(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = user.ssoAccessToken map { at =>
     getSyncedUser(UserId(user.id), at) flatMap { userOpt =>
       userOpt map { user =>
         val p = Promise[Option[UserInfo]]
@@ -51,12 +50,6 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       } getOrElse(Future.successful(None))
     }
   } getOrElse (Future.failed(Failures.unverifiedIdentity))
-
-  private def ssoAccessToken(user: AuthenticatedUser): Option[SSOAccessToken] = user.
-    claims.
-    get("sso/at").
-    flatMap(_.cast[String]).
-    map(SSOAccessToken.apply)
 
   private def userFromDb(id: UserId): Future[Option[User]] = Future {
     db.withSession { implicit session =>
@@ -97,7 +90,7 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     }
   }
 
-  override def getUserInfo()(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = ssoAccessToken(user) map { at =>
+  override def getUserInfo()(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = user.ssoAccessToken map { at =>
     getSyncedUser(UserId(user.id), at).map(_.map(userInfoFromUser))
   } getOrElse(Future.failed(Failures.unverifiedIdentity))
 }
