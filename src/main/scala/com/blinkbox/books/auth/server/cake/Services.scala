@@ -31,7 +31,7 @@ trait EventsComponent {
 }
 
 trait DatabaseComponent extends BaseDatabaseComponent {
-  type Tables = ZuulTables[Types.Profile]
+  type Tables = ZuulTables[DB.Profile]
 }
 
 trait PasswordHasherComponent {
@@ -40,9 +40,9 @@ trait PasswordHasherComponent {
 
 trait RepositoriesComponent extends BaseRepositoriesComponent {
   this: DatabaseComponent =>
-  def authRepository: AuthRepository[Types.Profile]
-  def userRepository: UserRepository[Types.Profile]
-  def clientRepository: ClientRepository[Types.Profile]
+  def authRepository: AuthRepository[DB.Profile]
+  def userRepository: UserRepository[DB.Profile]
+  def clientRepository: ClientRepository[DB.Profile]
 }
 
 trait GeoIPComponent {

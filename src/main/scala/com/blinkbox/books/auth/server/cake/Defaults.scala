@@ -8,7 +8,7 @@ import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO, FileKeySto
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
-import com.blinkbox.books.slick.MySQLDBTypes
+import com.blinkbox.books.slick.MySQLDatabaseSupport
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
 import com.rabbitmq.client.Connection
@@ -37,7 +37,7 @@ trait DefaultEventsComponent extends EventsComponent {
 trait DefaultDatabaseComponent extends DatabaseComponent {
   this: ConfigComponent =>
 
-  val Types = new MySQLDBTypes
+  val DB = new MySQLDatabaseSupport
 
   override val driver = MySQLDriver
 
@@ -47,7 +47,7 @@ trait DefaultDatabaseComponent extends DatabaseComponent {
     Database.forURL(jdbcUrl, driver = "com.mysql.jdbc.Driver", user = user, password = password)
   }
 
-  override val tables = ZuulTables[Types.Profile](driver)
+  override val tables = ZuulTables[DB.Profile](driver)
 }
 
 trait DefaultPasswordHasherComponent extends PasswordHasherComponent {

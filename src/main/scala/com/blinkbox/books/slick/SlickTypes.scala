@@ -45,7 +45,8 @@ trait TablesSupport[Profile <: JdbcProfile, Tables <: TablesContainer[Profile]] 
 /**
  * Basic types used in the subsequent components to remain db-agnostic
  */
-trait DBTypes {
+trait DatabaseSupport {
+  type Session = Profile#Backend#Session
   type Profile <: JdbcProfile
   type Database = Profile#Backend#Database
   type ExceptionTransformer = PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
@@ -57,11 +58,11 @@ trait DBTypes {
  * is quite tricky and has to be implemented by instantiating the correct DBTypes implementation.
  */
 trait BaseDatabaseComponent {
-  val Types: DBTypes
-  type Tables <: TablesContainer[Types.Profile]
+  val DB: DatabaseSupport
+  type Tables <: TablesContainer[DB.Profile]
 
-  def driver: Types.Profile
-  def db: Types.Database
+  def driver: DB.Profile
+  def db: DB.Database
   def tables: Tables
   def exceptionTransformer: Types.ExceptionTransformer = Types.exceptionTransformer orElse {
     case ex: SQLException => UnknownDatabaseException(ex)
@@ -75,7 +76,7 @@ trait BaseRepositoriesComponent {
   this: BaseDatabaseComponent =>
 }
 
-class MySQLDBTypes extends DBTypes {
+class MySQLDatabaseSupport extends DatabaseSupport {
   type Profile = JdbcProfile
 
   override def exceptionTransformer = {
@@ -83,7 +84,7 @@ class MySQLDBTypes extends DBTypes {
   }
 }
 
-class H2DBTypes extends DBTypes {
+class H2DatabaseSupport extends DatabaseSupport {
   type Profile = JdbcProfile
 
   override def exceptionTransformer = {

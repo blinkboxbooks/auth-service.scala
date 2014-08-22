@@ -7,7 +7,7 @@ import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
 import com.blinkbox.books.auth.server.sso.{SSOInvalidRequest, SSOConflict, SSO, SSOCredentials}
-import com.blinkbox.books.slick.{UnknownDatabaseException, ConstraintException, DBTypes}
+import com.blinkbox.books.slick.{UnknownDatabaseException, ConstraintException, DatabaseSupport}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 
@@ -18,7 +18,7 @@ trait RegistrationService {
   def registerUser(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[TokenInfo]
 }
 
-class DefaultRegistrationService[DB <: DBTypes](
+class DefaultRegistrationService[DB <: DatabaseSupport](
     db: DB#Database,
     authRepo: AuthRepository[DB#Profile],
     userRepo: UserRepository[DB#Profile],

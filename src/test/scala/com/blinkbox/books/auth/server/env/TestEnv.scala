@@ -7,7 +7,7 @@ import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data.{Client, _}
 import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
-import com.blinkbox.books.slick.H2DBTypes
+import com.blinkbox.books.slick.H2DatabaseSupport
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import org.joda.time.Duration
@@ -28,11 +28,11 @@ trait TestConfigComponent extends ConfigComponent {
 }
 
 trait TestDatabaseComponent extends DatabaseComponent {
-  val Types = new H2DBTypes
+  val DB = new H2DatabaseSupport
 
   override val db = TestH2.db
   override val driver = H2Driver
-  override val tables = ZuulTables[Types.Profile](driver)
+  override val tables = ZuulTables[DB.Profile](driver)
 }
 
 trait TestEventsComponent extends EventsComponent {

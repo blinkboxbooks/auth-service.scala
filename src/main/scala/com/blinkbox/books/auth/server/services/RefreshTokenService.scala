@@ -3,19 +3,18 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{Publisher, UserAuthenticated}
-import com.blinkbox.books.auth.server.sso.{SSOCredentials, SSO}
-import com.blinkbox.books.slick.DBTypes
+import com.blinkbox.books.auth.server.sso.{SSO, SSOCredentials}
+import com.blinkbox.books.slick.DatabaseSupport
 import com.blinkbox.books.time.Clock
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 
 trait RefreshTokenService {
   def revokeRefreshToken(token: String): Future[Unit]
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo]
 }
 
-class DefaultRefreshTokenService[DB <: DBTypes](
+class DefaultRefreshTokenService[DB <: DatabaseSupport](
     db: DB#Database,
     authRepo: AuthRepository[DB#Profile],
     userRepo: UserRepository[DB#Profile],
