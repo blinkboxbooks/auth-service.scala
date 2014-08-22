@@ -8,11 +8,9 @@ import org.joda.time.{DateTime, DateTimeZone}
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile._
 
-sealed trait DatabaseException[T <: SQLException] extends Throwable {
-  val inner: T
-}
-case class ConstraintException[T <: SQLException](inner: T) extends DatabaseException[T]
-case class UnknownDatabaseException[T <: SQLException](inner: T) extends DatabaseException[T]
+sealed abstract class DatabaseException[T <: SQLException](cause: T) extends Exception(cause.getMessage, cause)
+case class ConstraintException[T <: SQLException](cause: T) extends DatabaseException[T](cause)
+case class UnknownDatabaseException[T <: SQLException](cause: T) extends DatabaseException[T](cause)
 
 /**
  * Utility to mix in to get type alias for classes depending on a specific slick profile
@@ -49,8 +47,15 @@ trait DatabaseSupport {
   type Session = Profile#Backend#Session
   type Profile <: JdbcProfile
   type Database = Profile#Backend#Database
-  type ExceptionTransformer = PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
-  def exceptionTransformer: PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
+
+  protected type ExceptionTransformer = PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
+  protected def exceptionTransformer: ExceptionTransformer
+
+  object ExceptionFilter {
+    def apply(f: PartialFunction[Throwable, Throwable]) = exceptionTransformer andThen f orElse f
+  }
+
+  type ExceptionFilter = ExceptionFilter.type
 }
 
 /**
@@ -64,9 +69,8 @@ trait BaseDatabaseComponent {
   def driver: DB.Profile
   def db: DB.Database
   def tables: Tables
-  def exceptionTransformer: Types.ExceptionTransformer = Types.exceptionTransformer orElse {
-    case ex: SQLException => UnknownDatabaseException(ex)
-  }
+
+  lazy val exceptionFilter = DB.ExceptionFilter
 }
 
 /**

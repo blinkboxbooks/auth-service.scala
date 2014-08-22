@@ -23,7 +23,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     authRepo: AuthRepository[DB#Profile],
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
-    exceptionTransformer: DB#ExceptionTransformer,
+    exceptionFilter: DB#ExceptionFilter,
     geoIP: GeoIP,
     events: Publisher,
     sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
@@ -58,11 +58,9 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     }
   }
 
-  private val errorTransformer = exceptionTransformer andThen {
-    // TODO: Decide what to do in this case
-    case ConstraintException(e) => sys.error("Unexpected constraint violation when saving the user")
+  private val errorTransformer = exceptionFilter {
+    case ConstraintException(e) => Failures.unknownError("Unexpected constraint error", Some(e))
     case UnknownDatabaseException(e) => Failures.requestException(e.getMessage, InvalidRequest)
-  } orElse PartialFunction[Throwable, Throwable] {
     case SSOConflict => Failures.usernameAlreadyTaken
     case SSOInvalidRequest(msg) => Failures.requestException(msg, InvalidRequest)
     case e => e
