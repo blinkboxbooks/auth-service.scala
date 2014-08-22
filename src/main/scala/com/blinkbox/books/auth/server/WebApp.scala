@@ -41,6 +41,7 @@ object WebAppComponents extends
   DefaultRefreshTokenServiceComponent with
   DefaultRegistrationServiceComponent with
   DefaultPasswordAuthenticationServiceComponent with
+  DefaultPasswordUpdatedServiceComponent with
   DefaultApiComponent
 
 class WebService extends HttpServiceActor {

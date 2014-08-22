@@ -1,7 +1,5 @@
 package com.blinkbox.books.auth.server
 
-import java.sql.SQLException
-
 import scala.concurrent.duration.FiniteDuration
 
 sealed trait ZuulErrorCode
@@ -37,11 +35,13 @@ object ZuulRequestErrorReason extends EnumContainer[ZuulRequestErrorReason] {
   case object CountryGeoBlocked extends ZuulRequestErrorReason
   case object UsernameAlreadyTaken extends ZuulRequestErrorReason
   case object ClientLimitReached extends ZuulRequestErrorReason
+  case object WrongOldPassword extends ZuulRequestErrorReason
 
   val reprs: Map[ZuulRequestErrorReason, String] = Map(
     CountryGeoBlocked -> "country_geoblocked",
     UsernameAlreadyTaken -> "username_already_taken",
-    ClientLimitReached -> "client_limit_reached"
+    ClientLimitReached -> "client_limit_reached",
+    WrongOldPassword -> "old_password_is_wrong"
   )
 }
 
@@ -87,6 +87,7 @@ object Failures {
   def invalidUsernamePassword = ZuulRequestException("The username and/or password is incorrect.", InvalidGrant)
   def invalidClientCredentials = ZuulRequestException("Invalid client credentials.", InvalidClient)
   def clientLimitReached = ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
+  def oldPasswordIsWrong = ZuulRequestException("Old password is wrong", InvalidRequest, Some(WrongOldPassword))
 
   def unknownError(msg: String, ex: Option[Throwable] = None) = ZuulUnknownException(msg, ex)
 
