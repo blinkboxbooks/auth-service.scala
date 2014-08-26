@@ -3,6 +3,7 @@ package com.blinkbox.books.slick
 import java.sql.SQLException
 
 import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException
+import org.h2.api.ErrorCode
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.slick.driver.JdbcProfile
@@ -48,11 +49,17 @@ trait DatabaseSupport {
   type Profile <: JdbcProfile
   type Database = Profile#Backend#Database
 
+  // The exception transformer should be implemented to wrap db-specific exception in db-agnostic ones
   protected type ExceptionTransformer = PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
   protected def exceptionTransformer: ExceptionTransformer
 
+  // This lifts the exception transformer so that it is defined for any throwable in a way that transform db-specific
+  // exceptions and leave non-db-specific ones untouched
+  private def liftedTransformer = exceptionTransformer.orElse[Throwable, Throwable] { case ex => ex }
+
+  // This object should be used to catch db exceptions
   object ExceptionFilter {
-    def apply(f: PartialFunction[Throwable, Throwable]) = exceptionTransformer andThen f orElse f
+    def apply(f: PartialFunction[Throwable, Throwable]) = liftedTransformer andThen f
   }
 
   type ExceptionFilter = ExceptionFilter.type
@@ -91,7 +98,12 @@ class MySQLDatabaseSupport extends DatabaseSupport {
 class H2DatabaseSupport extends DatabaseSupport {
   type Profile = JdbcProfile
 
+  val constraintViolationCodes =
+    ErrorCode.DUPLICATE_KEY_1 ::
+    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_CHILD_EXISTS_1 ::
+    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_PARENT_MISSING_1 :: Nil
+
   override def exceptionTransformer = {
-    case ex: org.h2.jdbc.JdbcSQLException => ConstraintException(ex)
+    case ex: org.h2.jdbc.JdbcSQLException if constraintViolationCodes contains ex.getErrorCode => ConstraintException(ex)
   }
 }

@@ -37,7 +37,7 @@ trait DefaultEventsComponent extends EventsComponent {
 trait DefaultDatabaseComponent extends DatabaseComponent {
   this: ConfigComponent =>
 
-  val DB = new MySQLDatabaseSupport
+  override val DB = new MySQLDatabaseSupport
 
   override val driver = MySQLDriver
 
