@@ -98,10 +98,10 @@ class MySQLDatabaseSupport extends DatabaseSupport {
 class H2DatabaseSupport extends DatabaseSupport {
   type Profile = JdbcProfile
 
-  val constraintViolationCodes =
-    ErrorCode.DUPLICATE_KEY_1 ::
-    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_CHILD_EXISTS_1 ::
-    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_PARENT_MISSING_1 :: Nil
+  val constraintViolationCodes = Set(
+    ErrorCode.DUPLICATE_KEY_1,
+    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_CHILD_EXISTS_1,
+    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_PARENT_MISSING_1)
 
   override def exceptionTransformer = {
     case ex: org.h2.jdbc.JdbcSQLException if constraintViolationCodes contains ex.getErrorCode => ConstraintException(ex)
