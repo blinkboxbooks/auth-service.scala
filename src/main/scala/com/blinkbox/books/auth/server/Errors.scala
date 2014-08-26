@@ -1,5 +1,7 @@
 package com.blinkbox.books.auth.server
 
+import java.sql.SQLException
+
 import scala.concurrent.duration.FiniteDuration
 
 sealed trait ZuulErrorCode
@@ -85,6 +87,8 @@ object Failures {
   def invalidUsernamePassword = ZuulRequestException("The username and/or password is incorrect.", InvalidGrant)
   def invalidClientCredentials = ZuulRequestException("Invalid client credentials.", InvalidClient)
   def clientLimitReached = ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
+
+  def unknownError(msg: String, ex: Option[Throwable] = None) = ZuulUnknownException(msg, ex)
 
   def tooManyRequests(retryAfter: FiniteDuration) =
     ZuulTooManyRequestException(s"Too many login attempts, please retry after ${retryAfter.toSeconds} seconds", retryAfter)

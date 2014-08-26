@@ -1,10 +1,17 @@
 package com.blinkbox.books.slick
 
+import java.sql.SQLException
+
+import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException
+import org.h2.api.ErrorCode
 import org.joda.time.{DateTime, DateTimeZone}
 
-import scala.reflect.ClassTag
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile._
+
+sealed abstract class DatabaseException[T <: SQLException](cause: T) extends Exception(cause.getMessage, cause)
+case class ConstraintException[T <: SQLException](cause: T) extends DatabaseException[T](cause)
+case class UnknownDatabaseException[T <: SQLException](cause: T) extends DatabaseException[T](cause)
 
 /**
  * Utility to mix in to get type alias for classes depending on a specific slick profile
@@ -37,11 +44,25 @@ trait TablesSupport[Profile <: JdbcProfile, Tables <: TablesContainer[Profile]] 
 /**
  * Basic types used in the subsequent components to remain db-agnostic
  */
-trait DBTypes {
+trait DatabaseSupport {
+  type Session = Profile#Backend#Session
   type Profile <: JdbcProfile
-  type ConstraintException <: Throwable
   type Database = Profile#Backend#Database
-  val constraintExceptionTag: ClassTag[ConstraintException]
+
+  // The exception transformer should be implemented to wrap db-specific exception in db-agnostic ones
+  protected type ExceptionTransformer = PartialFunction[Throwable, DatabaseException[_ <: SQLException]]
+  protected def exceptionTransformer: ExceptionTransformer
+
+  // This lifts the exception transformer so that it is defined for any throwable in a way that transform db-specific
+  // exceptions and leave non-db-specific ones untouched
+  private def liftedTransformer = exceptionTransformer.orElse[Throwable, Throwable] { case ex => ex }
+
+  // This object should be used to catch db exceptions
+  object ExceptionFilter {
+    def apply(f: PartialFunction[Throwable, Throwable]) = liftedTransformer andThen f
+  }
+
+  type ExceptionFilter = ExceptionFilter.type
 }
 
 /**
@@ -49,14 +70,14 @@ trait DBTypes {
  * is quite tricky and has to be implemented by instantiating the correct DBTypes implementation.
  */
 trait BaseDatabaseComponent {
-  val Types: DBTypes
-  type Tables <: TablesContainer[Types.Profile]
+  val DB: DatabaseSupport
+  type Tables <: TablesContainer[DB.Profile]
 
-  def driver: Types.Profile
-  def db: Types.Database
+  def driver: DB.Profile
+  def db: DB.Database
   def tables: Tables
 
-  implicit lazy val constraintExceptionTag: ClassTag[Types.ConstraintException] = Types.constraintExceptionTag
+  lazy val exceptionFilter = DB.ExceptionFilter
 }
 
 /**
@@ -64,4 +85,25 @@ trait BaseDatabaseComponent {
  */
 trait BaseRepositoriesComponent {
   this: BaseDatabaseComponent =>
+}
+
+class MySQLDatabaseSupport extends DatabaseSupport {
+  type Profile = JdbcProfile
+
+  override def exceptionTransformer = {
+    case ex: MySQLIntegrityConstraintViolationException => ConstraintException(ex)
+  }
+}
+
+class H2DatabaseSupport extends DatabaseSupport {
+  type Profile = JdbcProfile
+
+  val constraintViolationCodes = Set(
+    ErrorCode.DUPLICATE_KEY_1,
+    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_CHILD_EXISTS_1,
+    ErrorCode.REFERENTIAL_INTEGRITY_VIOLATED_PARENT_MISSING_1)
+
+  override def exceptionTransformer = {
+    case ex: org.h2.jdbc.JdbcSQLException if constraintViolationCodes contains ex.getErrorCode => ConstraintException(ex)
+  }
 }

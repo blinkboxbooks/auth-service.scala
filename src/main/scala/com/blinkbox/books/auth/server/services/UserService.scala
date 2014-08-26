@@ -85,7 +85,7 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
           }
 
           Option(updatedUser)
-        case (_, None) => throw ZuulUnknownException("The user doesn't exist on the SSO service")
+        case (_, None) => throw Failures.unknownError("The user doesn't exist on the SSO service")
       }
     }
   }

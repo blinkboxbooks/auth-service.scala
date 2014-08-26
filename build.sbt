@@ -34,7 +34,7 @@ val dependencySettings = Seq(
       "com.blinkbox.books"        %%  "common-scala-test"     % "0.2.0"   % "test",
       "io.spray"                  %   "spray-testkit"         % sprayV    % "test",
       "xmlunit"                   %   "xmlunit"               % "1.5"     % "test",
-      "com.h2database"            %   "h2"                    % "1.4.181" % "test"
+      "com.h2database"            %   "h2"                    % "1.4.181"
     )
   }
 )

@@ -7,7 +7,7 @@ import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
 import com.blinkbox.books.auth.server.sso.{SSOInvalidRequest, SSOConflict, SSO, SSOCredentials}
-import com.blinkbox.books.slick.DBTypes
+import com.blinkbox.books.slick.{UnknownDatabaseException, ConstraintException, DatabaseSupport}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 
@@ -18,14 +18,15 @@ trait RegistrationService {
   def registerUser(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[TokenInfo]
 }
 
-class DefaultRegistrationService[DB <: DBTypes](
+class DefaultRegistrationService[DB <: DatabaseSupport](
     db: DB#Database,
     authRepo: AuthRepository[DB#Profile],
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
+    exceptionFilter: DB#ExceptionFilter,
     geoIP: GeoIP,
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock, tag: ClassTag[DB#ConstraintException]) extends RegistrationService {
+    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
 
   // TODO: Make this configurable
   private val TermsAndConditionsVersion = "1.0"
@@ -57,12 +58,11 @@ class DefaultRegistrationService[DB <: DBTypes](
     }
   }
 
-  private val errorTransformer = (_: Throwable) match {
-    case e: DataTruncation => Failures.requestException(e.getMessage, InvalidRequest)
+  private val errorTransformer = exceptionFilter {
+    case ConstraintException(e) => Failures.unknownError("Unexpected constraint error", Some(e))
+    case UnknownDatabaseException(e) => Failures.requestException(e.getMessage, InvalidRequest)
     case SSOConflict => Failures.usernameAlreadyTaken
     case SSOInvalidRequest(msg) => Failures.requestException(msg, InvalidRequest)
-    // TODO: Decide what to do in this case
-    case e: DB#ConstraintException => sys.error("Unexpected constraint violation when saving the user")
     case e => e
   }
 
