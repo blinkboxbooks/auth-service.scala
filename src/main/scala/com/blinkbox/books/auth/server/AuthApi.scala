@@ -139,9 +139,17 @@ class AuthApi(
     }
   }
 
+  val resetPassword: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:password-reset-token") {
+    formFields('password_reset_token, 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
+      onSuccess(passwordUpdateService.resetPassword(credentials)) { tokenInfo =>
+        uncacheable(OK, tokenInfo)
+      }
+    }
+  }
+
   val oAuthToken: Route = post {
     path("oauth2" / "token") {
-      registerUser ~ authenticate ~ refreshAccessToken
+      registerUser ~ authenticate ~ refreshAccessToken ~ resetPassword
     }
   }
 
@@ -272,11 +280,31 @@ class AuthApi(
     }
   }
 
+  val generatePasswordResetToken: Route = post {
+    path("password" / "reset") {
+      formFields('username) { username =>
+        onSuccess(passwordUpdateService.generatePasswordResetToken(username)) { _ =>
+          // TODO: Check that this endpoint should return an empty response / 204
+          complete(OK, None)
+        }
+      }
+    }
+  }
+
+  val validatePasswordResetToken: Route = post {
+    path("password" / "reset" / "validate-token") {
+      formFields('password_reset_token) {
+        ???
+      }
+    }
+  }
+
   val routes: Route = monitor() {
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
         querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
-          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange
+          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange ~
+          validatePasswordResetToken
       }
     }
   }

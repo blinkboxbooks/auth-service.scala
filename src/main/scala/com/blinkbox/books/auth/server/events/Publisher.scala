@@ -22,7 +22,7 @@ case class UserRegistered(user: data.User) extends Event
 case class UserUpdated(oldUser: data.User, newUser: data.User) extends Event
 case class UserAuthenticated(user: data.User, client: Option[data.Client]) extends Event
 case class UserPasswordChanged(user: data.User) extends Event
-case class UserPasswordResetRequested(user: data.User, token: String, link: URL) extends Event
+case class UserPasswordResetRequested(username: String, token: String, link: URL) extends Event
 case class ClientRegistered(user: data.User, client: data.Client) extends Event
 case class ClientUpdated(user: data.User, oldClient: data.Client, newClient: data.Client) extends Event
 case class ClientDeregistered(user: data.User, client: data.Client) extends Event
@@ -105,8 +105,8 @@ class LegacyRabbitMqPublisher(channel: Channel)(implicit executionContext: Execu
       Some(XmlMessages.sendEmail(user, "welcome", Map("salutation" -> user.firstName)))
     case UserPasswordChanged(user) =>
       Some(XmlMessages.sendEmail(user, "password_confirmed", Map("salutation" -> user.firstName)))
-    case UserPasswordResetRequested(user, token, link) =>
-      Some(XmlMessages.sendEmail(user, "password_reset", Map("salutation" -> user.firstName, "resetLink" -> link, "resetToken" -> token)))
+//    case UserPasswordResetRequested(user, token, link) =>
+//      Some(XmlMessages.sendEmail(user, "password_reset", Map("salutation" -> user.firstName, "resetLink" -> link, "resetToken" -> token)))
     case _ =>
       None
   }
@@ -134,7 +134,7 @@ class RabbitMqPublisher(channel: Channel)(implicit executionContext: ExecutionCo
   private implicit def userId2eventUserId(id: data.UserId) = UserId(id.value)
   private implicit def client2eventClient(c: data.Client) = Client(c.id, c.name, c.brand, c.model, c.os)
   private implicit def user2eventUser(u: data.User) = User(u.id, u.username, u.firstName, u.lastName)
-  private implicit def user2eventUserProfile(u: data.User) = UserProfile(u, AccountInfo("1.0", ssoUserId = u.ssoId), MarketingPreferences(u.allowMarketing))
+  private implicit def user2eventUserProfile(u: data.User) = UserProfile(u, AccountInfo("1.0", ssoUserId = u.ssoId.map(_.value)), MarketingPreferences(u.allowMarketing))
 
   private def eventBody(event: Event): EventBody = event match {
     case ClientDeregistered(user, client) => JsonEventBody(Client.Deregistered(client.updatedAt, user, client))

@@ -4,9 +4,10 @@ import java.sql.DataTruncation
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data.{Client => UserClient}
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientRegistered, Publisher, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{SSOInvalidRequest, SSOConflict, SSO, SSOCredentials}
+import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.slick.{UnknownDatabaseException, ConstraintException, DatabaseSupport}
 import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
@@ -42,7 +43,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
       registration
     }
 
-  private def persistDetails(registration: UserRegistration, credentials: SSOCredentials): Future[(User, Option[Client], RefreshToken)] =
+  private def persistDetails(registration: UserRegistration, credentials: SSOCredentials): Future[(User, Option[UserClient], RefreshToken)] =
     Future {
       db.withTransaction { implicit transaction =>
         val u = userRepo.createUser(registration)
@@ -52,7 +53,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
       }
     }
 
-  private def markLinked(user: User, ssoId: String): Future[Unit] = Future {
+  private def markLinked(user: User, ssoId: SSOUserId): Future[Unit] = Future {
     db.withSession { implicit session =>
       userRepo.updateUser(user.copy(ssoId = Some(ssoId)))
     }

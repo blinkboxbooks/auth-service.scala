@@ -41,6 +41,7 @@ object WebAppComponents extends
   DefaultRefreshTokenServiceComponent with
   DefaultRegistrationServiceComponent with
   DefaultPasswordAuthenticationServiceComponent with
+  DefaultSsoSyncComponent with
   DefaultPasswordUpdatedServiceComponent with
   DefaultApiComponent
 

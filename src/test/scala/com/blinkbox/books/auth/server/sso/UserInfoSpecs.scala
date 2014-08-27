@@ -12,7 +12,7 @@ class UserInfoSpecs extends FlatSpec with Matchers with SpecBase with FailHelper
     whenReady(sso.userInfo(SSOAccessToken("some-access-token"))) { userInfo =>
       userInfo should matchPattern {
         case UserInformation(
-          "6E41CB9F",
+          SSOUserId("6E41CB9F"),
           "john.doe+blinkbox@example.com",
           "John",
           "Doe",

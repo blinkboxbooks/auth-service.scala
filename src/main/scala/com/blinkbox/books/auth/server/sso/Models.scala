@@ -3,10 +3,19 @@ package com.blinkbox.books.auth.server.sso
 import com.blinkbox.books.auth.server.EnumContainer
 import org.joda.time.DateTime
 
+import scala.concurrent.duration._
+
 case class SSOAccessToken(value: String) extends AnyVal
+case class SSOUserId(value: String) extends AnyVal
 
 case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: String) {
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
+}
+
+case class SSOUserCredentials(userId: SSOUserId, credentials: SSOCredentials)
+
+case class SSOPasswordResetToken(resetToken: String, expiresIn: Long) {
+  val expiresInDuration: FiniteDuration = expiresIn.seconds
 }
 
 sealed trait SSOTokenStatus
@@ -47,4 +56,4 @@ case class TokenStatus(
 
 case class LinkedAccount(service: String, serviceUserId: String, serviceAllowMarketing: Boolean)
 
-case class UserInformation(userId: String, username: String, firstName: String, lastName: String, linkedAccounts: List[LinkedAccount])
+case class UserInformation(userId: SSOUserId, username: String, firstName: String, lastName: String, linkedAccounts: List[LinkedAccount])

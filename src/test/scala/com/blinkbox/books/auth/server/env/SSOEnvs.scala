@@ -48,6 +48,11 @@ trait SSOResponseFixtures {
     "session_elevation": "${SSOTokenElevation.toString(elevation)}",
     "session_elevation_expires_in": 300
   }"""
+
+  val resetTokenJson = s"""{
+    "reset_token": "r3sett0ken",
+    "expires_in": 3600
+  }""".stripMargin
 }
 
 trait CommonResponder extends SSOResponseFixtures {
@@ -110,6 +115,18 @@ trait TokenStatusResponder extends CommonResponder {
   )
 }
 
+trait PasswordResetResponder extends CommonResponder {
+  this: TestSSOComponent =>
+
+  def ssoGenerateResetToken: Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, resetTokenJson.getBytes)))
+  )
+
+  def ssoUserNotFound: Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.NotFound, HttpEntity.Empty))
+  )
+}
+
 class RegistrationTestEnv extends TestEnv with RegistrationResponder
 
 class AuthenticationTestEnv extends TestEnv with AuthenticationResponder
@@ -121,3 +138,5 @@ class RefreshTestEnv extends TestEnv with AuthenticationResponder
 class UserInfoTestEnv extends TestEnv with UserInfoResponder
 
 class TokenStatusEnv extends TestEnv with TokenStatusResponder
+
+class PasswordResetEnv extends TestEnv with PasswordResetResponder

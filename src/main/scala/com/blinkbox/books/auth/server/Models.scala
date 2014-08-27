@@ -59,6 +59,10 @@ case class RefreshTokenCredentials(token: String, clientId: Option[String], clie
   if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
+case class ResetTokenCredentials(resetToken: String, newPassword: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
+  if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
+}
+
 case class ClientRegistration(
   name: String,
   brand: String,
