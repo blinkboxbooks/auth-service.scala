@@ -89,7 +89,7 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
 
     ssoRevocation flatMap { _ =>
       zuulToken.map { zt =>
-        db.withSession { implicit session => authRepo.revokeRefreshToken(zt)}
+        db.withSession { implicit session => authRepo.revokeRefreshToken(zt) }
       }
     }
   }
