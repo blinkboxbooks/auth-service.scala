@@ -19,12 +19,33 @@ trait SSOResponseFixtures {
     "error_description": "$description"
   }"""
 
-  val userInfoJson = s"""{
+  val johnDoeInfoJson = s"""{
     "user_id":"6E41CB9F",
     "username":"john.doe+blinkbox@example.com",
     "email":"john.doe@example.com",
     "first_name":"John",
     "last_name":"Doe",
+    "date_of_birth": "1985-04-12",
+    "gender": "M",
+    "group_allow_marketing": false,
+    "validated": true,
+    "linked_accounts": [
+      {
+        "service":"music",
+        "service_user_id":"john.doe@music.com",
+        "service_linked_on": "2012-04-12T23:20:50.52Z",
+        "service_allow_marketing": true,
+        "service_tc_accepted_version": "v2.0"
+      }
+    ]
+  }"""
+
+  val userAInfoJson = s"""{
+    "user_id":"6E41CB9F",
+    "username":"user.a@test.tst",
+    "email":"user.a@test.tst",
+    "first_name":"A First",
+    "last_name":"A Last",
     "date_of_birth": "1985-04-12",
     "gender": "M",
     "group_allow_marketing": false,
@@ -102,9 +123,13 @@ trait AuthenticationResponder extends CommonResponder {
 trait UserInfoResponder extends CommonResponder {
   this: TestSSOComponent =>
 
-  def ssoSuccessfulUserInfo(): Unit = ssoResponse.complete(
-      _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, userInfoJson.getBytes)))
+  def ssoSuccessfulJohnDoeInfo(): Unit = ssoResponse.complete(
+      _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, johnDoeInfoJson.getBytes)))
     )
+
+  def ssoSuccessfulUserAInfo(): Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, userAInfoJson.getBytes)))
+  )
 }
 
 trait TokenStatusResponder extends CommonResponder {
@@ -129,7 +154,7 @@ trait PasswordResetResponder extends CommonResponder {
 
 class RegistrationTestEnv extends TestEnv with RegistrationResponder
 
-class AuthenticationTestEnv extends TestEnv with AuthenticationResponder
+class AuthenticationTestEnv extends TestEnv with AuthenticationResponder with UserInfoResponder
 
 class LinkTestEnv extends TestEnv with CommonResponder
 

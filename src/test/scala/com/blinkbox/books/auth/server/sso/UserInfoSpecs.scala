@@ -7,7 +7,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class UserInfoSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
 
   "The SSO client" should "retrieve user information if the SSO service responds with a success" in new UserInfoTestEnv {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     whenReady(sso.userInfo(SSOAccessToken("some-access-token"))) { userInfo =>
       userInfo should matchPattern {

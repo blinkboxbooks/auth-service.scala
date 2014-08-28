@@ -11,7 +11,7 @@ class UserInfoSpecs extends ApiSpecBase[UserInfoTestEnv] {
   override def newEnv = new UserInfoTestEnv
 
   "The service" should "return user info for an authenticated user that is present on SSO" in {
-    env.ssoSuccessfulUserInfo()
+    env.ssoSuccessfulJohnDoeInfo()
 
     Get("/users/1") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
@@ -39,7 +39,7 @@ class UserInfoSpecs extends ApiSpecBase[UserInfoTestEnv] {
   }
 
   it should "return a 401 if the user is not present on our database but it is available on SSO" in {
-    env.ssoSuccessfulUserInfo()
+    env.ssoSuccessfulJohnDoeInfo()
 
     val token = TokenBuilder.issueAccessToken(
       env.userA.copy(id = UserId(10)), None, env.refreshTokenNoClientA, Some(SSOCredentials(SSOAccessToken("some-access-token"), "bearer", 300, SSORefreshToken("some-refresh-token"))))

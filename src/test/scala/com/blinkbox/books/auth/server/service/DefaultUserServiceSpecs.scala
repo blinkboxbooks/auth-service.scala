@@ -13,7 +13,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   import driver.simple._
 
   "The user service" should "retrieve an user and update its data with data coming from SSO" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     whenReady(userService.getUserInfo()(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
@@ -36,7 +36,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "signal an unverified identity when retrieving an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
       tables.refreshTokens.filter(_.userId === userIdA).mutate(_.delete)
@@ -59,7 +59,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "update an user given new details and return updated user information" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
     whenReady(userService.updateUser(fullUserPatch)(authenticatedUserA)) { infoOpt =>
@@ -90,7 +90,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "signal an unverified identity when updating an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
       tables.refreshTokens.filter(_.userId === userIdA).mutate(_.delete)

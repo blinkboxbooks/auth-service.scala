@@ -8,7 +8,7 @@ import com.blinkbox.books.auth.server.sso.{SSOUnknownException, SSOUserId, SSOAc
 class DefaultSsoSyncServiceSpecs extends SpecBase {
 
   "The Sso sync service" should "create an user if a None is provide" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
     whenReady(ssoSync(None, SSOAccessToken("some-access-token"))){ user =>
@@ -30,7 +30,7 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
 
   it should "link and update an user if one not having SSO id has been provided" in new TestEnv with UserInfoResponder {
     ssoNoContent()
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     whenReady(ssoSync(Some(userC), SSOAccessToken("some-access-token"))){ user =>
       user should matchPattern {
@@ -50,7 +50,7 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
   }
 
   it should "update an user if one having SSO id has been provided" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     whenReady(ssoSync(Some(userA), SSOAccessToken("some-access-token"))){ user =>
       user should matchPattern {
