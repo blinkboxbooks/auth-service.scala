@@ -5,11 +5,16 @@ import org.joda.time.DateTime
 
 import scala.concurrent.duration._
 
-case class SSOAccessToken(value: String) extends AnyVal
-case class SSOPasswordResetToken(value: String) extends AnyVal
+sealed trait SSOToken extends Any {
+  def value: String
+}
+case class SSOAccessToken(value: String) extends AnyVal with SSOToken
+case class SSOPasswordResetToken(value: String) extends AnyVal with SSOToken
+case class SSORefreshToken(value: String) extends AnyVal with SSOToken
+
 case class SSOUserId(value: String) extends AnyVal
 
-case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: String) {
+case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: SSORefreshToken) {
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
 }
 

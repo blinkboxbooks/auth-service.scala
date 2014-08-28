@@ -40,7 +40,7 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
   }
 
   // TODO: Remove this duplication of code from PasswordAuthenticationService
-  private def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoRefreshToken: String) : Future[RefreshToken] = Future {
+  private def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoRefreshToken: SSORefreshToken) : Future[RefreshToken] = Future {
     db.withSession { implicit session => authRepo.createRefreshToken(userId, clientId, ssoRefreshToken) }
   }
 

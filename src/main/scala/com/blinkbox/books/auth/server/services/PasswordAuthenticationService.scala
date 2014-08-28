@@ -34,7 +34,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     db.withSession { implicit session => authenticateClient(authRepo, credentials, user.id) }
   }
 
-  private def getToken(userId: UserId, clientId: Option[ClientId], refreshToken: String) : Future[RefreshToken] = Future {
+  private def getToken(userId: UserId, clientId: Option[ClientId], refreshToken: SSORefreshToken) : Future[RefreshToken] = Future {
     db.withSession { implicit session => authRepo.createRefreshToken(userId, clientId, refreshToken) }
   }
 

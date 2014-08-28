@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.auth.server.TokenStatus
-import com.blinkbox.books.auth.server.sso.SSOUserId
+import com.blinkbox.books.auth.server.sso.{SSORefreshToken, SSOUserId}
 import com.blinkbox.books.time.Clock
 import org.joda.time.DateTime
 
@@ -61,7 +61,7 @@ case class RefreshToken(
     userId: UserId,
     clientId: Option[ClientId],
     token: String,
-    ssoRefreshToken: Option[String],
+    ssoRefreshToken: Option[SSORefreshToken],
     isRevoked: Boolean,
     expiresAt: DateTime,
     elevationExpiresAt: DateTime,

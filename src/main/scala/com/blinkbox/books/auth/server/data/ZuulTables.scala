@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.data
 
-import com.blinkbox.books.auth.server.sso.SSOUserId
+import com.blinkbox.books.auth.server.sso.{SSORefreshToken, SSOUserId}
 import com.blinkbox.books.slick.TablesContainer
 import org.joda.time.DateTime
 
@@ -18,6 +18,7 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
   implicit lazy val clientIdColumnType = MappedColumnType.base[ClientId, Int](_.value, ClientId(_))
   implicit lazy val refreshTokenIdColumnType = MappedColumnType.base[RefreshTokenId, Int](_.value, RefreshTokenId(_))
   implicit lazy val ssoIdColumnType = MappedColumnType.base[SSOUserId, String](_.value, SSOUserId(_))
+  implicit lazy val ssoRefreshTokenColumnType = MappedColumnType.base[SSORefreshToken, String](_.value, SSORefreshToken(_))
 
   class Users(tag: Tag) extends Table[User](tag, "users") {
     def id = column[UserId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
@@ -55,7 +56,7 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def userId = column[UserId]("user_id", O.NotNull)
     def clientId = column[Option[ClientId]]("client_id")
     def token = column[String]("token", O.NotNull)
-    def ssoToken = column[Option[String]]("sso_refresh_token")
+    def ssoToken = column[Option[SSORefreshToken]]("sso_refresh_token")
     def isRevoked = column[Boolean]("revoked", O.NotNull)
     def expiresAt = column[DateTime]("expires_at", O.NotNull)
     def elevationExpiresAt = column[DateTime]("elevation_expires_at", O.NotNull)

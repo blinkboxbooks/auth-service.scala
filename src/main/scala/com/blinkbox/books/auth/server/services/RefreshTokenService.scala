@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{Publisher, UserAuthenticated}
-import com.blinkbox.books.auth.server.sso.{SSO, SSOCredentials}
+import com.blinkbox.books.auth.server.sso.{SSORefreshToken, SSO, SSOCredentials}
 import com.blinkbox.books.slick.DatabaseSupport
 import com.blinkbox.books.time.Clock
 
@@ -50,7 +50,7 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
     db.withSession { implicit session => authenticateClient(authRepo, credentials, token.userId) }
   }
 
-  private def extendTokenLifetime(token: RefreshToken, ssoRefreshToken: Option[String]): Future[Unit] = Future {
+  private def extendTokenLifetime(token: RefreshToken, ssoRefreshToken: Option[SSORefreshToken]): Future[Unit] = Future {
     db.withSession { implicit session => authRepo.extendRefreshTokenLifetime(token, ssoRefreshToken)}
   }
 

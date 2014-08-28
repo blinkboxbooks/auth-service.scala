@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.sso.{SSOAccessToken, SSOCredentials}
+import com.blinkbox.books.auth.server.sso.{SSORefreshToken, SSOAccessToken, SSOCredentials}
 import com.blinkbox.books.auth.server.{TokenBuilder, UserInfo}
 import com.blinkbox.books.auth.server.env.UserInfoTestEnv
 import spray.http.{FormData, StatusCodes, OAuth2BearerToken}
@@ -48,7 +48,7 @@ class UpdateUserSpecs extends ApiSpecBase[UserInfoTestEnv] {
     env.ssoSuccessfulUserInfo()
 
     val token = TokenBuilder.issueAccessToken(
-      env.userA.copy(id = UserId(10)), None, env.refreshTokenNoClientA, Some(SSOCredentials(SSOAccessToken("some-access-token"), "bearer", 300, "some-refresh-token")))
+      env.userA.copy(id = UserId(10)), None, env.refreshTokenNoClientA, Some(SSOCredentials(SSOAccessToken("some-access-token"), "bearer", 300, SSORefreshToken("some-refresh-token"))))
 
     Patch("/users/10", userPatch) ~> addCredentials(OAuth2BearerToken(token.access_token)) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)

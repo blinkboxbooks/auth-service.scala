@@ -105,11 +105,16 @@ class TestEnv extends
 
   val exp = now.withDurationAdded(Duration.standardHours(1), 1)
   val refreshTokenClientA1Id = RefreshTokenId(1)
-  val refreshTokenClientA1 = RefreshToken(refreshTokenClientA1Id, now, now, userIdA, Some(clientIdA1), "some-token-a1", Some("some-sso-token-a1"), false, exp, exp, exp)
-  val refreshTokenClientA2 = RefreshToken(RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", Some("some-sso-token-a2"), false, exp, exp, exp)
-  val refreshTokenClientA3 = RefreshToken(RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", Some("some-sso-token-a3"), true, now, now, now)
-  val refreshTokenNoClientA = RefreshToken(RefreshTokenId(4), now, now, userIdA, None, "some-token-a", Some("some-sso-token-a"), false, now, now, now)
-  val refreshTokenNoClientDeregisteredA = RefreshToken(RefreshTokenId(5), now, now, userIdA, None, "some-token-a-deregistered", Some("some-sso-token-a-deregistered"), true, now, now, now)
+  val refreshTokenClientA1 = RefreshToken(
+    refreshTokenClientA1Id, now, now, userIdA, Some(clientIdA1), "some-token-a1", Some(SSORefreshToken("some-sso-token-a1")), false, exp, exp, exp)
+  val refreshTokenClientA2 = RefreshToken(
+    RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", Some(SSORefreshToken("some-sso-token-a2")), false, exp, exp, exp)
+  val refreshTokenClientA3 = RefreshToken(
+    RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", Some(SSORefreshToken("some-sso-token-a3")), true, now, now, now)
+  val refreshTokenNoClientA = RefreshToken(
+    RefreshTokenId(4), now, now, userIdA, None, "some-token-a", Some(SSORefreshToken("some-sso-token-a")), false, now, now, now)
+  val refreshTokenNoClientDeregisteredA = RefreshToken(
+    RefreshTokenId(5), now, now, userIdA, None, "some-token-a-deregistered", Some(SSORefreshToken("some-sso-token-a-deregistered")), true, now, now, now)
 
   val clientsC =
     for (id <- 4 until 16)
@@ -132,7 +137,7 @@ class TestEnv extends
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
   val tokenInfoA1 = TokenBuilder.issueAccessToken(
-    userA, None, refreshTokenNoClientA, Some(SSOCredentials(SSOAccessToken("some-access-token"), "bearer", 300, "some-refresh-token")))
+    userA, None, refreshTokenNoClientA, Some(SSOCredentials(SSOAccessToken("some-access-token"), "bearer", 300, SSORefreshToken("some-refresh-token"))))
 
   val tokenInfoA1WithoutSSO = TokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 

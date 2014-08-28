@@ -41,9 +41,9 @@ object SSOConstants {
 trait SSO {
   def register(req: UserRegistration): Future[(SSOUserId, SSOCredentials)]
   def authenticate(c: PasswordCredentials): Future[SSOCredentials]
-  def refresh(ssoRefreshToken: String): Future[SSOCredentials]
+  def refresh(ssoRefreshToken: SSORefreshToken): Future[SSOCredentials]
   def resetPassword(passwordToken: String, newPassword: String): Future[SSOUserCredentials]
-  def revokeToken(ssoRefreshToken: String): Future[Unit]
+  def revokeToken(token: SSORefreshToken): Future[Unit]
   def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   def generatePasswordResetToken(username: String): Future[SSOPasswordResetTokenResponse]
   def updatePassword(token: SSOAccessToken, oldPassword: String, newPassword: String): Future[Unit]
@@ -156,18 +156,18 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     client.dataRequest[UserInformation](Get(versioned(C.UserInfoUri)), oauthCredentials(token)) transform(identity, userInfoErrorsTransformer)
   }
 
-  def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
+  def refresh(ssoRefreshToken: SSORefreshToken): Future[SSOCredentials] = {
     logger.debug("Authenticating via refresh token")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RefreshTokenGrant,
-      "refresh_token" -> ssoRefreshToken
+      "refresh_token" -> ssoRefreshToken.value
     )))) transform(identity, refreshErrorsTransformer)
   }
 
-  def revokeToken(ssoRefreshToken: String): Future[Unit] = {
+  def revokeToken(token: SSORefreshToken): Future[Unit] = {
     logger.debug("Revoking refresh token")
     client.unitRequest(Post(versioned(C.RevokeTokenUri), FormData(Map(
-      "token" -> ssoRefreshToken
+      "token" -> token.value
     )))) transform(identity, revokeTokenErrorsTransformer)
   }
 
