@@ -4,7 +4,7 @@ import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.env.{CommonResponder, TestEnv}
 import com.blinkbox.books.auth.server.sso.{SSOAccessToken, SSOCredentials, SSOTestEnv}
 import com.blinkbox.books.auth.server.{TokenBuilder, UserInfo}
-import spray.http.{FormData, OAuth2BearerToken, StatusCodes}
+import spray.http.{HttpEntity, FormData, OAuth2BearerToken, StatusCodes}
 
 class UpdatePasswordSpecs extends ApiSpecBase[TestEnv with CommonResponder] {
 
@@ -20,6 +20,7 @@ class UpdatePasswordSpecs extends ApiSpecBase[TestEnv with CommonResponder] {
 
     Post("/password/change", passwordRequest) ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
+      response.entity should equal(HttpEntity.Empty)
     }
   }
 

@@ -272,7 +272,6 @@ class AuthApi(
       authenticate(authenticator) { implicit user =>
         formFields('old_password, 'new_password) { (oldPassword, newPassword) =>
           onSuccess(passwordUpdateService.updatePassword(oldPassword, newPassword)) { _ =>
-            // TODO: Check that this endpoint should return an empty response
             complete(OK, None)
           }
         }
