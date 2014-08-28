@@ -42,7 +42,7 @@ trait SSO {
   def register(req: UserRegistration): Future[(SSOUserId, SSOCredentials)]
   def authenticate(c: PasswordCredentials): Future[SSOCredentials]
   def refresh(ssoRefreshToken: SSORefreshToken): Future[SSOCredentials]
-  def resetPassword(passwordToken: String, newPassword: String): Future[SSOUserCredentials]
+  def resetPassword(passwordToken: SSOPasswordResetToken, newPassword: String): Future[SSOUserCredentials]
   def revokeToken(token: SSORefreshToken): Future[Unit]
   def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   def generatePasswordResetToken(username: String): Future[SSOPasswordResetTokenResponse]
@@ -225,12 +225,12 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) transform(identity, generatePasswordTokenErrorTransformer)
   }
 
-  def resetPassword(passwordToken: String, newPassword: String): Future[SSOUserCredentials] = {
+  def resetPassword(passwordToken: SSOPasswordResetToken, newPassword: String): Future[SSOUserCredentials] = {
     logger.debug("Reset password")
 
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.PasswordResetTokenGrant,
-      "password_reset_token" -> passwordToken,
+      "password_reset_token" -> passwordToken.value,
       "password" -> newPassword
     )))) map(userCredentials) transform(identity, resetPasswordErrorTransformer)
   }

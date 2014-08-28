@@ -4,7 +4,7 @@ import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.SSOUnknownException
+import com.blinkbox.books.auth.server.sso.{SSOPasswordResetToken, SSOUnknownException}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
@@ -140,7 +140,7 @@ class AuthApi(
   }
 
   val resetPassword: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:password-reset-token") {
-    formFields('password_reset_token, 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
+    formFields('password_reset_token.as[SSOPasswordResetToken], 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
       onSuccess(passwordUpdateService.resetPassword(credentials)) { tokenInfo =>
         uncacheable(OK, tokenInfo)
       }

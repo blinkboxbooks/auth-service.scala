@@ -5,7 +5,7 @@ import com.blinkbox.books.testkit.FailHelper
 import org.joda.time.{DateTimeZone, DateTime}
 import org.scalatest.{Matchers, FlatSpec}
 
-class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
+class SessionStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
 
   def checkDates(issued: DateTime, expiry: DateTime) =
     issued == new DateTime("2000-01-01T01:01:01.010Z").withZone(DateTimeZone.UTC) &&
