@@ -50,6 +50,7 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
       user.copy(
         firstName = u.firstName,
         lastName = u.lastName,
+        username = u.username,
         ssoId = Some(u.userId))
     }
 
@@ -62,7 +63,7 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
 
   override def apply(maybeUser: Option[User], ssoAccessToken: SSOAccessToken): Future[User] =
     maybeUser.fold(syncNewUser(ssoAccessToken)) { user =>
-      if (user.ssoId.isDefined) Future.successful(user)
+      if (user.ssoId.isDefined) syncExistingUser(ssoAccessToken, user)
       else for {
         _           <- sso linkAccount(ssoAccessToken, user.id, user.allowMarketing, TermsVersion)
         updatedUser <- syncExistingUser(ssoAccessToken, user)
