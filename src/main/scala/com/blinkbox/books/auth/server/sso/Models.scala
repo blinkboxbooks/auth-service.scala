@@ -6,6 +6,7 @@ import org.joda.time.DateTime
 import scala.concurrent.duration._
 
 case class SSOAccessToken(value: String) extends AnyVal
+case class SSOPasswordResetToken(value: String) extends AnyVal
 case class SSOUserId(value: String) extends AnyVal
 
 case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: String) {
@@ -14,7 +15,7 @@ case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expire
 
 case class SSOUserCredentials(userId: SSOUserId, credentials: SSOCredentials)
 
-case class SSOPasswordResetToken(resetToken: String, expiresIn: Long) {
+case class SSOPasswordResetTokenResponse(resetToken: SSOPasswordResetToken, expiresIn: Long) {
   val expiresInDuration: FiniteDuration = expiresIn.seconds
 }
 

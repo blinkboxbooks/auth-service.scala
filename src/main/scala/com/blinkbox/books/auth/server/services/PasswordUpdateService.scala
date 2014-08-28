@@ -28,7 +28,7 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordUpdateService with ClientAuthenticator[DB#Profile] {
 
   // TODO: Make this configurable
-  private def resetUrl(token: String) = new URL(s"http://foo.bar/password-reset/$token")
+  private def resetUrl(token: SSOPasswordResetToken) = new URL(s"http://foo.bar/password-reset/${token.value}")
 
   private def userBySsoId(ssoId: SSOUserId): Future[Option[User]] = Future {
     db.withSession { implicit session => userRepo.userWithSsoId(ssoId) }

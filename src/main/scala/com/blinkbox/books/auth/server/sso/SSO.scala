@@ -44,19 +44,18 @@ trait SSO {
   def refresh(ssoRefreshToken: String): Future[SSOCredentials]
   def resetPassword(passwordToken: String, newPassword: String): Future[SSOUserCredentials]
   def revokeToken(ssoRefreshToken: String): Future[Unit]
-  // // User - authenticated
   def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
-  def generatePasswordResetToken(username: String): Future[SSOPasswordResetToken]
+  def generatePasswordResetToken(username: String): Future[SSOPasswordResetTokenResponse]
   def updatePassword(token: SSOAccessToken, oldPassword: String, newPassword: String): Future[Unit]
   def sessionStatus(token: SSOAccessToken): Future[TokenStatus]
   def extendSession(token: SSOAccessToken): Future[Unit]
   def userInfo(token: SSOAccessToken): Future[UserInformation]
   def updateUser(token: SSOAccessToken, req: UserPatch): Future[Unit]
-  // // Admin
+  // Admin
   // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
   // def adminUserDetails(req: GetUserDetails): Future[UserDetail]
   // def adminUpdateUser(req: UpdateUser): Future[UserDetail]
-  // // Health-check
+  // Health-check
   // def systemStatus(): Future[SystemStatus]
 }
 
@@ -209,10 +208,10 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     ))), oauthCredentials(token)) transform(identity, updatePasswordErrorTransformer)
   }
 
-  def generatePasswordResetToken(username: String): Future[SSOPasswordResetToken] = {
+  def generatePasswordResetToken(username: String): Future[SSOPasswordResetTokenResponse] = {
     logger.debug("Generate password-reset token")
 
-    client.dataRequest[SSOPasswordResetToken](Post(versioned(C.GeneratePasswordResetTokenUri), FormData(Map(
+    client.dataRequest[SSOPasswordResetTokenResponse](Post(versioned(C.GeneratePasswordResetTokenUri), FormData(Map(
       "username" -> username
     )))) transform(identity, generatePasswordTokenErrorTransformer)
   }
