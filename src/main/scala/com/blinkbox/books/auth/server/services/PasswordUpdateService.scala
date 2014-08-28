@@ -1,6 +1,7 @@
 package com.blinkbox.books.auth.server.services
 
 import java.net.URL
+import java.util.NoSuchElementException
 
 import com.blinkbox.books.auth.server.data.{Client => UserClient, _}
 import com.blinkbox.books.auth.server.events.{UserPasswordResetRequested, Publisher}
@@ -64,6 +65,8 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     client                                    <- authenticateClient(credentials, syncedUser.id)
     refreshToken                              <- createRefreshToken(syncedUser.id, client.map(_.id), ssoCredentials.refreshToken)
   } yield TokenBuilder.issueAccessToken(syncedUser, client, refreshToken, Some(ssoCredentials), includeRefreshToken = true)
-  
-  override def validatePasswordResetToken(resetToken: String): Future[Unit] = ???
+
+  override def validatePasswordResetToken(resetToken: String): Future[Unit] = sso.tokenStatus(SSOPasswordResetToken(resetToken)) filter { s =>
+    s.tokenType == "password_reset" && s.status == SSOTokenStatus.Valid
+  } transform(_ => (), { case _: NoSuchElementException => Failures.invalidPasswordResetToken })
 }

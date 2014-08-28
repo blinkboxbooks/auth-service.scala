@@ -15,7 +15,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
     ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
 
     whenReady(sso.sessionStatus(SSOAccessToken("an-acces-token")))(_ should matchPattern {
-      case TokenStatus(SSOTokenStatus.Valid, issued, expiry, "refresh", SSOTokenElevation.Critical, 300) if checkDates(issued, expiry) =>
+      case SessionStatus(SSOTokenStatus.Valid, issued, expiry, "refresh", SSOTokenElevation.Critical, 300) if checkDates(issued, expiry) =>
     })
   }
 
@@ -23,7 +23,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
     ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.None)
 
     whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
-      case TokenStatus(SSOTokenStatus.Valid, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case SessionStatus(SSOTokenStatus.Valid, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }
 
@@ -31,7 +31,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
     ssoSessionInfo(SSOTokenStatus.Revoked, SSOTokenElevation.None)
 
     whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
-      case TokenStatus(SSOTokenStatus.Revoked, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case SessionStatus(SSOTokenStatus.Revoked, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }
 
@@ -39,7 +39,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
     ssoSessionInfo(SSOTokenStatus.Expired, SSOTokenElevation.None)
 
     whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
-      case TokenStatus(SSOTokenStatus.Expired, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case SessionStatus(SSOTokenStatus.Expired, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }
 
@@ -47,7 +47,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
     ssoSessionInfo(SSOTokenStatus.Invalid, SSOTokenElevation.None)
 
     whenReady(sso.sessionStatus(SSOAccessToken("an-access-token")))(_ should matchPattern {
-      case TokenStatus(SSOTokenStatus.Invalid, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case SessionStatus(SSOTokenStatus.Invalid, issued, expiry, "refresh", SSOTokenElevation.None, 300) if checkDates(issued, expiry) =>
     })
   }
 }

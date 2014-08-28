@@ -47,7 +47,8 @@ trait SSO {
   def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   def generatePasswordResetToken(username: String): Future[SSOPasswordResetTokenResponse]
   def updatePassword(token: SSOAccessToken, oldPassword: String, newPassword: String): Future[Unit]
-  def sessionStatus(token: SSOAccessToken): Future[TokenStatus]
+  def sessionStatus(token: SSOAccessToken): Future[SessionStatus]
+  def tokenStatus(token: SSOToken): Future[TokenStatus]
   def extendSession(token: SSOAccessToken): Future[Unit]
   def userInfo(token: SSOAccessToken): Future[UserInformation]
   def updateUser(token: SSOAccessToken, req: UserPatch): Future[Unit]
@@ -171,8 +172,16 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) transform(identity, revokeTokenErrorsTransformer)
   }
 
-  def sessionStatus(token: SSOAccessToken): Future[TokenStatus] = {
+  def sessionStatus(token: SSOAccessToken): Future[SessionStatus] = {
+    logger.debug("Fetching session status")
+    client.dataRequest[SessionStatus](Post(versioned(C.TokenStatusUri), FormData(Map(
+      "token" -> token.value
+    )))) transform(identity, tokenStatusErrorsTransformer)
+  }
+
+  def tokenStatus(token: SSOToken): Future[TokenStatus] = {
     logger.debug("Fetching token status")
+
     client.dataRequest[TokenStatus](Post(versioned(C.TokenStatusUri), FormData(Map(
       "token" -> token.value
     )))) transform(identity, tokenStatusErrorsTransformer)
