@@ -150,11 +150,9 @@ class TestEnv extends
     }
   }
 
-  def preSyncUser(id: UserId): Unit = {
-    db.withSession { implicit session =>
-      import tables._
-      users.filter(_.id === id).map(_.ssoId).update(Some(SSOUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
-    }
+  def preSyncUser(id: UserId): Unit = db.withSession { implicit session =>
+    import tables._
+    users.filter(_.id === id).map(_.ssoId).update(Some(SSOUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
   }
 
   db.withSession { implicit session =>

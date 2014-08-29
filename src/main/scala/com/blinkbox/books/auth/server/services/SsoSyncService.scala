@@ -1,5 +1,7 @@
 package com.blinkbox.books.auth.server.services
 
+import java.util.NoSuchElementException
+
 import com.blinkbox.books.auth.server.UserRegistration
 import com.blinkbox.books.auth.server.data.{UserRepository, User}
 import com.blinkbox.books.auth.server.events.{UserUpdated, Publisher, UserRegistered}
@@ -54,11 +56,11 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
         ssoId = Some(u.userId))
     }
 
-    for {
-      updatedUser <- userFuture
+    (for {
+      updatedUser <- userFuture if updatedUser != user
       _           <- updateUser(updatedUser)
       _           <- events.publish(UserUpdated(user, updatedUser))
-    } yield updatedUser
+    } yield updatedUser) recover { case _: NoSuchElementException => user }
   }
 
   override def apply(maybeUser: Option[User], ssoAccessToken: SSOAccessToken): Future[User] =

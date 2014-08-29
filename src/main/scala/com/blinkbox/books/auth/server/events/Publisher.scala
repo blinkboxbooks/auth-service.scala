@@ -106,6 +106,7 @@ class LegacyRabbitMqPublisher(channel: Channel)(implicit executionContext: Execu
       Some(XmlMessages.sendEmail(user, "welcome", Map("salutation" -> user.firstName)))
     case UserPasswordChanged(user) =>
       Some(XmlMessages.sendEmail(user, "password_confirmed", Map("salutation" -> user.firstName)))
+// TODO: Make sure ExactTarget ships first as it replaces these two lines
 //    case UserPasswordResetRequested(user, token, link) =>
 //      Some(XmlMessages.sendEmail(user, "password_reset", Map("salutation" -> user.firstName, "resetLink" -> link, "resetToken" -> token)))
     case _ =>
