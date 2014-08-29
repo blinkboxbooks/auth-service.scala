@@ -17,7 +17,7 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
   it should "report a ZuulRequestException if the SSO service doesn't recognize the old password" in new TestEnv with CommonResponder {
     ssoResponse(StatusCodes.Forbidden)
 
-    failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) should equal(Failures.oldPasswordIsWrong)
+    failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) should equal(Failures.oldPasswordInvalid)
   }
 
   it should "report a ZuulRequestException if the SSO service doesn't accept the new password because it doesn't meet requirements" in new TestEnv with CommonResponder {

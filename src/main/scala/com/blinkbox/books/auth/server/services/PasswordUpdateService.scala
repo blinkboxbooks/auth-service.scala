@@ -19,7 +19,7 @@ class DefaultPasswordUpdateService(
   override def updatePassword(oldPassword: String, newPassword: String)(implicit user: AuthenticatedUser): Future[Unit] =
     user.ssoAccessToken.map {
       at => sso.updatePassword(at, oldPassword, newPassword) transform(identity, {
-        case SSOForbidden => Failures.oldPasswordIsWrong
+        case SSOForbidden => Failures.oldPasswordInvalid
         case SSOInvalidRequest(_) => Failures.passwordTooShort
         case SSOTooManyRequests(retryAfter) => Failures.tooManyRequests(retryAfter)
       })
