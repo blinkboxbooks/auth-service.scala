@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.16.5 ([#35](https://git.mobcastdev.com/Zuul/auth-service/pull/35) 2014-08-29 11:24:51)
+
+Updated dependencies
+
+### Improvements
+
+- Updated library dependencies to the latest versions.
+- Fixes the build which needs a later version of message schemas.
+
 ## 0.16.4 ([#34](https://git.mobcastdev.com/Zuul/auth-service/pull/34) 2014-08-29 10:34:05)
 
 Fix rpm submodule
