@@ -32,11 +32,11 @@ class ClientInfoSpecs extends ApiSpecBase[TestEnv] {
   }
 
   it should "return a 401 with no error code if no access token is supplied" in {
-    testMissingAccessToken(Get("/clients/1"), route)
+    shouldBeUnauthorisedWithMissingAccessToken(Get("/clients/1"), route)
   }
 
   it should "return a 401 with an invalid token error code if an invalid access token is supplied" in {
-    testInvalidAccessToken(Get("/clients/1"), route)
+    shouldBeUnauthorisedWithInvalidAccessToken(Get("/clients/1"), route)
   }
 
   it should "return a 404 if a non-existent client is requested" in {

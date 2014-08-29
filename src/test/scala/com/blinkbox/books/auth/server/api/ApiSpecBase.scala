@@ -35,13 +35,13 @@ trait JsonUnmarshallers {
 trait AuthorisationTestHelpers {
   this: ScalatestRouteTest with Matchers =>
 
-  def testMissingAccessToken(request: HttpRequest, route: Route): Unit =
+  def shouldBeUnauthorisedWithMissingAccessToken(request: HttpRequest, route: Route): Unit =
     request ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
       header[`WWW-Authenticate`] should equal(Some(`WWW-Authenticate`(HttpChallenge("Bearer", "", Map()))))
     }
 
-  def testInvalidAccessToken(request: HttpRequest, route: Route): Unit =
+  def shouldBeUnauthorisedWithInvalidAccessToken(request: HttpRequest, route: Route): Unit =
     request ~> addCredentials(OAuth2BearerToken("faketoken")) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
       header[`WWW-Authenticate`] should equal(Some(`WWW-Authenticate`(HttpChallenge("Bearer", "", Map("error" -> "invalid_token", "error_description" -> "The access token is invalid")))))
