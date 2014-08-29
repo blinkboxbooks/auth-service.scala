@@ -103,9 +103,15 @@ trait DefaultClientServiceComponent extends ClientServiceComponent {
 }
 
 trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticationServiceComponent {
-  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SSOComponent =>
+  this: DatabaseComponent with
+    RepositoriesComponent with
+    EventsComponent with
+    AsyncComponent with
+    TimeSupport with
+    SSOComponent with
+    SsoSyncComponent =>
 
-  val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, clientRepository, publisher, sso)
+  val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, clientRepository, publisher, ssoSync, sso)
 }
 
 trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
@@ -114,10 +120,22 @@ trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
   val refreshTokenService = new DefaultRefreshTokenService(db, authRepository, userRepository, clientRepository, publisher, sso)
 }
 
-trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceComponent {
-  this: EventsComponent with AsyncComponent with TimeSupport with SSOComponent =>
+trait DefaultSsoSyncComponent extends SsoSyncComponent {
+  this: EventsComponent with AsyncComponent with SSOComponent with DatabaseComponent with RepositoriesComponent =>
 
-  val passwordUpdateService = new DefaultPasswordUpdateService(publisher, sso)
+  def ssoSync = new DefaultSsoSyncService(db, userRepository, publisher, sso)
+}
+
+trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceComponent {
+  this: EventsComponent with
+    AsyncComponent with
+    TimeSupport with
+    SSOComponent with
+    DatabaseComponent with
+    RepositoriesComponent with
+    SsoSyncComponent =>
+
+  val passwordUpdateService = new DefaultPasswordUpdateService(db, userRepository, authRepository, ssoSync, publisher, sso)
 }
 
 trait DefaultSSOComponent extends SSOComponent {

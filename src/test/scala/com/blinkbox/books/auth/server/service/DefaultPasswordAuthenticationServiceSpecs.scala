@@ -20,6 +20,8 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
 
   "The password authentication service" should "create an access token for valid user credentials without a client and not providing an IP" in new AuthenticationTestEnv {
     ssoSuccessfulAuthentication()
+    ssoSuccessfulUserAInfo()
+
     whenReady(passwordAuthenticationService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", None, None), None)) { token =>
       token.user_first_name should equal(userA.firstName)
       token.user_last_name should equal(userA.lastName)
@@ -38,6 +40,8 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
 
   it should "create an access token for valid user credentials with a client and not providing an IP" in new AuthenticationTestEnv {
     ssoSuccessfulAuthentication()
+    ssoSuccessfulUserAInfo()
+
     whenReady(passwordAuthenticationService.authenticate(
       PasswordCredentials("user.a@test.tst", "a-password", Some(clientInfoA1.client_id), Some("test-secret-a1")), None)) { token =>
 
@@ -65,6 +69,8 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
 
   it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in new AuthenticationTestEnv {
     ssoSuccessfulAuthentication()
+    ssoSuccessfulUserAInfo()
+
     failingWith[ZuulRequestException](passwordAuthenticationService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", Some("foo"), Some("bar")), None)) should matchPattern {
       case ZuulRequestException(_, InvalidClient, None) =>
     }
@@ -89,7 +95,7 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
 
   it should "create an access token and register an user in the system if the SSO returns a success but we don't have an user in our database" in new AuthenticationTestEnv with UserInfoResponder {
     ssoSuccessfulAuthentication()
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
     ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent, HttpEntity.Empty))) // Link request
 
     whenReady(passwordAuthenticationService.authenticate(PasswordCredentials("john.doe+blinkbox@example.com", "foobar", None, None), None)) { _ =>
@@ -105,7 +111,7 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
   it should "create an access token and link an user if the SSO returns a success but the user in our database is not yet linked" in new AuthenticationTestEnv with UserInfoResponder {
     ssoSuccessfulAuthentication()
     ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent, HttpEntity.Empty))) // Link request
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     val username = "john.doe+blinkbox@example.com"
 

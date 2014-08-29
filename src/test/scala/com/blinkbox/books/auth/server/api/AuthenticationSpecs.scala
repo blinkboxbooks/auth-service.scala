@@ -50,6 +50,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
 
   "The service" should "accept valid username/password pair returning a valid access token" in {
     env.ssoSuccessfulAuthentication()
+    env.ssoSuccessfulUserAInfo()
+
     Post("/oauth2/token", FormData(validCredentials)) ~> route ~> check {
       status should equal(StatusCodes.OK)
 
@@ -64,6 +66,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
 
   it should "accept valid username/password pair and client credentials returning a valid access token" in {
     env.ssoSuccessfulAuthentication()
+    env.ssoSuccessfulUserAInfo()
+
     Post("/oauth2/token", FormData(validCredentialsWithClient)) ~> route ~> check {
       status should equal(StatusCodes.OK)
 
@@ -79,6 +83,7 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
 
   it should "reject incomplete client information" in {
     env.ssoUnsuccessfulAuthentication()
+
     Post("/oauth2/token", FormData(validCredentialsWithClient - "client_secret")) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 
@@ -90,6 +95,7 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
 
   it should "reject invalid username/password credentials" in {
     env.ssoUnsuccessfulAuthentication()
+
     Post("/oauth2/token", FormData(validCredentialsWithClient.updated("password", "invalid"))) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 
@@ -112,6 +118,8 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
 
   it should "reject credentials for a de-registerd client" in {
     env.ssoSuccessfulAuthentication()
+    env.ssoSuccessfulUserAInfo()
+
     Post("/oauth2/token", FormData(validCredentialsWithDeregisteredClient)) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 

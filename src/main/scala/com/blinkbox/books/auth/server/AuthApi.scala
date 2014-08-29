@@ -4,7 +4,7 @@ import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.SSOUnknownException
+import com.blinkbox.books.auth.server.sso.{SSOPasswordResetToken, SSOUnknownException}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
@@ -15,7 +15,7 @@ import spray.http.HttpHeaders.{RawHeader, `WWW-Authenticate`}
 import spray.http.StatusCodes._
 import spray.http.{HttpEntity, HttpChallenge}
 import spray.routing._
-import spray.httpx.unmarshalling.FormDataUnmarshallers
+import spray.httpx.unmarshalling.{Deserializer, FormDataUnmarshallers}
 import com.blinkbox.books.auth.User
 import spray.routing.authentication.ContextAuthenticator
 
@@ -99,6 +99,8 @@ class AuthApi(
   val UserId = IntNumber.map(data.UserId(_))
   val ClientId = IntNumber.map(data.ClientId(_))
   val RefreshTokenId = IntNumber.map(data.RefreshTokenId(_))
+  val ResetToken = Deserializer.fromFunction2Converter((s: String) => SSOPasswordResetToken(s))
+
 
 //  first_name (required)
 //  last_name (required)
@@ -139,9 +141,17 @@ class AuthApi(
     }
   }
 
+  val resetPassword: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:password-reset-token") {
+    formFields('password_reset_token.as(ResetToken), 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
+      onSuccess(passwordUpdateService.resetPassword(credentials)) { tokenInfo =>
+        uncacheable(OK, tokenInfo)
+      }
+    }
+  }
+
   val oAuthToken: Route = post {
     path("oauth2" / "token") {
-      registerUser ~ authenticate ~ refreshAccessToken
+      registerUser ~ authenticate ~ refreshAccessToken ~ resetPassword
     }
   }
 
@@ -264,9 +274,28 @@ class AuthApi(
       authenticate(authenticator) { implicit user =>
         formFields('old_password, 'new_password) { (oldPassword, newPassword) =>
           onSuccess(passwordUpdateService.updatePassword(oldPassword, newPassword)) { _ =>
-            // TODO: Check that this endpoint should return an empty response
             complete(OK, None)
           }
+        }
+      }
+    }
+  }
+
+  val generatePasswordResetToken: Route = post {
+    path("password" / "reset") {
+      formFields('username) { username =>
+        onSuccess(passwordUpdateService.generatePasswordResetToken(username)) { _ =>
+          complete(OK, None)
+        }
+      }
+    }
+  }
+
+  val validatePasswordResetToken: Route = post {
+    path("password" / "reset" / "validate-token") {
+      formFields('password_reset_token) { token =>
+        onSuccess(passwordUpdateService.validatePasswordResetToken(SSOPasswordResetToken(token))) { _ =>
+          complete(OK, None)
         }
       }
     }
@@ -276,7 +305,8 @@ class AuthApi(
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
         querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
-          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange
+          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange ~
+          validatePasswordResetToken ~ generatePasswordResetToken
       }
     }
   }

@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.services
 
-import com.blinkbox.books.auth.server.data.{UserId, AuthRepository, Client, User}
-import com.blinkbox.books.auth.server.{ClientInfo, UserInfo, ClientCredentials, Failures}
+import com.blinkbox.books.auth.server._
+import com.blinkbox.books.auth.server.data._
 import spray.http.RemoteAddress
 
 import scala.slick.profile.BasicProfile
@@ -45,4 +45,3 @@ trait ClientInfoFactory {
 trait GeoIP {
   def countryCode(address: RemoteAddress): String
 }
-

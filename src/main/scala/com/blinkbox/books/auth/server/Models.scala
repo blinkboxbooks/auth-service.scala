@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.auth.Elevation.Elevation
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidClient
-import com.blinkbox.books.auth.server.sso.SSOTokenStatus
+import com.blinkbox.books.auth.server.sso.{SSOPasswordResetToken, SSOTokenStatus}
 import com.blinkbox.books.auth.server.sso.SSOTokenStatus.{Revoked, Expired}
 import org.joda.time.{DateTime, LocalDate}
 
@@ -56,6 +56,10 @@ case class PasswordCredentials(username: String, password: String, clientId: Opt
 }
 
 case class RefreshTokenCredentials(token: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
+  if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
+}
+
+case class ResetTokenCredentials(resetToken: SSOPasswordResetToken, newPassword: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
   if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 

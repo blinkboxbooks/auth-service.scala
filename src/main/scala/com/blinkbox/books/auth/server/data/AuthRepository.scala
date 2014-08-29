@@ -2,6 +2,7 @@ package com.blinkbox.books.auth.server.data
 
 import java.security.SecureRandom
 
+import com.blinkbox.books.auth.server.sso.SSORefreshToken
 import com.blinkbox.books.slick.{TablesSupport, SlickTypes}
 import com.blinkbox.books.time.{Clock, TimeSupport}
 import com.blinkbox.security.jwt.util.Base64
@@ -13,12 +14,12 @@ import scala.slick.profile.BasicProfile
 trait AuthRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def recordLoginAttempt(username: String, succeeded: Boolean, clientIP: Option[RemoteAddress])(implicit session: Session): Unit
   def authenticateClient(id: String, secret: String, userId: UserId)(implicit session: Session): Option[Client]
-  def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: String)(implicit session: Session): RefreshToken
+  def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: SSORefreshToken)(implicit session: Session): RefreshToken
   def refreshTokenWithId(id: RefreshTokenId)(implicit session: Session): Option[RefreshToken]
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
   def refreshTokensByClientId(clientId: ClientId)(implicit session: Session): List[RefreshToken]
   def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session)
-  def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[String])(implicit session: Session): Unit
+  def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[SSORefreshToken])(implicit session: Session): Unit
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
 }
 
@@ -48,7 +49,7 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
     client
   }
 
-  override def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: String)(implicit session: Session): RefreshToken = {
+  override def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: SSORefreshToken)(implicit session: Session): RefreshToken = {
     val token = newRefreshToken(userId, clientId, ssoToken)
     val id = (refreshTokens returning refreshTokens.map(_.id)) += token
     token.copy(id = id)
@@ -72,7 +73,7 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
     refreshTokens.filter(_.id === t.id).map(t => (t.updatedAt, t.clientId)).update(clock.now(), Some(c.id))
   }
 
-  override def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[String])(implicit session: Session) = {
+  override def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[SSORefreshToken])(implicit session: Session) = {
     // TODO: Make lifetime extension configurable
     val now = clock.now()
     refreshTokens.filter(_.id === t.id).map(t => (t.updatedAt, t.expiresAt, t.ssoToken)).update(now, now.plusDays(90), ssoRefreshToken)
@@ -81,7 +82,7 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
   override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =
     refreshTokens.filter(_.id === t.id).map(_.isRevoked).update(true)
 
-  private def newRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: String) = {
+  private def newRefreshToken(userId: UserId, clientId: Option[ClientId], ssoToken: SSORefreshToken) = {
     val now = clock.now()
     val buf = new Array[Byte](32)
     new SecureRandom().nextBytes(buf)

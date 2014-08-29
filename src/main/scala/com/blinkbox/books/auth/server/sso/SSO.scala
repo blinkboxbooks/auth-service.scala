@@ -19,6 +19,7 @@ case object SSOConflict extends SSOException
 case object SSOForbidden extends SSOException
 case class SSOTooManyRequests(retryAfter: FiniteDuration) extends SSOException
 case class SSOInvalidRequest(message: String) extends SSOException
+case object SSONotFound extends SSOException
 case class SSOUnknownException(e: Throwable) extends SSOException
 
 object SSOConstants {
@@ -29,31 +30,33 @@ object SSOConstants {
   val TokenStatusUri = "/tokens/status"
   val ExtendSessionUri = "/session"
   val UpdatePasswordUri = "/password/update"
+  val GeneratePasswordResetTokenUri = "/password/reset/generate-token"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
+  val PasswordResetTokenGrant = "urn:blinkbox:oauth:grant-type:password-reset-token"
   val PasswordGrant = "password"
   val RefreshTokenGrant = "refresh_token"
 }
 
 trait SSO {
-  def register(req: UserRegistration): Future[(String, SSOCredentials)]
+  def register(req: UserRegistration): Future[(SSOUserId, SSOCredentials)]
   def authenticate(c: PasswordCredentials): Future[SSOCredentials]
-  def refresh(ssoRefreshToken: String): Future[SSOCredentials]
-  // def resetPassword(token: PasswordResetToken): Future[TokenCredentials]
-  def revokeToken(ssoRefreshToken: String): Future[Unit]
-  // // User - authenticated
+  def refresh(ssoRefreshToken: SSORefreshToken): Future[SSOCredentials]
+  def resetPassword(passwordToken: SSOPasswordResetToken, newPassword: String): Future[SSOUserCredentials]
+  def revokeToken(token: SSORefreshToken): Future[Unit]
   def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
-  // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
+  def generatePasswordResetToken(username: String): Future[SSOPasswordResetTokenResponse]
   def updatePassword(token: SSOAccessToken, oldPassword: String, newPassword: String): Future[Unit]
-  def sessionStatus(token: SSOAccessToken): Future[TokenStatus]
+  def sessionStatus(token: SSOAccessToken): Future[SessionStatus]
+  def tokenStatus(token: SSOToken): Future[TokenStatus]
   def extendSession(token: SSOAccessToken): Future[Unit]
   def userInfo(token: SSOAccessToken): Future[UserInformation]
   def updateUser(token: SSOAccessToken, req: UserPatch): Future[Unit]
-  // // Admin
+  // Admin
   // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
   // def adminUserDetails(req: GetUserDetails): Future[UserDetail]
   // def adminUpdateUser(req: UpdateUser): Future[UserDetail]
-  // // Health-check
+  // Health-check
   // def systemStatus(): Future[SystemStatus]
 }
 
@@ -64,9 +67,14 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   private val C = SSOConstants
 
-  private def extractUserId(cred: SSOCredentials): (String, SSOCredentials) = SsoDecodedAccessToken.decode(cred.accessToken.value, tokenDecoder) match {
-    case Success(token) => (token.subject, cred)
+  private def extractUserId(cred: SSOCredentials): (SSOUserId, SSOCredentials) = SsoDecodedAccessToken.decode(cred.accessToken.value, tokenDecoder) match {
+    case Success(token) => (SSOUserId(token.subject), cred)
     case Failure(_) => throw new SSOInvalidAccessToken(cred)
+  }
+
+  private def userCredentials(cred: SSOCredentials): SSOUserCredentials = {
+    val (id, _) = extractUserId(cred)
+    SSOUserCredentials(id, cred)
   }
 
   private def extractInvalidRequest(e: UnsuccessfulResponseException): SSOException = {
@@ -95,6 +103,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => extractTooManyRequests(e)
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.NotFound => SSONotFound
     case e: Throwable => SSOUnknownException(e)
   }
 
@@ -109,10 +118,12 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def extendSessionErrorTransformer = commonErrorsTransformer
   private def updateUserErrorTransformer = commonErrorsTransformer
   private def updatePasswordErrorTransformer = commonErrorsTransformer
+  private def generatePasswordTokenErrorTransformer = commonErrorsTransformer
+  private def resetPasswordErrorTransformer = commonErrorsTransformer
 
   def oauthCredentials(token: SSOAccessToken): HttpCredentials = new OAuth2BearerToken(token.value)
 
-  def register(req: UserRegistration): Future[(String, SSOCredentials)] = {
+  def register(req: UserRegistration): Future[(SSOUserId, SSOCredentials)] = {
     logger.debug("Registering user")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RegistrationGrant,
@@ -146,23 +157,31 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
     client.dataRequest[UserInformation](Get(versioned(C.UserInfoUri)), oauthCredentials(token)) transform(identity, userInfoErrorsTransformer)
   }
 
-  def refresh(ssoRefreshToken: String): Future[SSOCredentials] = {
+  def refresh(ssoRefreshToken: SSORefreshToken): Future[SSOCredentials] = {
     logger.debug("Authenticating via refresh token")
     client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.RefreshTokenGrant,
-      "refresh_token" -> ssoRefreshToken
+      "refresh_token" -> ssoRefreshToken.value
     )))) transform(identity, refreshErrorsTransformer)
   }
 
-  def revokeToken(ssoRefreshToken: String): Future[Unit] = {
+  def revokeToken(token: SSORefreshToken): Future[Unit] = {
     logger.debug("Revoking refresh token")
     client.unitRequest(Post(versioned(C.RevokeTokenUri), FormData(Map(
-      "token" -> ssoRefreshToken
+      "token" -> token.value
     )))) transform(identity, revokeTokenErrorsTransformer)
   }
 
-  def sessionStatus(token: SSOAccessToken): Future[TokenStatus] = {
+  def sessionStatus(token: SSOAccessToken): Future[SessionStatus] = {
+    logger.debug("Fetching session status")
+    client.dataRequest[SessionStatus](Post(versioned(C.TokenStatusUri), FormData(Map(
+      "token" -> token.value
+    )))) transform(identity, tokenStatusErrorsTransformer)
+  }
+
+  def tokenStatus(token: SSOToken): Future[TokenStatus] = {
     logger.debug("Fetching token status")
+
     client.dataRequest[TokenStatus](Post(versioned(C.TokenStatusUri), FormData(Map(
       "token" -> token.value
     )))) transform(identity, tokenStatusErrorsTransformer)
@@ -196,5 +215,23 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
       "old_password" -> oldPassword,
       "new_password" -> newPassword
     ))), oauthCredentials(token)) transform(identity, updatePasswordErrorTransformer)
+  }
+
+  def generatePasswordResetToken(username: String): Future[SSOPasswordResetTokenResponse] = {
+    logger.debug("Generate password-reset token")
+
+    client.dataRequest[SSOPasswordResetTokenResponse](Post(versioned(C.GeneratePasswordResetTokenUri), FormData(Map(
+      "username" -> username
+    )))) transform(identity, generatePasswordTokenErrorTransformer)
+  }
+
+  def resetPassword(passwordToken: SSOPasswordResetToken, newPassword: String): Future[SSOUserCredentials] = {
+    logger.debug("Reset password")
+
+    client.dataRequest[SSOCredentials](Post(versioned(C.TokenUri), FormData(Map(
+      "grant_type" -> C.PasswordResetTokenGrant,
+      "password_reset_token" -> passwordToken.value,
+      "password" -> newPassword
+    )))) map(userCredentials) transform(identity, resetPasswordErrorTransformer)
   }
 }

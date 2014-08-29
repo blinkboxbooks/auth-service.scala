@@ -3,10 +3,25 @@ package com.blinkbox.books.auth.server.sso
 import com.blinkbox.books.auth.server.EnumContainer
 import org.joda.time.DateTime
 
-case class SSOAccessToken(value: String) extends AnyVal
+import scala.concurrent.duration._
 
-case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: String) {
+sealed trait SSOToken extends Any {
+  def value: String
+}
+case class SSOAccessToken(value: String) extends AnyVal with SSOToken
+case class SSOPasswordResetToken(value: String) extends AnyVal with SSOToken
+case class SSORefreshToken(value: String) extends AnyVal with SSOToken
+
+case class SSOUserId(value: String) extends AnyVal
+
+case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: SSORefreshToken) {
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
+}
+
+case class SSOUserCredentials(userId: SSOUserId, credentials: SSOCredentials)
+
+case class SSOPasswordResetTokenResponse(resetToken: SSOPasswordResetToken, expiresIn: Long) {
+  val expiresInDuration: FiniteDuration = expiresIn.seconds
 }
 
 sealed trait SSOTokenStatus
@@ -37,7 +52,7 @@ object SSOTokenElevation extends EnumContainer[SSOTokenElevation] {
   )
 }
 
-case class TokenStatus(
+case class SessionStatus(
   status: SSOTokenStatus,
   issuedAt: DateTime,
   expiresAt: DateTime,
@@ -45,6 +60,15 @@ case class TokenStatus(
   sessionElevation: SSOTokenElevation,
   sessionElevationExpiresIn: Int)
 
+case class TokenStatus(
+  status: SSOTokenStatus,
+  issuedAt: DateTime,
+  expiresAt: DateTime,
+  tokenType: String,
+  sessionElevation: Option[SSOTokenElevation],
+  sessionElevationExpiresIn: Option[Int]
+)
+
 case class LinkedAccount(service: String, serviceUserId: String, serviceAllowMarketing: Boolean)
 
-case class UserInformation(userId: String, username: String, firstName: String, lastName: String, linkedAccounts: List[LinkedAccount])
+case class UserInformation(userId: SSOUserId, username: String, firstName: String, lastName: String, linkedAccounts: List[LinkedAccount])

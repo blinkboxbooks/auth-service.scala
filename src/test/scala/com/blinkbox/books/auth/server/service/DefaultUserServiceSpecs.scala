@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server.service
 import com.blinkbox.books.auth.server.data.{User, UserId}
 import com.blinkbox.books.auth.server.env.{CommonResponder, TestEnv, UserInfoResponder}
 import com.blinkbox.books.auth.server.events.UserUpdated
+import com.blinkbox.books.auth.server.sso.SSOUserId
 import com.blinkbox.books.auth.server.{Failures, ZuulAuthorizationException, ZuulUnknownException}
 import spray.http.{HttpEntity, StatusCodes}
 
@@ -12,7 +13,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   import driver.simple._
 
   "The user service" should "retrieve an user and update its data with data coming from SSO" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     whenReady(userService.getUserInfo()(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
@@ -26,7 +27,7 @@ class DefaultUserServiceSpecs extends SpecBase {
 
       val updated = db.withSession { implicit session => tables.users.filter(_.id === userIdA).firstOption }
 
-      val expected = User(userIdA, now, now, "john.doe+blinkbox@example.com", "John", "Doe", "a-password", true, Some("6E41CB9F"))
+      val expected = User(userIdA, now, now, "john.doe+blinkbox@example.com", "John", "Doe", "a-password", true, Some(SSOUserId("6E41CB9F")))
 
       updated should equal(Some(expected))
 
@@ -35,7 +36,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "signal an unverified identity when retrieving an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
       tables.refreshTokens.filter(_.userId === userIdA).mutate(_.delete)
@@ -58,7 +59,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "update an user given new details and return updated user information" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
     whenReady(userService.updateUser(fullUserPatch)(authenticatedUserA)) { infoOpt =>
@@ -75,9 +76,9 @@ class DefaultUserServiceSpecs extends SpecBase {
         tables.users.filter(_.id === UserId(1)).firstOption
       }
 
-      val ssoSynced = User(userIdA, now, now, "john.doe+blinkbox@example.com", "John", "Doe", "a-password", true, Some("6E41CB9F"))
+      val ssoSynced = User(userIdA, now, now, "john.doe+blinkbox@example.com", "John", "Doe", "a-password", true, Some(SSOUserId("6E41CB9F")))
 
-      val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, Some("6E41CB9F"))
+      val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, Some(SSOUserId("6E41CB9F")))
 
       updated should equal(Some(expectedUpdatedUser))
 
@@ -89,7 +90,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "signal an unverified identity when updating an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
-    ssoSuccessfulUserInfo()
+    ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
       tables.refreshTokens.filter(_.userId === userIdA).mutate(_.delete)
