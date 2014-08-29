@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.16.4 ([#34](https://git.mobcastdev.com/Zuul/auth-service/pull/34) 2014-08-29 10:34:05)
+
+Fix rpm submodule
+
+### Improvements
+
+- RPM submodule now references a commit that exists.
+
 ## 0.16.3 ([#28](https://git.mobcastdev.com/Zuul/auth-service/pull/28) 2014-08-20 15:44:08)
 
 Rename SsoAccessToken -> SsoDecodedAccessToken
