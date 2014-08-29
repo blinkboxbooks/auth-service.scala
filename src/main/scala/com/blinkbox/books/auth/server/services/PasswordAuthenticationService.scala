@@ -24,7 +24,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     clientRepo: ClientRepository[Profile], // TODO: This is not used any more, remove it
     events: Publisher,
     ssoSync: SsoSyncService,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordAuthenticationService with ClientAuthenticator[Profile] {
+    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordAuthenticationService with ClientAuthenticator[Profile] {
 
   private def findUser(username: String): Future[Option[User]] = Future {
     db.withSession { implicit session => userRepo.userWithUsername(username) }
@@ -34,7 +34,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     db.withSession { implicit session => authenticateClient(authRepo, credentials, user.id) }
   }
 
-  private def getToken(userId: UserId, clientId: Option[ClientId], refreshToken: SSORefreshToken) : Future[RefreshToken] = Future {
+  private def getToken(userId: UserId, clientId: Option[ClientId], refreshToken: SsoRefreshToken) : Future[RefreshToken] = Future {
     db.withSession { implicit session => authRepo.createRefreshToken(userId, clientId, refreshToken) }
   }
 
@@ -51,9 +51,9 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     } yield TokenBuilder.issueAccessToken(user, client, token, Some(ssoCredentials), includeRefreshToken = true)
 
   } transform(identity, {
-    case SSOUnauthorized => Failures.invalidUsernamePassword
-    case SSOInvalidRequest(msg) => Failures.requestException(msg, InvalidRequest)
-    case SSOTooManyRequests(retryAfter) => Failures.tooManyRequests(retryAfter)
+    case SsoUnauthorized => Failures.invalidUsernamePassword
+    case SsoInvalidRequest(msg) => Failures.requestException(msg, InvalidRequest)
+    case SsoTooManyRequests(retryAfter) => Failures.tooManyRequests(retryAfter)
     case e: Throwable => e
   })
 }

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSSO, FileKeyStore, SsoAccessTokenDecoder}
+import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSso, FileKeyStore, SsoAccessTokenDecoder}
 import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
@@ -73,7 +73,7 @@ trait DefaultAuthServiceComponent extends AuthServiceComponent {
     with EventsComponent
     with AsyncComponent
     with TimeSupport
-    with SSOComponent =>
+    with SsoComponent =>
 
   val sessionService = new DefaultSessionService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
 }
@@ -85,13 +85,13 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
     with EventsComponent
     with AsyncComponent
     with TimeSupport
-    with SSOComponent =>
+    with SsoComponent =>
 
   val registrationService = new DefaultRegistrationService(db, authRepository, userRepository, clientRepository, exceptionFilter, geoIp, publisher, sso)
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
-  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SSOComponent =>
+  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SsoComponent =>
 
   val userService = new DefaultUserService(db, userRepository, sso, publisher)
 }
@@ -108,20 +108,20 @@ trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticati
     EventsComponent with
     AsyncComponent with
     TimeSupport with
-    SSOComponent with
+    SsoComponent with
     SsoSyncComponent =>
 
   val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, clientRepository, publisher, ssoSync, sso)
 }
 
 trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
-  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SSOComponent =>
+  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SsoComponent =>
 
   val refreshTokenService = new DefaultRefreshTokenService(db, authRepository, userRepository, clientRepository, publisher, sso)
 }
 
 trait DefaultSsoSyncComponent extends SsoSyncComponent {
-  this: EventsComponent with AsyncComponent with SSOComponent with DatabaseComponent with RepositoriesComponent =>
+  this: EventsComponent with AsyncComponent with SsoComponent with DatabaseComponent with RepositoriesComponent =>
 
   def ssoSync = new DefaultSsoSyncService(db, userRepository, publisher, sso)
 }
@@ -130,7 +130,7 @@ trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceCompon
   this: EventsComponent with
     AsyncComponent with
     TimeSupport with
-    SSOComponent with
+    SsoComponent with
     DatabaseComponent with
     RepositoriesComponent with
     SsoSyncComponent =>
@@ -138,12 +138,12 @@ trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceCompon
   val passwordUpdateService = new DefaultPasswordUpdateService(db, userRepository, authRepository, ssoSync, publisher, sso)
 }
 
-trait DefaultSSOComponent extends SSOComponent {
+trait DefaultSsoComponent extends SsoComponent {
   this: ConfigComponent with AsyncComponent =>
 
   private val keyStore = new FileKeyStore(config.sso.keyStore)
   private val tokenDecoder = new SsoAccessTokenDecoder(keyStore)
-  override val sso = new DefaultSSO(config.sso, new DefaultClient(config.sso), tokenDecoder)
+  override val sso = new DefaultSso(config.sso, new DefaultClient(config.sso), tokenDecoder)
 }
 
 trait DefaultApiComponent {

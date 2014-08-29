@@ -5,34 +5,34 @@ import org.joda.time.DateTime
 
 import scala.concurrent.duration._
 
-sealed trait SSOToken extends Any {
+sealed trait SsoToken extends Any {
   def value: String
 }
-case class SSOAccessToken(value: String) extends AnyVal with SSOToken
-case class SSOPasswordResetToken(value: String) extends AnyVal with SSOToken
-case class SSORefreshToken(value: String) extends AnyVal with SSOToken
+case class SsoAccessToken(value: String) extends AnyVal with SsoToken
+case class SsoPasswordResetToken(value: String) extends AnyVal with SsoToken
+case class SsoRefreshToken(value: String) extends AnyVal with SsoToken
 
-case class SSOUserId(value: String) extends AnyVal
+case class SsoUserId(value: String) extends AnyVal
 
-case class SSOCredentials(accessToken: SSOAccessToken, tokenType: String, expiresIn: Int, refreshToken: SSORefreshToken) {
+case class SsoCredentials(accessToken: SsoAccessToken, tokenType: String, expiresIn: Int, refreshToken: SsoRefreshToken) {
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
 }
 
-case class SSOUserCredentials(userId: SSOUserId, credentials: SSOCredentials)
+case class SsoUserCredentials(userId: SsoUserId, credentials: SsoCredentials)
 
-case class SSOPasswordResetTokenResponse(resetToken: SSOPasswordResetToken, expiresIn: Long) {
+case class SsoPasswordResetTokenResponse(resetToken: SsoPasswordResetToken, expiresIn: Long) {
   val expiresInDuration: FiniteDuration = expiresIn.seconds
 }
 
-sealed trait SSOTokenStatus
+sealed trait SsoTokenStatus
 
-object SSOTokenStatus extends EnumContainer[SSOTokenStatus] {
-  case object Invalid extends SSOTokenStatus
-  case object Expired extends SSOTokenStatus
-  case object Revoked extends SSOTokenStatus
-  case object Valid extends SSOTokenStatus
+object SsoTokenStatus extends EnumContainer[SsoTokenStatus] {
+  case object Invalid extends SsoTokenStatus
+  case object Expired extends SsoTokenStatus
+  case object Revoked extends SsoTokenStatus
+  case object Valid extends SsoTokenStatus
 
-  override val reprs: Map[SSOTokenStatus, String] = Map(
+  override val reprs: Map[SsoTokenStatus, String] = Map(
     Invalid -> "invalid",
     Expired -> "expired",
     Revoked -> "revoked",
@@ -40,35 +40,35 @@ object SSOTokenStatus extends EnumContainer[SSOTokenStatus] {
   )
 }
 
-sealed trait SSOTokenElevation
+sealed trait SsoTokenElevation
 
-object SSOTokenElevation extends EnumContainer[SSOTokenElevation] {
-  case object None extends SSOTokenElevation
-  case object Critical extends SSOTokenElevation
+object SsoTokenElevation extends EnumContainer[SsoTokenElevation] {
+  case object None extends SsoTokenElevation
+  case object Critical extends SsoTokenElevation
 
-  override val reprs: Map[SSOTokenElevation, String] = Map(
+  override val reprs: Map[SsoTokenElevation, String] = Map(
     None -> "none",
     Critical -> "critical"
   )
 }
 
 case class SessionStatus(
-  status: SSOTokenStatus,
+  status: SsoTokenStatus,
   issuedAt: DateTime,
   expiresAt: DateTime,
   tokenType: String,
-  sessionElevation: SSOTokenElevation,
+  sessionElevation: SsoTokenElevation,
   sessionElevationExpiresIn: Int)
 
 case class TokenStatus(
-  status: SSOTokenStatus,
+  status: SsoTokenStatus,
   issuedAt: DateTime,
   expiresAt: DateTime,
   tokenType: String,
-  sessionElevation: Option[SSOTokenElevation],
+  sessionElevation: Option[SsoTokenElevation],
   sessionElevationExpiresIn: Option[Int]
 )
 
 case class LinkedAccount(service: String, serviceUserId: String, serviceAllowMarketing: Boolean)
 
-case class UserInformation(userId: SSOUserId, username: String, firstName: String, lastName: String, linkedAccounts: List[LinkedAccount])
+case class UserInformation(userId: SsoUserId, username: String, firstName: String, lastName: String, linkedAccounts: List[LinkedAccount])

@@ -27,7 +27,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     exceptionFilter: DB#ExceptionFilter,
     geoIP: GeoIP,
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
+    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
 
   // TODO: Make this configurable
   private val TermsAndConditionsVersion = "1.0"
@@ -43,7 +43,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
       registration
     }
 
-  private def persistDetails(registration: UserRegistration, credentials: SSOCredentials): Future[(User, Option[UserClient], RefreshToken)] =
+  private def persistDetails(registration: UserRegistration, credentials: SsoCredentials): Future[(User, Option[UserClient], RefreshToken)] =
     Future {
       db.withTransaction { implicit transaction =>
         val u = userRepo.createUser(registration)
@@ -53,7 +53,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
       }
     }
 
-  private def markLinked(user: User, ssoId: SSOUserId): Future[Unit] = Future {
+  private def markLinked(user: User, ssoId: SsoUserId): Future[Unit] = Future {
     db.withSession { implicit session =>
       userRepo.updateUser(user.copy(ssoId = Some(ssoId)))
     }
@@ -62,8 +62,8 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
   private val errorTransformer = exceptionFilter {
     case ConstraintException(e) => Failures.unknownError("Unexpected constraint error", Some(e))
     case UnknownDatabaseException(e) => Failures.requestException(e.getMessage, InvalidRequest)
-    case SSOConflict => Failures.usernameAlreadyTaken
-    case SSOInvalidRequest(msg) => Failures.requestException(msg, InvalidRequest)
+    case SsoConflict => Failures.usernameAlreadyTaken
+    case SsoInvalidRequest(msg) => Failures.requestException(msg, InvalidRequest)
     case e => e
   }
 

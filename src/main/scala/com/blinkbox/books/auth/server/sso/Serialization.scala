@@ -36,7 +36,7 @@ object Serialization extends Json4sJacksonSupport {
     }
   }
 
-  implicit val json4sJacksonFormats: Formats = json.DefaultFormats + new EnumSerializer(SSOTokenElevation) + new EnumSerializer(SSOTokenStatus) +
+  implicit val json4sJacksonFormats: Formats = json.DefaultFormats + new EnumSerializer(SsoTokenElevation) + new EnumSerializer(SsoTokenStatus) +
     new EnumNameSerializer(Elevation) + snakeizer
 }
 

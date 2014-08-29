@@ -4,7 +4,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 
 import com.blinkbox.books.auth.server.data
-import com.blinkbox.books.auth.server.sso.SSOPasswordResetToken
+import com.blinkbox.books.auth.server.sso.SsoPasswordResetToken
 import com.blinkbox.books.logging._
 import com.blinkbox.books.messaging.{EventBody, JsonEventBody}
 import com.blinkbox.books.schemas.events.client.v2.{Client, ClientId}
@@ -23,7 +23,7 @@ case class UserRegistered(user: data.User) extends Event
 case class UserUpdated(oldUser: data.User, newUser: data.User) extends Event
 case class UserAuthenticated(user: data.User, client: Option[data.Client]) extends Event
 case class UserPasswordChanged(user: data.User) extends Event
-case class UserPasswordResetRequested(username: String, token: SSOPasswordResetToken, link: URL) extends Event
+case class UserPasswordResetRequested(username: String, token: SsoPasswordResetToken, link: URL) extends Event
 case class ClientRegistered(user: data.User, client: data.Client) extends Event
 case class ClientUpdated(user: data.User, oldClient: data.Client, newClient: data.Client) extends Event
 case class ClientDeregistered(user: data.User, client: data.Client) extends Event

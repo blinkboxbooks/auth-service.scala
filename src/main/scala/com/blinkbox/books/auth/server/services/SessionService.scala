@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
-import com.blinkbox.books.auth.server.sso.{SSOUnauthorized, SSO, SSOAccessToken, SSOTokenElevation}
+import com.blinkbox.books.auth.server.sso.{SsoUnauthorized, Sso, SsoAccessToken, SsoTokenElevation}
 import com.blinkbox.books.auth.{Elevation, User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 import shapeless.Typeable._
@@ -23,7 +23,7 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     clientRepo: ClientRepository[Profile],
     geoIP: GeoIP,
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock)
+    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
   extends SessionService with UserInfoFactory with ClientInfoFactory with ClientAuthenticator[Profile] {
 
   // TODO: Make this configurable
@@ -44,12 +44,12 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     )
   }
 
-  private def elevationFromSessionElevation(e: SSOTokenElevation) = e match {
-    case SSOTokenElevation.Critical => Elevation.Critical
-    case SSOTokenElevation.None => Elevation.Unelevated
+  private def elevationFromSessionElevation(e: SsoTokenElevation) = e match {
+    case SsoTokenElevation.Critical => Elevation.Critical
+    case SsoTokenElevation.None => Elevation.Unelevated
   }
 
-  private def querySessionWithSSO(token: SSOAccessToken) = sso.sessionStatus(token).map { s =>
+  private def querySessionWithSSO(token: SsoAccessToken) = sso.sessionStatus(token).map { s =>
     val status = TokenStatus.fromSSOValidity(s.status)
     val elevation = if (status == TokenStatus.Valid) Some(elevationFromSessionElevation(s.sessionElevation)) else None
 
@@ -73,6 +73,6 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   override def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo] = user.ssoAccessToken.map { at =>
     sso.extendSession(at)
       .flatMap(_ => querySession())
-      .transform(identity, { case SSOUnauthorized => Failures.unverifiedIdentity })
+      .transform(identity, { case SsoUnauthorized => Failures.unverifiedIdentity })
   } getOrElse(Future.failed(Failures.unverifiedIdentity))
 }

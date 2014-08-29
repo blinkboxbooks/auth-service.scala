@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.service
 import com.blinkbox.books.auth.server.data.{UserId, User}
 import com.blinkbox.books.auth.server.env.{UserInfoResponder, TestEnv}
 import com.blinkbox.books.auth.server.events.{UserUpdated, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{SSOUnknownException, SSOUserId, SSOAccessToken}
+import com.blinkbox.books.auth.server.sso.{SsoUnknownException, SsoUserId, SsoAccessToken}
 
 class DefaultSsoSyncServiceSpecs extends SpecBase {
 
@@ -11,9 +11,9 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
-    whenReady(ssoSync(None, SSOAccessToken("some-access-token"))){ user =>
+    whenReady(ssoSync(None, SsoAccessToken("some-access-token"))){ user =>
       user should matchPattern {
-        case User(UserId(_), _, _, "john.doe+blinkbox@example.com", "John", "Doe", _, false, Some(SSOUserId("6E41CB9F"))) =>
+        case User(UserId(_), _, _, "john.doe+blinkbox@example.com", "John", "Doe", _, false, Some(SsoUserId("6E41CB9F"))) =>
       }
 
       import driver.simple._
@@ -32,9 +32,9 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
     ssoNoContent()
     ssoSuccessfulJohnDoeInfo()
 
-    whenReady(ssoSync(Some(userC), SSOAccessToken("some-access-token"))){ user =>
+    whenReady(ssoSync(Some(userC), SsoAccessToken("some-access-token"))){ user =>
       user should matchPattern {
-        case User(id, _, _, "john.doe+blinkbox@example.com", "John", "Doe", _, true, Some(SSOUserId("6E41CB9F"))) if id == userIdC =>
+        case User(id, _, _, "john.doe+blinkbox@example.com", "John", "Doe", _, true, Some(SsoUserId("6E41CB9F"))) if id == userIdC =>
       }
 
       import driver.simple._
@@ -52,9 +52,9 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
   it should "update an user if one having SSO id has been provided" in new TestEnv with UserInfoResponder {
     ssoSuccessfulJohnDoeInfo()
 
-    whenReady(ssoSync(Some(userA), SSOAccessToken("some-access-token"))){ user =>
+    whenReady(ssoSync(Some(userA), SsoAccessToken("some-access-token"))){ user =>
       user should matchPattern {
-        case User(id, _, _, "john.doe+blinkbox@example.com", "John", "Doe", _, true, Some(SSOUserId("6E41CB9F"))) if id == userIdA =>
+        case User(id, _, _, "john.doe+blinkbox@example.com", "John", "Doe", _, true, Some(SsoUserId("6E41CB9F"))) if id == userIdA =>
       }
 
       import driver.simple._

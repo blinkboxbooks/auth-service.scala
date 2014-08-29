@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{Publisher, UserAuthenticated}
-import com.blinkbox.books.auth.server.sso.{SSORefreshToken, SSO, SSOCredentials}
+import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, Sso, SsoCredentials}
 import com.blinkbox.books.slick.DatabaseSupport
 import com.blinkbox.books.time.Clock
 
@@ -20,14 +20,14 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock)
+    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
   extends RefreshTokenService with ClientAuthenticator[DB#Profile] {
 
   private def fetchRefreshToken(c: RefreshTokenCredentials): Future[RefreshToken] = Future {
     db.withSession { implicit session => authRepo.refreshTokenWithToken(c.token).getOrElse(throw Failures.invalidRefreshToken)}
   }
 
-  private def fetchSSOCredentials(token: RefreshToken): Future[Option[SSOCredentials]] = token.ssoRefreshToken match {
+  private def fetchSSOCredentials(token: RefreshToken): Future[Option[SsoCredentials]] = token.ssoRefreshToken match {
     case Some(t) => sso.refresh(t).map(Option.apply)
     case None => Future.successful(None)
   }
@@ -50,7 +50,7 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
     db.withSession { implicit session => authenticateClient(authRepo, credentials, token.userId) }
   }
 
-  private def extendTokenLifetime(token: RefreshToken, ssoRefreshToken: Option[SSORefreshToken]): Future[Unit] = Future {
+  private def extendTokenLifetime(token: RefreshToken, ssoRefreshToken: Option[SsoRefreshToken]): Future[Unit] = Future {
     db.withSession { implicit session => authRepo.extendRefreshTokenLifetime(token, ssoRefreshToken)}
   }
 

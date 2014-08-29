@@ -4,7 +4,7 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidClient, Inval
 import com.blinkbox.books.auth.server.data.{UserId, User}
 import com.blinkbox.books.auth.server.env.{RegistrationResponder, UserInfoResponder, AuthenticationTestEnv}
 import com.blinkbox.books.auth.server.events.{UserUpdated, UserAuthenticated, UserRegistered}
-import com.blinkbox.books.auth.server.sso.SSOCredentials
+import com.blinkbox.books.auth.server.sso.SsoCredentials
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures

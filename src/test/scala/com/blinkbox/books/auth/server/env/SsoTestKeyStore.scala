@@ -5,7 +5,7 @@ import java.security.{KeyFactory, PublicKey}
 
 import com.blinkbox.books.auth.server.sso.KeyStore
 
-object SSOTestKeyStore extends KeyStore {
+object SsoTestKeyStore extends KeyStore {
   def verificationKey: PublicKey = {
     val keyStream = getClass.getClassLoader.getResourceAsStream("sso_public.key")
     val keyData = Stream.continually(keyStream.read).takeWhile(_ != -1).map(_.toByte).toArray

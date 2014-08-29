@@ -44,24 +44,24 @@ trait TestPasswordHasherComponent extends PasswordHasherComponent {
   override val passwordHasher = PasswordHasher(identity, (s1, s2) => s1 == s2)
 }
 
-trait TestSSOComponent extends SSOComponent {
+trait TestSsoComponent extends SsoComponent {
   this: ConfigComponent with AsyncComponent =>
 
   val ssoResponse = new SSOResponseMocker
 
   private val client = new TestSSOClient(config.sso, ssoResponse.nextResponse)
-  private val tokenDecoder = new SsoAccessTokenDecoder(SSOTestKeyStore) {
+  private val tokenDecoder = new SsoAccessTokenDecoder(SsoTestKeyStore) {
     override def validateExpirationTime(expirationTime: Date) = {} // allow expired token for test purposes
   }
 
-  override val sso = new DefaultSSO(config.sso, client, tokenDecoder)
+  override val sso = new DefaultSso(config.sso, client, tokenDecoder)
 }
 
 class TestEnv extends
     TestConfigComponent with
     DefaultAsyncComponent with
     StoppedClockSupport with
-    TestSSOComponent with
+    TestSsoComponent with
     DefaultGeoIPComponent with
     TestEventsComponent with
     TestDatabaseComponent with
@@ -85,8 +85,8 @@ class TestEnv extends
   val userIdB = UserId(2)
   val userIdC = UserId(3)
 
-  val userA = User(userIdA, now, now, "user.a@test.tst", "A First", "A Last", "a-password", true, Some(SSOUserId("sso-a")))
-  val userB = User(userIdB, now, now, "user.b@test.tst", "B First", "B Last", "b-password", true, Some(SSOUserId("sso-b")))
+  val userA = User(userIdA, now, now, "user.a@test.tst", "A First", "A Last", "a-password", true, Some(SsoUserId("sso-a")))
+  val userB = User(userIdB, now, now, "user.b@test.tst", "B First", "B Last", "b-password", true, Some(SsoUserId("sso-b")))
   val userC = User(userIdC, now, now, "user.c@test.tst", "C First", "C Last", "c-password", true, None)
 
   def fullUserPatch = UserPatch(Some("Updated First"), Some("Updated Last"), Some("updated@test.tst"), Some(false), None)
@@ -106,15 +106,15 @@ class TestEnv extends
   val exp = now.withDurationAdded(Duration.standardHours(1), 1)
   val refreshTokenClientA1Id = RefreshTokenId(1)
   val refreshTokenClientA1 = RefreshToken(
-    refreshTokenClientA1Id, now, now, userIdA, Some(clientIdA1), "some-token-a1", Some(SSORefreshToken("some-sso-token-a1")), false, exp, exp, exp)
+    refreshTokenClientA1Id, now, now, userIdA, Some(clientIdA1), "some-token-a1", Some(SsoRefreshToken("some-sso-token-a1")), false, exp, exp, exp)
   val refreshTokenClientA2 = RefreshToken(
-    RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", Some(SSORefreshToken("some-sso-token-a2")), false, exp, exp, exp)
+    RefreshTokenId(2), now, now, userIdA, Some(clientIdA2), "some-token-a2", Some(SsoRefreshToken("some-sso-token-a2")), false, exp, exp, exp)
   val refreshTokenClientA3 = RefreshToken(
-    RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", Some(SSORefreshToken("some-sso-token-a3")), true, now, now, now)
+    RefreshTokenId(3), now, now, userIdA, Some(clientIdA3), "some-token-a3", Some(SsoRefreshToken("some-sso-token-a3")), true, now, now, now)
   val refreshTokenNoClientA = RefreshToken(
-    RefreshTokenId(4), now, now, userIdA, None, "some-token-a", Some(SSORefreshToken("some-sso-token-a")), false, now, now, now)
+    RefreshTokenId(4), now, now, userIdA, None, "some-token-a", Some(SsoRefreshToken("some-sso-token-a")), false, now, now, now)
   val refreshTokenNoClientDeregisteredA = RefreshToken(
-    RefreshTokenId(5), now, now, userIdA, None, "some-token-a-deregistered", Some(SSORefreshToken("some-sso-token-a-deregistered")), true, now, now, now)
+    RefreshTokenId(5), now, now, userIdA, None, "some-token-a-deregistered", Some(SsoRefreshToken("some-sso-token-a-deregistered")), true, now, now, now)
 
   val clientsC =
     for (id <- 4 until 16)
@@ -137,11 +137,11 @@ class TestEnv extends
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
   val tokenInfoA1 = TokenBuilder.issueAccessToken(
-    userA, None, refreshTokenNoClientA, Some(SSOCredentials(SSOAccessToken("some-access-token"), "bearer", 300, SSORefreshToken("some-refresh-token"))))
+    userA, None, refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
 
   val tokenInfoA1WithoutSSO = TokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 
-  val resetCredentials = ResetTokenCredentials(SSOPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
+  val resetCredentials = ResetTokenCredentials(SsoPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
 
   def removeSSOTokens(): Unit = {
     import driver.simple._
@@ -152,7 +152,7 @@ class TestEnv extends
 
   def preSyncUser(id: UserId): Unit = db.withSession { implicit session =>
     import tables._
-    users.filter(_.id === id).map(_.ssoId).update(Some(SSOUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
+    users.filter(_.id === id).map(_.ssoId).update(Some(SsoUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
   }
 
   db.withSession { implicit session =>

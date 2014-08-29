@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.service
 import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode.InvalidToken
 import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason.UnverifiedIdentity
 import com.blinkbox.books.auth.server.env.{CommonResponder, TestEnv, TokenStatusEnv}
-import com.blinkbox.books.auth.server.sso.{SSOTokenElevation, SSOTokenStatus}
+import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import com.blinkbox.books.auth.server.{TokenStatus, SessionInfo, ZuulAuthorizationException}
 import com.blinkbox.books.auth.{Elevation, User}
 import spray.http.StatusCodes
@@ -17,7 +17,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
   ))
 
   "The session service" should "report the status of an access token bound to a critically elevated SSO token" in new TokenStatusEnv {
-    ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
+    ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     whenReady(sessionService.querySession())(_ should matchPattern {
       case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), None) =>
@@ -25,7 +25,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
   }
 
   it should "report the status of an access token bound to an un-elevated SSO token" in new TokenStatusEnv {
-    ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.None)
+    ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None)
 
     whenReady(sessionService.querySession())(_ should matchPattern {
       case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, None) =>
@@ -33,7 +33,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
   }
 
   it should "report the status of an access token bound to a revoked SSO token" in new TokenStatusEnv {
-    ssoSessionInfo(SSOTokenStatus.Revoked, SSOTokenElevation.None)
+    ssoSessionInfo(SsoTokenStatus.Revoked, SsoTokenElevation.None)
 
     whenReady(sessionService.querySession())(_ should matchPattern {
       case SessionInfo(TokenStatus.Invalid, None, None, None) =>
@@ -41,7 +41,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
   }
 
   it should "report the status of an access token bound to an expired SSO token" in new TokenStatusEnv {
-    ssoSessionInfo(SSOTokenStatus.Expired, SSOTokenElevation.None)
+    ssoSessionInfo(SsoTokenStatus.Expired, SsoTokenElevation.None)
 
     whenReady(sessionService.querySession())(_ should matchPattern {
       case SessionInfo(TokenStatus.Invalid, None, None, None) =>
@@ -49,7 +49,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
   }
 
   it should "report the status of an access token bound to an invalid SSO token" in new TokenStatusEnv {
-    ssoSessionInfo(SSOTokenStatus.Invalid, SSOTokenElevation.None)
+    ssoSessionInfo(SsoTokenStatus.Invalid, SsoTokenElevation.None)
 
     whenReady(sessionService.querySession())(_ should matchPattern {
       case SessionInfo(TokenStatus.Invalid, None, None, None) =>
@@ -68,7 +68,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
 
   it should "extend an user session by invoking the SSO service" in new TokenStatusEnv {
     ssoNoContent()
-    ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
+    ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     whenReady(sessionService.extendSession())(_ should matchPattern {
       case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), None) =>

@@ -7,15 +7,15 @@ import spray.http.{StatusCodes, StatusCode}
 
 class ExtendSessionSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
 
-  "The SSO client" should "extend a given SSO session" in new SSOTestEnv with CommonResponder {
+  "The SSO client" should "extend a given SSO session" in new SsoTestEnv with CommonResponder {
     ssoNoContent()
 
-    whenReady(sso.extendSession(SSOAccessToken("some-access-token"))) { _ => }
+    whenReady(sso.extendSession(SsoAccessToken("some-access-token"))) { _ => }
   }
 
-  it should "return an Unauthorized exception if the SSO service signals invalid credentials" in new SSOTestEnv with CommonResponder {
+  it should "return an Unauthorized exception if the SSO service signals invalid credentials" in new SsoTestEnv with CommonResponder {
     ssoResponse(StatusCodes.Unauthorized)
 
-    failingWith[SSOUnauthorized.type](sso.extendSession(SSOAccessToken("some-access-token"))) should equal(SSOUnauthorized)
+    failingWith[SsoUnauthorized.type](sso.extendSession(SsoAccessToken("some-access-token"))) should equal(SsoUnauthorized)
   }
 }

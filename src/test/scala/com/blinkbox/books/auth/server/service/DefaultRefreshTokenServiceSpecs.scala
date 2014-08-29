@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidGrant, InvalidClient}
 import com.blinkbox.books.auth.server.data.RefreshTokenId
-import com.blinkbox.books.auth.server.sso.{SSOUnknownException, SSOUnauthorized}
+import com.blinkbox.books.auth.server.sso.{SsoUnknownException, SsoUnauthorized}
 import com.blinkbox.books.auth.server.{ZuulRequestException, RefreshTokenCredentials}
 import com.blinkbox.books.auth.server.env.{CommonResponder, AuthenticationTestEnv, TestEnv}
 import com.blinkbox.books.testkit.FailHelper
@@ -116,7 +116,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
 
   it should "fail with an exception and not revoke a zuul token if SSO signals an error removing the corresponding SSO token" in new TestEnv with CommonResponder {
     ssoResponse(StatusCodes.BadRequest)
-    failingWith[SSOUnknownException](refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token))
+    failingWith[SsoUnknownException](refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token))
 
     val token = db.withSession { implicit session =>
       authRepository.refreshTokenWithId(refreshTokenClientA1Id)

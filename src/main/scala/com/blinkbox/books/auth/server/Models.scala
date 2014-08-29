@@ -2,8 +2,8 @@ package com.blinkbox.books.auth.server
 
 import com.blinkbox.books.auth.Elevation.Elevation
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidClient
-import com.blinkbox.books.auth.server.sso.{SSOPasswordResetToken, SSOTokenStatus}
-import com.blinkbox.books.auth.server.sso.SSOTokenStatus.{Revoked, Expired}
+import com.blinkbox.books.auth.server.sso.{SsoPasswordResetToken, SsoTokenStatus}
+import com.blinkbox.books.auth.server.sso.SsoTokenStatus.{Revoked, Expired}
 import org.joda.time.{DateTime, LocalDate}
 
 object TokenStatus extends Enumeration {
@@ -11,9 +11,9 @@ object TokenStatus extends Enumeration {
   val Valid = Value("VALID")
   val Invalid = Value("INVALID")
 
-  def fromSSOValidity(v: SSOTokenStatus) = v match {
-    case SSOTokenStatus.Invalid | Expired | Revoked => Invalid
-    case SSOTokenStatus.Valid => Valid
+  def fromSSOValidity(v: SsoTokenStatus) = v match {
+    case SsoTokenStatus.Invalid | Expired | Revoked => Invalid
+    case SsoTokenStatus.Valid => Valid
   }
 }
 
@@ -59,7 +59,7 @@ case class RefreshTokenCredentials(token: String, clientId: Option[String], clie
   if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 
-case class ResetTokenCredentials(resetToken: SSOPasswordResetToken, newPassword: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
+case class ResetTokenCredentials(resetToken: SsoPasswordResetToken, newPassword: String, clientId: Option[String], clientSecret: Option[String]) extends ClientCredentials {
   if (clientId.isDefined ^ clientSecret.isDefined) throw Failures.requestException("Both client id and client secret are required.", InvalidClient)
 }
 

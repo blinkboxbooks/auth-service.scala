@@ -1,10 +1,10 @@
 package com.blinkbox.books.auth.server.env
 
-import com.blinkbox.books.auth.server.sso.{SSOTokenElevation, SSOTokenStatus}
+import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import spray.http.HttpHeaders.RawHeader
 import spray.http._
 
-trait SSOResponseFixtures {
+trait SsoResponseFixtures {
   val validTokenSSOExpiry = 600
   val validTokenZuulExpiry = 540 // 1 minute before SSO token
   val validTokenJson = s"""{
@@ -61,12 +61,12 @@ trait SSOResponseFixtures {
     ]
   }"""
 
-  def sessionInfoJson(status: SSOTokenStatus, elevation: SSOTokenElevation, tokenType: String) = s"""{
-    "status": "${SSOTokenStatus.toString(status)}",
+  def sessionInfoJson(status: SsoTokenStatus, elevation: SsoTokenElevation, tokenType: String) = s"""{
+    "status": "${SsoTokenStatus.toString(status)}",
     "issued_at": "2000-01-01T01:01:01.01Z",
     "expires_at": "2020-01-01T01:01:01.01Z",
     "token_type": "$tokenType",
-    "session_elevation": "${SSOTokenElevation.toString(elevation)}",
+    "session_elevation": "${SsoTokenElevation.toString(elevation)}",
     "session_elevation_expires_in": 300
   }"""
 
@@ -76,8 +76,8 @@ trait SSOResponseFixtures {
   }""".stripMargin
 }
 
-trait CommonResponder extends SSOResponseFixtures {
-  this: TestSSOComponent =>
+trait CommonResponder extends SsoResponseFixtures {
+  this: TestSsoComponent =>
 
   def ssoNoInvocation() = ssoResponse.complete(_.failure(new IllegalStateException("No invocation for SSO was expected")))
 
@@ -100,7 +100,7 @@ trait CommonResponder extends SSOResponseFixtures {
 }
 
 trait RegistrationResponder extends CommonResponder {
-  this: TestSSOComponent =>
+  this: TestSsoComponent =>
 
   def ssoSuccessfulRegistration(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes))),
@@ -109,7 +109,7 @@ trait RegistrationResponder extends CommonResponder {
 }
 
 trait AuthenticationResponder extends CommonResponder {
-  this: TestSSOComponent =>
+  this: TestSsoComponent =>
 
   def ssoSuccessfulAuthentication(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes)))
@@ -121,7 +121,7 @@ trait AuthenticationResponder extends CommonResponder {
 }
 
 trait UserInfoResponder extends CommonResponder {
-  this: TestSSOComponent =>
+  this: TestSsoComponent =>
 
   def ssoSuccessfulJohnDoeInfo(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, johnDoeInfoJson.getBytes)))
@@ -133,16 +133,16 @@ trait UserInfoResponder extends CommonResponder {
 }
 
 trait TokenStatusResponder extends CommonResponder {
-  this: TestSSOComponent =>
+  this: TestSsoComponent =>
 
-  def ssoSessionInfo(status: SSOTokenStatus, elevation: SSOTokenElevation, tokenType: String = "refresh"): Unit =
+  def ssoSessionInfo(status: SsoTokenStatus, elevation: SsoTokenElevation, tokenType: String = "refresh"): Unit =
     ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, sessionInfoJson(status, elevation, tokenType).getBytes)))
     )
 }
 
 trait PasswordResetResponder extends CommonResponder {
-  this: TestSSOComponent =>
+  this: TestSsoComponent =>
 
   def ssoGenerateResetToken: Unit = ssoResponse.complete(
     _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, resetTokenJson.getBytes)))
