@@ -20,8 +20,6 @@ class UpdateUserSpecs extends ApiSpecBase[UserInfoTestEnv] {
     env.ssoNoContent()
 
     Patch("/users/1", userPatch) ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[UserInfo] should matchPattern {

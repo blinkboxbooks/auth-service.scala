@@ -15,8 +15,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
     env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
@@ -29,8 +27,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
     env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.None)
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
@@ -43,8 +39,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
     env.ssoNoInvocation()
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1WithoutSSO.access_token)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
@@ -58,8 +52,6 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
     env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
 
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {

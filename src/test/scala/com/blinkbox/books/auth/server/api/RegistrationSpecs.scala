@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.env.{RegistrationTestEnv, TestEnv}
+import com.blinkbox.books.auth.server.env.RegistrationTestEnv
 import spray.http._
 
 class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
@@ -30,8 +30,6 @@ class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
     env.ssoSuccessfulRegistration()
 
     Post("/oauth2/token", FormData(regDataSimple)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[TokenInfo] should matchPattern {
@@ -44,8 +42,6 @@ class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
     env.ssoSuccessfulRegistration()
 
     Post("/oauth2/token", FormData(regDataFull)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[TokenInfo] should matchPattern {
@@ -59,8 +55,6 @@ class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
     env.ssoNoInvocation()
 
     Post("/oauth2/token", FormData(regDataFull - "client_model")) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -73,8 +67,6 @@ class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
     env.ssoConflict()
 
     Post("/oauth2/token", FormData(regDataSimple.updated("username", "user.a@test.tst"))) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
