@@ -51,8 +51,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   "The service" should "accept valid username/password pair returning a valid access token" in {
     env.ssoSuccessfulAuthentication()
     Post("/oauth2/token", FormData(validCredentials)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       val u = env.userA
@@ -67,8 +65,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   it should "accept valid username/password pair and client credentials returning a valid access token" in {
     env.ssoSuccessfulAuthentication()
     Post("/oauth2/token", FormData(validCredentialsWithClient)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       val u = env.userA
@@ -84,8 +80,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   it should "reject incomplete client information" in {
     env.ssoUnsuccessfulAuthentication()
     Post("/oauth2/token", FormData(validCredentialsWithClient - "client_secret")) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -97,8 +91,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   it should "reject invalid username/password credentials" in {
     env.ssoUnsuccessfulAuthentication()
     Post("/oauth2/token", FormData(validCredentialsWithClient.updated("password", "invalid"))) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -110,7 +102,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   it should "return a TooManyRequest response if SSO is throttling the user" in {
     env.ssoTooManyRequests(20)
     Post("/oauth2/token", FormData(validCredentials)) ~> route ~> check {
-
       status should equal(StatusCodes.TooManyRequests)
 
       val retryAfter = headers.find(_.lowercaseName == "retry-after")
@@ -122,8 +113,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
   it should "reject credentials for a de-registerd client" in {
     env.ssoSuccessfulAuthentication()
     Post("/oauth2/token", FormData(validCredentialsWithDeregisteredClient)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -136,8 +125,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     env.ssoSuccessfulAuthentication()
 
     Post("/oauth2/token", FormData(validRefreshTokenCredentials)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       val u = env.userA
@@ -153,8 +140,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     env.ssoSuccessfulAuthentication()
 
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.OK)
 
       val u = env.userA
@@ -171,8 +156,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     env.ssoNoInvocation()
 
     Post("/oauth2/token", FormData(validRefreshTokenCredentials.updated("refresh_token", "invalid"))) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -185,8 +168,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     env.ssoNoInvocation()
 
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient.updated("client_id", "invalid"))) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -199,8 +180,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     env.ssoNoInvocation()
 
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithDeregisteredClient)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -213,8 +192,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     env.ssoNoInvocation()
 
     Post("/oauth2/token", FormData(revokedRefreshTokenCredentials)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -227,8 +204,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     env.ssoNoInvocation()
 
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient - "client_id" - "client_secret")) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -245,8 +220,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
     }
 
     Post("/oauth2/token", FormData(validRefreshTokenCredentials)) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
@@ -257,8 +230,6 @@ class AuthenticationSpecs extends ApiSpecBase[AuthenticationTestEnv] {
 
   it should "respond with an error when trying to revoke an invalid refresh token" in {
     Post("/tokens/revoke", FormData(Map("refresh_token" -> "invalid"))) ~> route ~> check {
-      import com.blinkbox.books.auth.server.Serialization._
-
       status should equal(StatusCodes.BadRequest)
 
       jsonResponseAs[ZuulRequestException] should matchPattern {
