@@ -67,6 +67,10 @@ trait CommonResponder extends SSOResponseFixtures {
   )
 
   def ssoNoContent(): Unit = ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent, HttpEntity.Empty)))
+
+  def ssoTooManyRequests(retryAfter: Int): Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.TooManyRequests, HttpEntity.Empty, RawHeader("Retry-After", retryAfter.toString) :: Nil))
+  )
 }
 
 trait RegistrationResponder extends CommonResponder {
@@ -87,10 +91,6 @@ trait AuthenticationResponder extends CommonResponder {
   
   def ssoUnsuccessfulAuthentication(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.Unauthorized, HttpEntity.Empty))
-    )
-
-  def ssoTooManyRequests(retryAfter: Int): Unit = ssoResponse.complete(
-      _.success(HttpResponse(StatusCodes.TooManyRequests, HttpEntity.Empty, RawHeader("Retry-After", retryAfter.toString) :: Nil))
     )
 }
 

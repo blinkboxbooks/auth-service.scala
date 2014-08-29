@@ -142,7 +142,7 @@ class RabbitMqPublisher(channel: Channel)(implicit executionContext: ExecutionCo
     case ClientUpdated(user, oldClient, newClient) => JsonEventBody(Client.Updated(newClient.updatedAt, user, newClient, oldClient))
     case UserAuthenticated(user, client) => JsonEventBody(User.Authenticated(clock.now(), user, client.map(client2eventClient)))
     case UserPasswordChanged(user) => JsonEventBody(User.PasswordChanged(user.updatedAt, user))
-    case UserPasswordResetRequested(user, token, link) => JsonEventBody(User.PasswordResetRequested(clock.now(), user, token, link))
+    case UserPasswordResetRequested(user, token, link) => JsonEventBody(User.PasswordResetRequested(clock.now(), user.username, token, link))
     case UserRegistered(user) => JsonEventBody(User.Registered(user.createdAt, user))
     case UserUpdated(oldUser, newUser) => JsonEventBody(User.Updated(newUser.updatedAt, newUser, oldUser))
   }

@@ -16,6 +16,7 @@ sealed trait SSOException extends Throwable
 case class SSOInvalidAccessToken(receivedCredentials: SSOCredentials) extends SSOException
 case object SSOUnauthorized extends SSOException
 case object SSOConflict extends SSOException
+case object SSOForbidden extends SSOException
 case class SSOTooManyRequests(retryAfter: FiniteDuration) extends SSOException
 case class SSOInvalidRequest(message: String) extends SSOException
 case class SSOUnknownException(e: Throwable) extends SSOException
@@ -27,6 +28,7 @@ object SSOConstants {
   val RevokeTokenUri = "/tokens/revoke"
   val TokenStatusUri = "/tokens/status"
   val ExtendSessionUri = "/session"
+  val UpdatePasswordUri = "/password/update"
 
   val RegistrationGrant = "urn:blinkbox:oauth:grant-type:registration"
   val PasswordGrant = "password"
@@ -42,7 +44,7 @@ trait SSO {
   // // User - authenticated
   def linkAccount(token: SSOAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   // def generatePasswordReset(gen: GeneratePasswordReset): Future[PasswordResetCredentials]
-  // def updatePassword(update: UpdatePassword): Future[Unit]
+  def updatePassword(token: SSOAccessToken, oldPassword: String, newPassword: String): Future[Unit]
   def sessionStatus(token: SSOAccessToken): Future[TokenStatus]
   def extendSession(token: SSOAccessToken): Future[Unit]
   def userInfo(token: SSOAccessToken): Future[UserInformation]
@@ -89,6 +91,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
   private def commonErrorsTransformer: Throwable => SSOException = {
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SSOUnauthorized
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Forbidden => SSOForbidden
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SSOConflict
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => extractTooManyRequests(e)
@@ -105,6 +108,7 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
   private def tokenStatusErrorsTransformer = commonErrorsTransformer
   private def extendSessionErrorTransformer = commonErrorsTransformer
   private def updateUserErrorTransformer = commonErrorsTransformer
+  private def updatePasswordErrorTransformer = commonErrorsTransformer
 
   def oauthCredentials(token: SSOAccessToken): HttpCredentials = new OAuth2BearerToken(token.value)
 
@@ -183,5 +187,14 @@ class DefaultSSO(config: SSOConfig, client: Client, tokenDecoder: SsoAccessToken
 
     client.unitRequest(
       Patch(versioned(C.UserInfoUri), FormData(formData)), oauthCredentials(token)) transform(identity, updateUserErrorTransformer)
+  }
+
+  def updatePassword(token: SSOAccessToken, oldPassword: String, newPassword: String): Future[Unit] = {
+    logger.debug("Changing password")
+
+    client.unitRequest(Post(versioned(C.UpdatePasswordUri), FormData(Map(
+      "old_password" -> oldPassword,
+      "new_password" -> newPassword
+    ))), oauthCredentials(token)) transform(identity, updatePasswordErrorTransformer)
   }
 }

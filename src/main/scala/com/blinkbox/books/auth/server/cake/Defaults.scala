@@ -114,6 +114,12 @@ trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
   val refreshTokenService = new DefaultRefreshTokenService(db, authRepository, userRepository, clientRepository, publisher, sso)
 }
 
+trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceComponent {
+  this: EventsComponent with AsyncComponent with TimeSupport with SSOComponent =>
+
+  val passwordUpdateService = new DefaultPasswordUpdateService(publisher, sso)
+}
+
 trait DefaultSSOComponent extends SSOComponent {
   this: ConfigComponent with AsyncComponent =>
 
@@ -129,6 +135,7 @@ trait DefaultApiComponent {
     with RegistrationServiceComponent
     with PasswordAuthenticationServiceComponent
     with RefreshTokenServiceComponent
+    with PasswordUpdateServiceComponent
     with ConfigComponent
     with AsyncComponent =>
 
@@ -143,6 +150,7 @@ trait DefaultApiComponent {
     registrationService,
     passwordAuthenticationService,
     refreshTokenService,
+    passwordUpdateService,
     authenticator)
   private val swaggerApi = new SwaggerApi(config.swagger)
 

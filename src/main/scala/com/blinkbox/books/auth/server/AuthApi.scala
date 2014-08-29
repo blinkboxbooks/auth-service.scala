@@ -86,6 +86,7 @@ class AuthApi(
     registrationService: RegistrationService,
     passwordAuthenticationService: PasswordAuthenticationService,
     refreshTokenService: RefreshTokenService,
+    passwordUpdateService: PasswordUpdateService,
     authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends AuthRoutes with Directives with FormDataUnmarshallers {
 
@@ -258,11 +259,24 @@ class AuthApi(
     }
   }
 
+  val passwordChange: Route = post {
+    path("password" / "change") {
+      authenticate(authenticator) { implicit user =>
+        formFields('old_password, 'new_password) { (oldPassword, newPassword) =>
+          onSuccess(passwordUpdateService.updatePassword(oldPassword, newPassword)) { _ =>
+            // TODO: Check that this endpoint should return an empty response
+            complete(OK, None)
+          }
+        }
+      }
+    }
+  }
+
   val routes: Route = monitor() {
     handleExceptions(exceptionHandler) {
       handleRejections(rejectionHandler) {
         querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
-          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo
+          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange
       }
     }
   }
