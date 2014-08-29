@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.16.6 ([#36](https://git.mobcastdev.com/Zuul/auth-service/pull/36) 2014-08-29 13:17:54)
+
+Added tests for listing clients
+
+### Improvements
+
+- Now has scala tests for listing clients
+- Removed a lot of messy serialisation imports
+- Made it easier to test unauthorised errors
+
 ## 0.16.5 ([#35](https://git.mobcastdev.com/Zuul/auth-service/pull/35) 2014-08-29 11:24:51)
 
 Updated dependencies
