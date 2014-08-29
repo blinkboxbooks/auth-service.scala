@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.17.0 ([#37](https://git.mobcastdev.com/Zuul/auth-service/pull/37) 2014-08-29 14:29:28)
+
+Implement password-reset scenarios
+
+### New feature
+
+This PR implements the remaining password reset scenarios and add tests all over them. The size of this PR went out of control a couple of commits ago, so :cookie: will be provided!
+
 ## 0.16.6 ([#36](https://git.mobcastdev.com/Zuul/auth-service/pull/36) 2014-08-29 13:17:54)
 
 Added tests for listing clients
