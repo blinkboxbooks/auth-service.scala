@@ -141,6 +141,8 @@ class TestEnv extends
 
   val tokenInfoA1WithoutSSO = TokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 
+  val resetCredentials = ResetTokenCredentials(SSOPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
+
   def removeSSOTokens(): Unit = {
     import driver.simple._
     db.withSession { implicit session =>

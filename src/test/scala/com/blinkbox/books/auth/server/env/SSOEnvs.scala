@@ -61,11 +61,11 @@ trait SSOResponseFixtures {
     ]
   }"""
 
-  def sessionInfoJson(status: SSOTokenStatus, elevation: SSOTokenElevation) = s"""{
+  def sessionInfoJson(status: SSOTokenStatus, elevation: SSOTokenElevation, tokenType: String) = s"""{
     "status": "${SSOTokenStatus.toString(status)}",
     "issued_at": "2000-01-01T01:01:01.01Z",
     "expires_at": "2020-01-01T01:01:01.01Z",
-    "token_type": "refresh",
+    "token_type": "$tokenType",
     "session_elevation": "${SSOTokenElevation.toString(elevation)}",
     "session_elevation_expires_in": 300
   }"""
@@ -135,9 +135,10 @@ trait UserInfoResponder extends CommonResponder {
 trait TokenStatusResponder extends CommonResponder {
   this: TestSSOComponent =>
 
-  def ssoSessionInfo(status: SSOTokenStatus, elevation: SSOTokenElevation): Unit = ssoResponse.complete(
-    _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, sessionInfoJson(status, elevation).getBytes)))
-  )
+  def ssoSessionInfo(status: SSOTokenStatus, elevation: SSOTokenElevation, tokenType: String = "refresh"): Unit =
+    ssoResponse.complete(
+      _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, sessionInfoJson(status, elevation, tokenType).getBytes)))
+    )
 }
 
 trait PasswordResetResponder extends CommonResponder {
@@ -164,4 +165,4 @@ class UserInfoTestEnv extends TestEnv with UserInfoResponder
 
 class TokenStatusEnv extends TestEnv with TokenStatusResponder
 
-class PasswordResetEnv extends TestEnv with PasswordResetResponder
+class PasswordResetEnv extends TestEnv with PasswordResetResponder with AuthenticationResponder with UserInfoResponder

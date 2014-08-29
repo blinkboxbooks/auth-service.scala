@@ -17,7 +17,7 @@ trait PasswordUpdateService {
   def updatePassword(oldPassword: String, newPassword: String)(implicit user: AuthenticatedUser): Future[Unit]
   def generatePasswordResetToken(username: String): Future[Unit]
   def resetPassword(credentials: ResetTokenCredentials): Future[TokenInfo]
-  def validatePasswordResetToken(resetToken: String): Future[Unit]
+  def validatePasswordResetToken(resetToken: SSOPasswordResetToken): Future[Unit]
 }
 
 class DefaultPasswordUpdateService[DB <: DatabaseSupport](
@@ -54,19 +54,25 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
       })
     } getOrElse (Future.failed(Failures.unverifiedIdentity))
 
-  override def generatePasswordResetToken(username: String): Future[Unit] = for {
-    token <- sso generatePasswordResetToken(username)
-  } yield events.publish(UserPasswordResetRequested(username, token.resetToken, resetUrl(token.resetToken)))
+  override def generatePasswordResetToken(username: String): Future[Unit] =
+    (for {
+      token <- sso generatePasswordResetToken (username)
+      res   <- events.publish(UserPasswordResetRequested(username, token.resetToken, resetUrl(token.resetToken)))
+    } yield res) recover { case SSONotFound => ()}
 
-  override def resetPassword(credentials: ResetTokenCredentials): Future[TokenInfo] = for {
-    SSOUserCredentials(ssoId, ssoCredentials) <- sso resetPassword(credentials.resetToken, credentials.newPassword)
-    user                                      <- userBySsoId(ssoId)
-    syncedUser                                <- ssoSync(user, ssoCredentials.accessToken)
-    client                                    <- authenticateClient(credentials, syncedUser.id)
-    refreshToken                              <- createRefreshToken(syncedUser.id, client.map(_.id), ssoCredentials.refreshToken)
-  } yield TokenBuilder.issueAccessToken(syncedUser, client, refreshToken, Some(ssoCredentials), includeRefreshToken = true)
+  override def resetPassword(credentials: ResetTokenCredentials): Future[TokenInfo] = {
+    val tokenInfo = for {
+      SSOUserCredentials(ssoId, ssoCredentials) <- sso resetPassword(credentials.resetToken, credentials.newPassword)
+      user                                      <- userBySsoId(ssoId)
+      syncedUser                                <- ssoSync(user, ssoCredentials.accessToken)
+      client                                    <- authenticateClient(credentials, syncedUser.id)
+      refreshToken                              <- createRefreshToken(syncedUser.id, client.map(_.id), ssoCredentials.refreshToken)
+    } yield TokenBuilder.issueAccessToken(syncedUser, client, refreshToken, Some(ssoCredentials), includeRefreshToken = true)
 
-  override def validatePasswordResetToken(resetToken: String): Future[Unit] = sso.tokenStatus(SSOPasswordResetToken(resetToken)) filter { s =>
+    tokenInfo transform(identity, { case SSOUnauthorized => Failures.invalidPasswordResetToken })
+  }
+
+  override def validatePasswordResetToken(resetToken: SSOPasswordResetToken): Future[Unit] = sso.tokenStatus(resetToken) filter { s =>
     s.tokenType == "password_reset" && s.status == SSOTokenStatus.Valid
   } transform(_ => (), { case _: NoSuchElementException => Failures.invalidPasswordResetToken })
 }

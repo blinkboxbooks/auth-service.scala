@@ -293,7 +293,7 @@ class AuthApi(
   val validatePasswordResetToken: Route = post {
     path("password" / "reset" / "validate-token") {
       formFields('password_reset_token) { token =>
-        onSuccess(passwordUpdateService.validatePasswordResetToken(token)) { _ =>
+        onSuccess(passwordUpdateService.validatePasswordResetToken(SSOPasswordResetToken(token))) { _ =>
           // TODO: Check that this endpoint should return an empty response / 204
           complete(OK, None)
         }
