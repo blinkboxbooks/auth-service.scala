@@ -15,7 +15,7 @@ import spray.http.HttpHeaders.{RawHeader, `WWW-Authenticate`}
 import spray.http.StatusCodes._
 import spray.http.{HttpEntity, HttpChallenge}
 import spray.routing._
-import spray.httpx.unmarshalling.FormDataUnmarshallers
+import spray.httpx.unmarshalling.{Deserializer, FormDataUnmarshallers}
 import com.blinkbox.books.auth.User
 import spray.routing.authentication.ContextAuthenticator
 
@@ -99,6 +99,8 @@ class AuthApi(
   val UserId = IntNumber.map(data.UserId(_))
   val ClientId = IntNumber.map(data.ClientId(_))
   val RefreshTokenId = IntNumber.map(data.RefreshTokenId(_))
+  val ResetToken = Deserializer.fromFunction2Converter((s: String) => SSOPasswordResetToken(s))
+
 
 //  first_name (required)
 //  last_name (required)
@@ -140,7 +142,7 @@ class AuthApi(
   }
 
   val resetPassword: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:password-reset-token") {
-    formFields('password_reset_token.as[SSOPasswordResetToken], 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
+    formFields('password_reset_token.as(ResetToken), 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
       onSuccess(passwordUpdateService.resetPassword(credentials)) { tokenInfo =>
         uncacheable(OK, tokenInfo)
       }
@@ -283,7 +285,6 @@ class AuthApi(
     path("password" / "reset") {
       formFields('username) { username =>
         onSuccess(passwordUpdateService.generatePasswordResetToken(username)) { _ =>
-          // TODO: Check that this endpoint should return an empty response / 204
           complete(OK, None)
         }
       }
@@ -306,7 +307,7 @@ class AuthApi(
       handleRejections(rejectionHandler) {
         querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
           updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange ~
-          validatePasswordResetToken
+          validatePasswordResetToken ~ generatePasswordResetToken
       }
     }
   }

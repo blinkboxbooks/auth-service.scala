@@ -59,11 +59,7 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
   "The password reset function" should "return client-specific authentication credentials if SSO accepts the given reset token" in new PasswordResetEnv {
     ssoSuccessfulAuthentication()
     ssoSuccessfulUserAInfo()
-
-    // Assume that user A has already been migrated by setting the SSO user id to the one contained in the SSO access token
-    import driver.simple._
-    import tables._
-    db.withSession { implicit session => users.filter(_.id === userIdA).map(_.ssoId).update(Some(SSOUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65"))) }
+    preSyncUser(userIdA)
 
     whenReady(passwordUpdateService.resetPassword(resetCredentials)) { token =>
       token.user_id should equal(userIdA.external)

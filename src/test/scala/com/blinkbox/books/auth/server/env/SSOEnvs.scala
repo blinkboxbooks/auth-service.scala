@@ -165,4 +165,4 @@ class UserInfoTestEnv extends TestEnv with UserInfoResponder
 
 class TokenStatusEnv extends TestEnv with TokenStatusResponder
 
-class PasswordResetEnv extends TestEnv with PasswordResetResponder with AuthenticationResponder with UserInfoResponder
+class PasswordResetEnv extends TestEnv with PasswordResetResponder with AuthenticationResponder with UserInfoResponder with TokenStatusResponder
