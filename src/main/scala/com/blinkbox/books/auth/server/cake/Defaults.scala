@@ -151,7 +151,8 @@ trait DefaultSsoSyncComponent extends SsoSyncComponent {
 }
 
 trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceComponent {
-  this: EventsComponent with
+  this: ConfigComponent with
+    EventsComponent with
     AsyncComponent with
     TimeSupport with
     SsoComponent with
@@ -161,7 +162,7 @@ trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceCompon
     SsoSyncComponent =>
 
   val passwordUpdateService = new DefaultPasswordUpdateService(
-    db, userRepository, authRepository, tokenBuilder, ssoSync, publisher, sso)
+    db, userRepository, authRepository, config.authServer.passwordResetBaseUrl, tokenBuilder, ssoSync, publisher, sso)
 }
 
 trait DefaultSsoComponent extends SsoComponent {

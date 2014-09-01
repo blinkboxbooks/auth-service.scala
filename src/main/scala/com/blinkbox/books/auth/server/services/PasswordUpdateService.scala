@@ -24,13 +24,15 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     db: DB#Database,
     userRepo: UserRepository[DB#Profile],
     authRepo: AuthRepository[DB#Profile],
+    resetBaseUrl: String,
     tokenBuilder: TokenBuilder,
     ssoSync: SsoSyncService,
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordUpdateService with ClientAuthenticator[DB#Profile] {
 
-  // TODO: Make this configurable
-  private def resetUrl(token: SsoPasswordResetToken) = new URL(s"http://foo.bar/password-reset/${token.value}")
+  private val trimmedBaseUrl: String = if (resetBaseUrl.endsWith("/")) resetBaseUrl.dropRight(1) else resetBaseUrl
+
+  private def resetUrl(token: SsoPasswordResetToken) = new URL(s"${trimmedBaseUrl}/${token.value}")
 
   private def userBySsoId(ssoId: SsoUserId): Future[Option[User]] = Future {
     db.withSession { implicit session => userRepo.userWithSsoId(ssoId) }
