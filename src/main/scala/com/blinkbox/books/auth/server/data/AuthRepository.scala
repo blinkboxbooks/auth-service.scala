@@ -6,6 +6,7 @@ import com.blinkbox.books.auth.server.sso.SsoRefreshToken
 import com.blinkbox.books.slick.{TablesSupport, SlickTypes}
 import com.blinkbox.books.time.{Clock, TimeSupport}
 import com.blinkbox.security.jwt.util.Base64
+import org.joda.time.Duration
 import spray.http.RemoteAddress
 
 import scala.slick.driver.JdbcProfile
@@ -19,7 +20,7 @@ trait AuthRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def refreshTokenWithToken(token: String)(implicit session: Session): Option[RefreshToken]
   def refreshTokensByClientId(clientId: ClientId)(implicit session: Session): List[RefreshToken]
   def associateRefreshTokenWithClient(t: RefreshToken, c: Client)(implicit session: Session)
-  def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[SsoRefreshToken])(implicit session: Session): Unit
+  def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[SsoRefreshToken], span: Duration)(implicit session: Session): Unit
   def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit
 }
 
@@ -73,10 +74,9 @@ trait JdbcAuthRepository[Profile <: JdbcProfile] extends AuthRepository[Profile]
     refreshTokens.filter(_.id === t.id).map(t => (t.updatedAt, t.clientId)).update(clock.now(), Some(c.id))
   }
 
-  override def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[SsoRefreshToken])(implicit session: Session) = {
-    // TODO: Make lifetime extension configurable
+  override def extendRefreshTokenLifetime(t: RefreshToken, ssoRefreshToken: Option[SsoRefreshToken], timeSpan: Duration)(implicit session: Session) = {
     val now = clock.now()
-    refreshTokens.filter(_.id === t.id).map(t => (t.updatedAt, t.expiresAt, t.ssoToken)).update(now, now.plusDays(90), ssoRefreshToken)
+    refreshTokens.filter(_.id === t.id).map(t => (t.updatedAt, t.expiresAt, t.ssoToken)).update(now, now.plus(timeSpan), ssoRefreshToken)
   }
 
   override def revokeRefreshToken(t: RefreshToken)(implicit session: Session): Unit =

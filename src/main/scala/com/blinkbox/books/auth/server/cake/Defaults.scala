@@ -125,7 +125,8 @@ trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticati
 }
 
 trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
-  this: DatabaseComponent with
+  this: ConfigComponent with
+    DatabaseComponent with
     RepositoriesComponent with
     EventsComponent with
     AsyncComponent with
@@ -134,7 +135,7 @@ trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
     SsoComponent =>
 
   val refreshTokenService = new DefaultRefreshTokenService(
-    db, authRepository, userRepository, clientRepository, tokenBuilder, publisher, sso)
+    db, authRepository, userRepository, clientRepository, config.authServer.refreshTokenLifetimeExtension, tokenBuilder, publisher, sso)
 }
 
 trait DefaultSsoSyncComponent extends SsoSyncComponent {
