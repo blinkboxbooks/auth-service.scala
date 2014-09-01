@@ -1,10 +1,7 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.env.{CommonResponder, TestEnv}
-import com.blinkbox.books.auth.server.sso.{SsoAccessToken, SsoCredentials, SsoTestEnv}
-import com.blinkbox.books.auth.server.{TokenBuilder, UserInfo}
-import spray.http.{HttpEntity, FormData, OAuth2BearerToken, StatusCodes}
+import spray.http.{FormData, HttpEntity, OAuth2BearerToken, StatusCodes}
 
 class UpdatePasswordSpecs extends ApiSpecBase[TestEnv with CommonResponder] {
 

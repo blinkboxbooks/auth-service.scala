@@ -85,5 +85,5 @@ object AppConfig {
     SSOConfig(config),
     AuthServerConfig(config, "service.auth"))
 
-  def default: AppConfig = AppConfig((new Configuration {}).config)
+  lazy val default: AppConfig = AppConfig((new Configuration {}).config)
 }

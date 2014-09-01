@@ -10,6 +10,7 @@ import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.slick.H2DatabaseSupport
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.joda.time.Duration
 
 import scala.slick.driver.H2Driver
@@ -19,10 +20,15 @@ trait StoppedClockSupport extends TimeSupport {
 }
 
 trait TestConfigComponent extends ConfigComponent {
-  Option(getClass.getResource("/sso_public.key")).map(_.getFile) match {
-    case Some(uri) => System.setProperty("SSO_KEYSTORE", uri)
-    case None => sys.error("Cannot find test key resource")
+  private def getResourcePath(resource: String) = Option(getClass.getResource(resource)).map(_.getFile) match {
+    case Some(uri) => uri
+    case None => sys.error(s"Cannot find resource: $resource")
   }
+
+  System.setProperty("SSO_KEYSTORE", getResourcePath("/sso_public.key"))
+  System.setProperty("AUTH_KEYS_PATH", getResourcePath("/auth_keys"))
+
+  ConfigFactory.invalidateCaches()
 
   override val config = AppConfig.default
 }
