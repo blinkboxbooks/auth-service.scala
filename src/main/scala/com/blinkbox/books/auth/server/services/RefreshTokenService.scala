@@ -19,6 +19,7 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
     authRepo: AuthRepository[DB#Profile],
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
+    tokenBuilder: TokenBuilder,
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
   extends RefreshTokenService with ClientAuthenticator[DB#Profile] {
@@ -65,7 +66,7 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
         _         <- checkAuthorization(token, client)
         ssoCreds  <- ssoFuture
         user      <- userFuture
-      } yield (token, user, client, ssoCreds, TokenBuilder.issueAccessToken(user, client, token, ssoCreds))
+      } yield (token, user, client, ssoCreds, tokenBuilder.issueAccessToken(user, client, token, ssoCreds))
     }
 
     tokenFuture.onSuccess {

@@ -25,6 +25,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
     exceptionFilter: DB#ExceptionFilter,
+    tokenBuilder: TokenBuilder,
     geoIP: GeoIP,
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
@@ -76,7 +77,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
       _                     <- markLinked(user, ssoId)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(user, cl)) getOrElse(Future.successful(()))
-    } yield TokenBuilder.issueAccessToken(user, client, token, Some(cred), includeRefreshToken = true, includeClientSecret = true)
+    } yield tokenBuilder.issueAccessToken(user, client, token, Some(cred), includeRefreshToken = true, includeClientSecret = true)
 
     tokenInfo.transform(identity, errorTransformer)
   }

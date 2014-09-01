@@ -5,7 +5,7 @@ import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSso, FileKeyStore, SsoAccessTokenDecoder}
-import com.blinkbox.books.auth.server.{AppConfig, AuthApi, DummyGeoIP, PasswordHasher, SwaggerApi}
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.rabbitmq.RabbitMq
 import com.blinkbox.books.slick.MySQLDatabaseSupport
@@ -54,6 +54,12 @@ trait DefaultPasswordHasherComponent extends PasswordHasherComponent {
   override val passwordHasher = PasswordHasher.default
 }
 
+trait DefaultTokenBuilderComponent extends TokenBuilderComponent {
+  this: ConfigComponent =>
+
+  override val tokenBuilder = new DefaultTokenBuilder(config.authServer.keysConfig)
+}
+
 trait DefaultRepositoriesComponent extends RepositoriesComponent {
   this: DatabaseComponent with PasswordHasherComponent with TimeSupport =>
 
@@ -85,9 +91,11 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
     with EventsComponent
     with AsyncComponent
     with TimeSupport
+    with TokenBuilderComponent
     with SsoComponent =>
 
-  val registrationService = new DefaultRegistrationService(db, authRepository, userRepository, clientRepository, exceptionFilter, geoIp, publisher, sso)
+  val registrationService = new DefaultRegistrationService(
+    db, authRepository, userRepository, clientRepository, exceptionFilter, tokenBuilder, geoIp, publisher, sso)
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
@@ -109,15 +117,24 @@ trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticati
     AsyncComponent with
     TimeSupport with
     SsoComponent with
+    TokenBuilderComponent with
     SsoSyncComponent =>
 
-  val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, clientRepository, publisher, ssoSync, sso)
+  val passwordAuthenticationService = new DefaultPasswordAuthenticationService(
+    db, authRepository, userRepository, clientRepository, tokenBuilder, publisher, ssoSync, sso)
 }
 
 trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
-  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SsoComponent =>
+  this: DatabaseComponent with
+    RepositoriesComponent with
+    EventsComponent with
+    AsyncComponent with
+    TimeSupport with
+    TokenBuilderComponent with
+    SsoComponent =>
 
-  val refreshTokenService = new DefaultRefreshTokenService(db, authRepository, userRepository, clientRepository, publisher, sso)
+  val refreshTokenService = new DefaultRefreshTokenService(
+    db, authRepository, userRepository, clientRepository, tokenBuilder, publisher, sso)
 }
 
 trait DefaultSsoSyncComponent extends SsoSyncComponent {
@@ -133,9 +150,11 @@ trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceCompon
     SsoComponent with
     DatabaseComponent with
     RepositoriesComponent with
+    TokenBuilderComponent with
     SsoSyncComponent =>
 
-  val passwordUpdateService = new DefaultPasswordUpdateService(db, userRepository, authRepository, ssoSync, publisher, sso)
+  val passwordUpdateService = new DefaultPasswordUpdateService(
+    db, userRepository, authRepository, tokenBuilder, ssoSync, publisher, sso)
 }
 
 trait DefaultSsoComponent extends SsoComponent {
@@ -158,7 +177,7 @@ trait DefaultApiComponent {
     with AsyncComponent =>
 
   val authenticator: ContextAuthenticator[User] = new ZuulTokenAuthenticator(
-    new ZuulTokenDeserializer(new ZuulTokenDecoder(config.auth.keysDir.getAbsolutePath)),
+    new ZuulTokenDeserializer(new ZuulTokenDecoder(config.authClient.keysDir.getAbsolutePath)),
     _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker
 
   private val zuulApi = new AuthApi(config.service,

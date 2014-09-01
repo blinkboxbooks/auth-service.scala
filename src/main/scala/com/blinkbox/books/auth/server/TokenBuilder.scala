@@ -11,14 +11,18 @@ import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
 import org.joda.time.{DateTimeZone, DateTime}
 
-object TokenBuilder {
-  // TODO: Make this configurable
-  val SigningKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
-  val EncryptionKeyPath = "/opt/bbb/keys/blinkbox/plat/enc/rsa/1/public.key"
+trait TokenBuilder {
+  def issueAccessToken(
+      user: User,
+      client: Option[Client],
+      token: RefreshToken,
+      ssoCredentials: Option[SsoCredentials],
+      includeRefreshToken: Boolean = false,
+      includeClientSecret: Boolean = false): TokenInfo
+}
 
-  def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: Option[SsoCredentials]): (Long, String) = {
-
-    // TODO: Do this properly with configurable keys etc.
+class DefaultTokenBuilder(config: KeysConfig) extends TokenBuilder {
+  private def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: Option[SsoCredentials]): (Long, String) = {
 
     // Expires our token 1 minute before the SSO ones, or in 30 minutes if no SSO credentials are provided
     val expiresIn = ssoCredentials.map(_.expiresIn - 60).getOrElse(1800)
@@ -34,20 +38,20 @@ object TokenBuilder {
     // TODO: Roles
     claims.put("zl/rti", Int.box(token.id.value))
 
-    val signingKeyData = Files.readAllBytes(Paths.get(SigningKeyPath))
+    val signingKeyData = Files.readAllBytes(config.signingKeyPath)
     val signingKeySpec = new PKCS8EncodedKeySpec(signingKeyData)
     val signingKey = KeyFactory.getInstance("EC").generatePrivate(signingKeySpec)
     val signer = new ES256(signingKey)
     val signingHeaders = new java.util.LinkedHashMap[String, AnyRef]
-    signingHeaders.put("kid", "/blinkbox/zuul/sig/ec/1")
+    signingHeaders.put("kid", config.signingKeyId)
 
-    val encryptionKeyData = Files.readAllBytes(Paths.get(EncryptionKeyPath))
+    val encryptionKeyData = Files.readAllBytes(config.encryptionKeyPath)
     val encryptionKeySpec = new X509EncodedKeySpec(encryptionKeyData)
     val encryptionKey = KeyFactory.getInstance("RSA").generatePublic(encryptionKeySpec)
     val encryptionAlgorithm = new RSA_OAEP(encryptionKey)
     val encrypter = new A128GCM(encryptionAlgorithm)
     val encryptionHeaders = new java.util.LinkedHashMap[String, AnyRef]
-    encryptionHeaders.put("kid", "/blinkbox/plat/enc/rsa/1")
+    encryptionHeaders.put("kid", config.encryptionKeyId)
     encryptionHeaders.put("cty", "JWT")
 
     val encoder = new TokenEncoder()
@@ -57,7 +61,7 @@ object TokenBuilder {
     (expiresIn, encrypted)
   }
 
-  def issueAccessToken(
+  override def issueAccessToken(
       user: User,
       client: Option[Client],
       token: RefreshToken,

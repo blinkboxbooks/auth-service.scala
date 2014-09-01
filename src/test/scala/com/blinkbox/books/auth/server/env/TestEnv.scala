@@ -66,6 +66,7 @@ class TestEnv extends
     TestEventsComponent with
     TestDatabaseComponent with
     TestPasswordHasherComponent with
+    DefaultTokenBuilderComponent with
     DefaultRepositoriesComponent with
     DefaultUserServiceComponent with
     DefaultClientServiceComponent with
@@ -136,10 +137,10 @@ class TestEnv extends
 
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
-  val tokenInfoA1 = TokenBuilder.issueAccessToken(
+  val tokenInfoA1 = tokenBuilder.issueAccessToken(
     userA, None, refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
 
-  val tokenInfoA1WithoutSSO = TokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
+  val tokenInfoA1WithoutSSO = tokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 
   val resetCredentials = ResetTokenCredentials(SsoPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
 

@@ -24,6 +24,7 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     db: DB#Database,
     userRepo: UserRepository[DB#Profile],
     authRepo: AuthRepository[DB#Profile],
+    tokenBuilder: TokenBuilder,
     ssoSync: SsoSyncService,
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordUpdateService with ClientAuthenticator[DB#Profile] {
@@ -67,7 +68,7 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
       syncedUser                                <- ssoSync(user, ssoCredentials.accessToken)
       client                                    <- authenticateClient(credentials, syncedUser.id)
       refreshToken                              <- createRefreshToken(syncedUser.id, client.map(_.id), ssoCredentials.refreshToken)
-    } yield TokenBuilder.issueAccessToken(syncedUser, client, refreshToken, Some(ssoCredentials), includeRefreshToken = true)
+    } yield tokenBuilder.issueAccessToken(syncedUser, client, refreshToken, Some(ssoCredentials), includeRefreshToken = true)
 
     tokenInfo transform(identity, { case SsoUnauthorized => Failures.invalidPasswordResetToken })
   }
