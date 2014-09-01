@@ -20,18 +20,21 @@ trait ClientService {
   def deleteClient(id: ClientId)(implicit user: AuthenticatedUser): Future[Option[ClientInfo]]
 }
 
-class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-    (db: Database, clientRepo: ClientRepository[Profile], authRepo: AuthRepository[Profile], userRepo: UserRepository[Profile], events: Publisher)
+class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#Database](
+    db: Database,
+    clientRepo:
+    ClientRepository[Profile],
+    authRepo: AuthRepository[Profile],
+    userRepo: UserRepository[Profile],
+    maxClients: Int,
+    events: Publisher)
     (implicit executionContext: ExecutionContext, clock: Clock) extends ClientService with ClientInfoFactory {
-
-  // TODO: Make this configurable
-  val MaxClients = 12
 
   implicit def userId(implicit user: AuthenticatedUser): UserId = UserId(user.id)
 
   override def registerClient(registration: ClientRegistration)(implicit user: AuthenticatedUser) = Future {
     val (usr, client) = db.withTransaction { implicit transaction =>
-      if (clientRepo.activeClientCount(userId) >= MaxClients) {
+      if (clientRepo.activeClientCount(userId) >= maxClients) {
         throw Failures.clientLimitReached
       }
       val u = userRepo.userWithId(userId).getOrElse(throw Failures.unverifiedIdentity)
