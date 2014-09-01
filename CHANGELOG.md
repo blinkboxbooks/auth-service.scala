@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.17.1 ([#38](https://git.mobcastdev.com/Zuul/auth-service/pull/38) 2014-08-29 16:43:26)
+
+Housekeeping - fix all SSO camel casing inconsistencies
+
+### Improvements
+
+Another big one: fixes all the mess I did with the SSO acronym and camel casing.
+
 ## 0.17.0 ([#37](https://git.mobcastdev.com/Zuul/auth-service/pull/37) 2014-08-29 14:29:28)
 
 Implement password-reset scenarios
