@@ -4,7 +4,7 @@ import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.{SSOPasswordResetToken, SSOUnknownException}
+import com.blinkbox.books.auth.server.sso.{SsoPasswordResetToken, SsoUnknownException}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
@@ -99,7 +99,7 @@ class AuthApi(
   val UserId = IntNumber.map(data.UserId(_))
   val ClientId = IntNumber.map(data.ClientId(_))
   val RefreshTokenId = IntNumber.map(data.RefreshTokenId(_))
-  val ResetToken = Deserializer.fromFunction2Converter((s: String) => SSOPasswordResetToken(s))
+  val ResetToken = Deserializer.fromFunction2Converter((s: String) => SsoPasswordResetToken(s))
 
 
 //  first_name (required)
@@ -294,7 +294,7 @@ class AuthApi(
   val validatePasswordResetToken: Route = post {
     path("password" / "reset" / "validate-token") {
       formFields('password_reset_token) { token =>
-        onSuccess(passwordUpdateService.validatePasswordResetToken(SSOPasswordResetToken(token))) { _ =>
+        onSuccess(passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken(token))) { _ =>
           complete(OK, None)
         }
       }
@@ -327,7 +327,7 @@ class AuthApi(
       respondWithHeader(RawHeader("Retry-After", retryAfter.toSeconds.toString)) {
         complete(TooManyRequests, HttpEntity.Empty)
       }
-    case SSOUnknownException(e) =>
+    case SsoUnknownException(e) =>
       log.error("Unknown SSO error", e)
       complete(InternalServerError, HttpEntity.Empty)
     case ZuulUnknownException(msg, inner) =>

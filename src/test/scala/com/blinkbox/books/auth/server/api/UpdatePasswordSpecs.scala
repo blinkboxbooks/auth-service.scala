@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.env.{CommonResponder, TestEnv}
-import com.blinkbox.books.auth.server.sso.{SSOAccessToken, SSOCredentials, SSOTestEnv}
+import com.blinkbox.books.auth.server.sso.{SsoAccessToken, SsoCredentials, SsoTestEnv}
 import com.blinkbox.books.auth.server.{TokenBuilder, UserInfo}
 import spray.http.{HttpEntity, FormData, OAuth2BearerToken, StatusCodes}
 

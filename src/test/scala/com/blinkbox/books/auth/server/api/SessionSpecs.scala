@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.auth.server.env.TokenStatusEnv
-import com.blinkbox.books.auth.server.sso.{SSOTokenElevation, SSOTokenStatus}
+import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import com.blinkbox.books.auth.server.{TokenStatus, SessionInfo}
 import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http.{HttpEntity, OAuth2BearerToken, StatusCodes}
@@ -12,7 +12,7 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
   override def newEnv = new TokenStatusEnv
 
   "The service" should "return session information for a valid and critically elevated token" in {
-    env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
+    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
@@ -24,7 +24,7 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
   }
 
   it should "return session information for a valid non elevated token" in {
-    env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.None)
+    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None)
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
@@ -49,7 +49,7 @@ class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
 
   it should "extend an user session by invoking the SSO service" in {
     env.ssoNoContent()
-    env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.Critical)
+    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)

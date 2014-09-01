@@ -7,7 +7,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class LinkSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
 
-  val accessToken = SSOAccessToken("some-access-token")
+  val accessToken = SsoAccessToken("some-access-token")
   val userId = UserId(123)
 
   "The SSO client" should "complete correctly a link request if the SSO service respond with a success" in new LinkTestEnv {
@@ -20,14 +20,14 @@ class LinkSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
     val err = "The request is not valid"
     ssoInvalidRequest(err)
 
-    failingWith[SSOInvalidRequest](sso.linkAccount(accessToken, userId, true, "1.0")) should matchPattern {
-      case SSOInvalidRequest(m) if m == err =>
+    failingWith[SsoInvalidRequest](sso.linkAccount(accessToken, userId, true, "1.0")) should matchPattern {
+      case SsoInvalidRequest(m) if m == err =>
     }
   }
 
   it should "correctly handle conflict responses if the account is already linked" in new LinkTestEnv {
     ssoConflict()
 
-    failingWith[SSOConflict.type](sso.linkAccount(accessToken, userId, true, "1.0"))
+    failingWith[SsoConflict.type](sso.linkAccount(accessToken, userId, true, "1.0"))
   }
 }

@@ -10,14 +10,14 @@ class GeneratePasswordResetTokenSpecs extends FlatSpec with Matchers with SpecBa
     ssoGenerateResetToken
 
     whenReady(sso.generatePasswordResetToken("foo@bar.com"))(_ should matchPattern {
-      case SSOPasswordResetTokenResponse(SSOPasswordResetToken("r3sett0ken"), 3600) =>
+      case SsoPasswordResetTokenResponse(SsoPasswordResetToken("r3sett0ken"), 3600) =>
     })
   }
 
   it should "return an error if the user is not found in the SSO service" in new PasswordResetEnv {
     ssoUserNotFound
 
-    failingWith[SSONotFound.type](sso.generatePasswordResetToken("foo@bar.com")) should equal(SSONotFound)
+    failingWith[SsoNotFound.type](sso.generatePasswordResetToken("foo@bar.com")) should equal(SsoNotFound)
   }
 
 }

@@ -5,7 +5,7 @@ import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
 import com.blinkbox.books.auth.server.data.{Client, RefreshToken, User}
-import com.blinkbox.books.auth.server.sso.SSOCredentials
+import com.blinkbox.books.auth.server.sso.SsoCredentials
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
@@ -16,7 +16,7 @@ object TokenBuilder {
   val SigningKeyPath = "/opt/bbb/keys/blinkbox/zuul/sig/ec/1/private.key"
   val EncryptionKeyPath = "/opt/bbb/keys/blinkbox/plat/enc/rsa/1/public.key"
 
-  def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: Option[SSOCredentials]): (Long, String) = {
+  def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: Option[SsoCredentials]): (Long, String) = {
 
     // TODO: Do this properly with configurable keys etc.
 
@@ -61,7 +61,7 @@ object TokenBuilder {
       user: User,
       client: Option[Client],
       token: RefreshToken,
-      ssoCredentials: Option[SSOCredentials],
+      ssoCredentials: Option[SsoCredentials],
       includeRefreshToken: Boolean = false,
       includeClientSecret: Boolean = false): TokenInfo = {
 

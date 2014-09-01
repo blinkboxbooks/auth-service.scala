@@ -17,7 +17,7 @@ trait PasswordUpdateService {
   def updatePassword(oldPassword: String, newPassword: String)(implicit user: AuthenticatedUser): Future[Unit]
   def generatePasswordResetToken(username: String): Future[Unit]
   def resetPassword(credentials: ResetTokenCredentials): Future[TokenInfo]
-  def validatePasswordResetToken(resetToken: SSOPasswordResetToken): Future[Unit]
+  def validatePasswordResetToken(resetToken: SsoPasswordResetToken): Future[Unit]
 }
 
 class DefaultPasswordUpdateService[DB <: DatabaseSupport](
@@ -26,12 +26,12 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     authRepo: AuthRepository[DB#Profile],
     ssoSync: SsoSyncService,
     events: Publisher,
-    sso: SSO)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordUpdateService with ClientAuthenticator[DB#Profile] {
+    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordUpdateService with ClientAuthenticator[DB#Profile] {
 
   // TODO: Make this configurable
-  private def resetUrl(token: SSOPasswordResetToken) = new URL(s"http://foo.bar/password-reset/${token.value}")
+  private def resetUrl(token: SsoPasswordResetToken) = new URL(s"http://foo.bar/password-reset/${token.value}")
 
-  private def userBySsoId(ssoId: SSOUserId): Future[Option[User]] = Future {
+  private def userBySsoId(ssoId: SsoUserId): Future[Option[User]] = Future {
     db.withSession { implicit session => userRepo.userWithSsoId(ssoId) }
   }
 
@@ -41,16 +41,16 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
   }
 
   // TODO: Remove this duplication of code from PasswordAuthenticationService
-  private def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoRefreshToken: SSORefreshToken) : Future[RefreshToken] = Future {
+  private def createRefreshToken(userId: UserId, clientId: Option[ClientId], ssoRefreshToken: SsoRefreshToken) : Future[RefreshToken] = Future {
     db.withSession { implicit session => authRepo.createRefreshToken(userId, clientId, ssoRefreshToken) }
   }
 
   override def updatePassword(oldPassword: String, newPassword: String)(implicit user: AuthenticatedUser): Future[Unit] =
     user.ssoAccessToken.map {
       at => sso.updatePassword(at, oldPassword, newPassword) transform(identity, {
-        case SSOForbidden => Failures.oldPasswordInvalid
-        case SSOInvalidRequest(_) => Failures.passwordTooShort
-        case SSOTooManyRequests(retryAfter) => Failures.tooManyRequests(retryAfter)
+        case SsoForbidden => Failures.oldPasswordInvalid
+        case SsoInvalidRequest(_) => Failures.passwordTooShort
+        case SsoTooManyRequests(retryAfter) => Failures.tooManyRequests(retryAfter)
       })
     } getOrElse (Future.failed(Failures.unverifiedIdentity))
 
@@ -58,21 +58,21 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     (for {
       token <- sso generatePasswordResetToken (username)
       res   <- events.publish(UserPasswordResetRequested(username, token.resetToken, resetUrl(token.resetToken)))
-    } yield res) recover { case SSONotFound => ()}
+    } yield res) recover { case SsoNotFound => ()}
 
   override def resetPassword(credentials: ResetTokenCredentials): Future[TokenInfo] = {
     val tokenInfo = for {
-      SSOUserCredentials(ssoId, ssoCredentials) <- sso resetPassword(credentials.resetToken, credentials.newPassword)
+      SsoUserCredentials(ssoId, ssoCredentials) <- sso resetPassword(credentials.resetToken, credentials.newPassword)
       user                                      <- userBySsoId(ssoId)
       syncedUser                                <- ssoSync(user, ssoCredentials.accessToken)
       client                                    <- authenticateClient(credentials, syncedUser.id)
       refreshToken                              <- createRefreshToken(syncedUser.id, client.map(_.id), ssoCredentials.refreshToken)
     } yield TokenBuilder.issueAccessToken(syncedUser, client, refreshToken, Some(ssoCredentials), includeRefreshToken = true)
 
-    tokenInfo transform(identity, { case SSOUnauthorized => Failures.invalidPasswordResetToken })
+    tokenInfo transform(identity, { case SsoUnauthorized => Failures.invalidPasswordResetToken })
   }
 
-  override def validatePasswordResetToken(resetToken: SSOPasswordResetToken): Future[Unit] = sso.tokenStatus(resetToken) filter { s =>
-    s.tokenType == "password_reset" && s.status == SSOTokenStatus.Valid
+  override def validatePasswordResetToken(resetToken: SsoPasswordResetToken): Future[Unit] = sso.tokenStatus(resetToken) filter { s =>
+    s.tokenType == "password_reset" && s.status == SsoTokenStatus.Valid
   } transform(_ => (), { case _: NoSuchElementException => Failures.invalidPasswordResetToken })
 }

@@ -9,9 +9,9 @@ class RefreshTokenSpecs extends FlatSpec with Matchers with SpecBase with FailHe
   "The SSO client" should "complete correctly return sso credentials if the SSO service returns a successful response" in new RefreshTestEnv {
     ssoSuccessfulAuthentication()
 
-    whenReady(sso.refresh(SSORefreshToken("some-refresh-token"))) { creds =>
+    whenReady(sso.refresh(SsoRefreshToken("some-refresh-token"))) { creds =>
       creds should matchPattern {
-        case SSOCredentials(_, "bearer", exp, _) if exp == validTokenSSOExpiry =>
+        case SsoCredentials(_, "bearer", exp, _) if exp == validTokenSSOExpiry =>
       }
     }
   }
@@ -20,8 +20,8 @@ class RefreshTokenSpecs extends FlatSpec with Matchers with SpecBase with FailHe
     val err = "The request is invalid"
     ssoInvalidRequest(err)
 
-    failingWith[SSOInvalidRequest](sso.refresh(SSORefreshToken("some-refresh-token"))) should matchPattern {
-      case SSOInvalidRequest(m) if m == err =>
+    failingWith[SsoInvalidRequest](sso.refresh(SsoRefreshToken("some-refresh-token"))) should matchPattern {
+      case SsoInvalidRequest(m) if m == err =>
     }
   }
 }

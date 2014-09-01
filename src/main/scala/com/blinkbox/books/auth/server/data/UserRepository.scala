@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.data
 
-import com.blinkbox.books.auth.server.sso.SSOUserId
+import com.blinkbox.books.auth.server.sso.SsoUserId
 import com.blinkbox.books.auth.server.{PasswordHasher, UserRegistration}
 import com.blinkbox.books.slick.{TablesSupport, SlickTypes}
 import com.blinkbox.books.time.{Clock, TimeSupport}
@@ -17,7 +17,7 @@ trait UserRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def updateUser(user: User)(implicit session: Session): Unit
   def createUser(registration: UserRegistration)(implicit session: Session): User
   def userWithId(id: UserId)(implicit session: Session): Option[User]
-  def userWithSsoId(id: SSOUserId)(implicit session: Session): Option[User]
+  def userWithSsoId(id: SsoUserId)(implicit session: Session): Option[User]
 }
 
 trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile] with TablesSupport[Profile, ZuulTables[Profile]] {
@@ -51,7 +51,7 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
 
   override def userWithId(id: UserId)(implicit session: Session) = users.filter(_.id === id).firstOption
   override def updateUser(user: User)(implicit session: Session): Unit = users.filter(_.id === user.id).update(user)
-  override def userWithSsoId(id: SSOUserId)(implicit session: Session) = users.filter(_.ssoId === id).firstOption
+  override def userWithSsoId(id: SsoUserId)(implicit session: Session) = users.filter(_.ssoId === id).firstOption
 }
 
 class DefaultUserRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile], val passwordHasher: PasswordHasher)(implicit val clock: Clock)

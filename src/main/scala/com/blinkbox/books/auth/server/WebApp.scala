@@ -29,7 +29,7 @@ object WebAppComponents extends
   DefaultConfigComponent with
   DefaultAsyncComponent with
   SystemTimeSupport with
-  DefaultSSOComponent with
+  DefaultSsoComponent with
   DefaultGeoIPComponent with
   DefaultEventsComponent with
   DefaultDatabaseComponent with

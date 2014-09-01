@@ -4,7 +4,7 @@ import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.env.{PasswordResetEnv, AuthenticationTestEnv}
 import com.blinkbox.books.auth.server.events.UserPasswordResetRequested
-import com.blinkbox.books.auth.server.sso.{SSOTokenElevation, SSOTokenStatus}
+import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import com.blinkbox.books.schemas.events.user.v2.User.PasswordResetRequested
 import spray.http.{HttpEntity, FormData, StatusCodes}
 
@@ -74,7 +74,7 @@ class PasswordResetSpecs extends ApiSpecBase[PasswordResetEnv] {
   }
 
   it should "validate a password reset token given that it is recognized by SSO" in {
-    env.ssoSessionInfo(SSOTokenStatus.Valid, SSOTokenElevation.None, "password_reset")
+    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None, "password_reset")
     env.preSyncUser(env.userIdA)
 
     Post("/password/reset/validate-token", FormData(Map(
@@ -88,7 +88,7 @@ class PasswordResetSpecs extends ApiSpecBase[PasswordResetEnv] {
   }
 
   it should "not validate a password reset token and answer with a BadRequest given that it is not recognized by SSO" in {
-    env.ssoSessionInfo(SSOTokenStatus.Invalid, SSOTokenElevation.None, "password_reset")
+    env.ssoSessionInfo(SsoTokenStatus.Invalid, SsoTokenElevation.None, "password_reset")
     env.preSyncUser(env.userIdA)
 
     Post("/password/reset/validate-token", FormData(Map(

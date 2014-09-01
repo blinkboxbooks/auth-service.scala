@@ -5,7 +5,7 @@ import com.blinkbox.books.auth.User
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.SSO
+import com.blinkbox.books.auth.server.sso.Sso
 import com.blinkbox.books.auth.server.{AppConfig, PasswordHasher}
 import com.blinkbox.books.slick.{BaseRepositoriesComponent, BaseDatabaseComponent}
 import spray.routing.Route
@@ -81,8 +81,8 @@ trait PasswordUpdateServiceComponent {
   def passwordUpdateService: PasswordUpdateService
 }
 
-trait SSOComponent {
-  def sso: SSO
+trait SsoComponent {
+  def sso: Sso
 }
 
 trait ApiComponent {

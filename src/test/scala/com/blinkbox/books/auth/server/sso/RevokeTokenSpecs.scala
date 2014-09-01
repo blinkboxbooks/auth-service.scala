@@ -10,21 +10,21 @@ class RevokeTokenSpecs extends FlatSpec with Matchers with SpecBase with FailHel
   "The SSO client" should "return a successful future if the SSO service replies with a 204" in new TestEnv with CommonResponder {
     ssoNoContent()
 
-    whenReady(sso.revokeToken(SSORefreshToken("some-refresh-token"))) { _ => }
+    whenReady(sso.revokeToken(SsoRefreshToken("some-refresh-token"))) { _ => }
   }
 
   it should "signal a request failure if the SSO service replies with a 400" in new TestEnv with CommonResponder {
     ssoInvalidRequest("Some error")
 
-    failingWith[SSOInvalidRequest](sso.revokeToken(SSORefreshToken("some-refresh-token"))) should matchPattern {
-      case SSOInvalidRequest("Some error") =>
+    failingWith[SsoInvalidRequest](sso.revokeToken(SsoRefreshToken("some-refresh-token"))) should matchPattern {
+      case SsoInvalidRequest("Some error") =>
     }
   }
 
   it should "signal an authentication failure in the SSO service" in new TestEnv with CommonResponder {
     ssoResponse(StatusCodes.Unauthorized)
 
-    failingWith[SSOUnauthorized.type](sso.revokeToken(SSORefreshToken("some-refresh-token")))
+    failingWith[SsoUnauthorized.type](sso.revokeToken(SsoRefreshToken("some-refresh-token")))
   }
 
 }

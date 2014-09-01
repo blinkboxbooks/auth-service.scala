@@ -14,7 +14,7 @@ class AuthenticationSpecs extends FlatSpec with Matchers with SpecBase with Fail
 
     whenReady(sso.authenticate(credentials)) { ssoCreds =>
       ssoCreds should matchPattern {
-        case SSOCredentials(_, "bearer", exp, _) if exp == validTokenSSOExpiry =>
+        case SsoCredentials(_, "bearer", exp, _) if exp == validTokenSSOExpiry =>
       }
     }
   }
@@ -23,22 +23,22 @@ class AuthenticationSpecs extends FlatSpec with Matchers with SpecBase with Fail
     val err = "Invalid username or password"
     ssoInvalidRequest(err)
 
-    failingWith[SSOInvalidRequest](sso.authenticate(credentials)) should matchPattern {
-      case SSOInvalidRequest(m) if m == err =>
+    failingWith[SsoInvalidRequest](sso.authenticate(credentials)) should matchPattern {
+      case SsoInvalidRequest(m) if m == err =>
     }
   }
 
   it should "return an authentication error if the SSO service doesn't recognize given credentials" in new AuthenticationTestEnv {
     ssoUnsuccessfulAuthentication()
 
-    failingWith[SSOUnauthorized.type](sso.authenticate(credentials))
+    failingWith[SsoUnauthorized.type](sso.authenticate(credentials))
   }
 
   it should "correctly signal when password throttling errors are returned from the SSO service" in new AuthenticationTestEnv {
     ssoTooManyRequests(10)
 
-    failingWith[SSOTooManyRequests](sso.authenticate(credentials)) should matchPattern {
-      case SSOTooManyRequests(d) if d.toSeconds == 10 =>
+    failingWith[SsoTooManyRequests](sso.authenticate(credentials)) should matchPattern {
+      case SsoTooManyRequests(d) if d.toSeconds == 10 =>
     }
   }
 }

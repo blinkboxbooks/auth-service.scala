@@ -14,7 +14,7 @@ class RegistrationSpecs extends FlatSpec with Matchers with SpecBase with FailHe
 
     whenReady(sso.register(reg)) { cred =>
       cred should matchPattern {
-        case (_, SSOCredentials(_, "bearer", exp, _)) if exp == validTokenSSOExpiry =>
+        case (_, SsoCredentials(_, "bearer", exp, _)) if exp == validTokenSSOExpiry =>
       }
     }
   }
@@ -22,15 +22,15 @@ class RegistrationSpecs extends FlatSpec with Matchers with SpecBase with FailHe
   it should "signal a conflict if the SSO service signals that the username is already taken" in new RegistrationTestEnv {
     ssoConflict()
 
-    failingWith[SSOConflict.type](sso.register(reg))
+    failingWith[SsoConflict.type](sso.register(reg))
   }
 
   it should "signal an invalid request if the SSO service signals validation errors" in new RegistrationTestEnv {
     val err = "Password does not meet minimum requirements"
     ssoInvalidRequest(err)
 
-    failingWith[SSOInvalidRequest](sso.register(reg)) should matchPattern {
-      case SSOInvalidRequest(m) if m == err =>
+    failingWith[SsoInvalidRequest](sso.register(reg)) should matchPattern {
+      case SsoInvalidRequest(m) if m == err =>
     }
   }
 }

@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.services
 
 import com.blinkbox.books.auth.server.data.{User, UserId, UserRepository}
 import com.blinkbox.books.auth.server.events.{Publisher, UserUpdated}
-import com.blinkbox.books.auth.server.sso.{SSOUnauthorized, UserInformation, SSOAccessToken, SSO}
+import com.blinkbox.books.auth.server.sso.{SsoUnauthorized, UserInformation, SsoAccessToken, Sso}
 import com.blinkbox.books.auth.server.{ZuulUnknownException, Failures, UserInfo, UserPatch}
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
@@ -17,7 +17,7 @@ trait UserService {
 }
 
 class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-  (db: Database, repo: UserRepository[Profile], sso: SSO, events: Publisher)
+  (db: Database, repo: UserRepository[Profile], sso: Sso, events: Publisher)
   (implicit ec: ExecutionContext, clock: Clock) extends UserService with UserInfoFactory {
 
   private def updateLocalUser(user: User, patch: UserPatch): UserInfo = {
@@ -57,10 +57,10 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     }
   }
 
-  private def userFromSso(token: SSOAccessToken): Future[Option[UserInformation]] =
-    sso.userInfo(token).map(Option.apply).recover { case SSOUnauthorized => None }
+  private def userFromSso(token: SsoAccessToken): Future[Option[UserInformation]] =
+    sso.userInfo(token).map(Option.apply).recover { case SsoUnauthorized => None }
 
-  private def getSyncedUser(id: UserId, token: SSOAccessToken): Future[Option[User]] = {
+  private def getSyncedUser(id: UserId, token: SsoAccessToken): Future[Option[User]] = {
     val dbFutureOption = userFromDb(id)
     val ssoFutureOption = userFromSso(token)
 
