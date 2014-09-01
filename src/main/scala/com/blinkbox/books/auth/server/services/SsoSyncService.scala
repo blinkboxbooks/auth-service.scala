@@ -18,11 +18,9 @@ trait SsoSyncService extends ((Option[User], SsoAccessToken) => Future[User]) {
 class DefaultSsoSyncService[DB <: DatabaseSupport](
     db: DB#Database,
     userRepo: UserRepository[DB#Profile],
+    termsVersion: String,
     events: Publisher,
     sso: Sso)(implicit ec: ExecutionContext) extends SsoSyncService {
-
-  // TODO: Move this to configuration
-  val TermsVersion = "1.0"
 
   private def registerUser(reg: UserRegistration): Future[User] = Future {
     db.withSession { implicit session => userRepo.createUser(reg) }
@@ -40,7 +38,7 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
     for {
       (ssoId, registration) <- registrationFuture
       user <- registerUser(registration)
-      _ <- sso linkAccount(ssoAccessToken, user.id, false, TermsVersion)
+      _ <- sso linkAccount(ssoAccessToken, user.id, false, termsVersion)
       linkedUser = user.copy(ssoId = Some(ssoId))
       _ <- updateUser(linkedUser)
       _ <- events.publish(UserRegistered(linkedUser))
@@ -67,7 +65,7 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
     maybeUser.fold(syncNewUser(ssoAccessToken)) { user =>
       if (user.ssoId.isDefined) syncExistingUser(ssoAccessToken, user)
       else for {
-        _           <- sso linkAccount(ssoAccessToken, user.id, user.allowMarketing, TermsVersion)
+        _           <- sso linkAccount(ssoAccessToken, user.id, user.allowMarketing, termsVersion)
         updatedUser <- syncExistingUser(ssoAccessToken, user)
       } yield updatedUser
     }

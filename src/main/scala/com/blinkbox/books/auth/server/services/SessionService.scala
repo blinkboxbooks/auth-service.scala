@@ -26,9 +26,6 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
   extends SessionService with UserInfoFactory with ClientInfoFactory with ClientAuthenticator[Profile] {
 
-  // TODO: Make this configurable
-  val MaxClients = 12
-
   private def sessionInfoFromUser(user: AuthenticatedUser) = fetchRefreshToken(user).map { token =>
     val elevation = (token.isValid, user.ssoAccessToken.isDefined)match {
       case (false, _) => None

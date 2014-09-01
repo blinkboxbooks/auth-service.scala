@@ -85,7 +85,8 @@ trait DefaultAuthServiceComponent extends AuthServiceComponent {
 }
 
 trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
-  this: DatabaseComponent
+  this: ConfigComponent
+    with DatabaseComponent
     with RepositoriesComponent
     with GeoIPComponent
     with EventsComponent
@@ -95,7 +96,7 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
     with SsoComponent =>
 
   val registrationService = new DefaultRegistrationService(
-    db, authRepository, userRepository, clientRepository, exceptionFilter, tokenBuilder, geoIp, publisher, sso)
+    db, authRepository, userRepository, clientRepository, exceptionFilter, config.authServer.termsVersion, tokenBuilder, geoIp, publisher, sso)
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
@@ -145,9 +146,14 @@ trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
 }
 
 trait DefaultSsoSyncComponent extends SsoSyncComponent {
-  this: EventsComponent with AsyncComponent with SsoComponent with DatabaseComponent with RepositoriesComponent =>
+  this: ConfigComponent with
+    EventsComponent with
+    AsyncComponent with
+    SsoComponent with
+    DatabaseComponent with
+    RepositoriesComponent =>
 
-  def ssoSync = new DefaultSsoSyncService(db, userRepository, publisher, sso)
+  def ssoSync = new DefaultSsoSyncService(db, userRepository, config.authServer.termsVersion, publisher, sso)
 }
 
 trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceComponent {

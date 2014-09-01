@@ -13,7 +13,6 @@ import com.blinkbox.books.time.Clock
 import spray.http.RemoteAddress
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 
 trait RegistrationService {
   def registerUser(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[TokenInfo]
@@ -25,13 +24,11 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
     exceptionFilter: DB#ExceptionFilter,
+    termsVersion: String,
     tokenBuilder: TokenBuilder,
     geoIP: GeoIP,
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
-
-  // TODO: Make this configurable
-  private val TermsAndConditionsVersion = "1.0"
 
   private def validateRegistration(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[UserRegistration] =
     Future {
@@ -73,7 +70,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
       reg                   <- validateRegistration(registration, clientIp)
       (ssoId, cred)         <- sso register reg
       (user, client, token) <- persistDetails(reg, cred)
-      _                     <- sso linkAccount(cred.accessToken, user.id, registration.allowMarketing, TermsAndConditionsVersion)
+      _                     <- sso linkAccount(cred.accessToken, user.id, registration.allowMarketing, termsVersion)
       _                     <- markLinked(user, ssoId)
       _                     <- events publish UserRegistered(user)
       _                     <- client map(cl => events publish ClientRegistered(user, cl)) getOrElse(Future.successful(()))
