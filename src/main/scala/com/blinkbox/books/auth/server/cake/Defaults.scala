@@ -100,72 +100,77 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
-  this: DatabaseComponent with RepositoriesComponent with EventsComponent with AsyncComponent with TimeSupport with SsoComponent =>
+  this: DatabaseComponent
+    with RepositoriesComponent
+    with EventsComponent
+    with AsyncComponent
+    with TimeSupport
+    with SsoComponent =>
 
   val userService = new DefaultUserService(db, userRepository, sso, publisher)
 }
 
 trait DefaultClientServiceComponent extends ClientServiceComponent {
-  this: ConfigComponent with
-    DatabaseComponent with
-    RepositoriesComponent with
-    EventsComponent with
-    AsyncComponent with
-    TimeSupport =>
+  this: ConfigComponent
+    with DatabaseComponent
+    with RepositoriesComponent
+    with EventsComponent
+    with AsyncComponent
+    with TimeSupport =>
 
   val clientService = new DefaultClientService(
     db, clientRepository, authRepository, userRepository, config.authServer.maxClients, publisher)
 }
 
 trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticationServiceComponent {
-  this: DatabaseComponent with
-    RepositoriesComponent with
-    EventsComponent with
-    AsyncComponent with
-    TimeSupport with
-    SsoComponent with
-    TokenBuilderComponent with
-    SsoSyncComponent =>
+  this: DatabaseComponent
+    with RepositoriesComponent
+    with EventsComponent
+    with AsyncComponent
+    with TimeSupport
+    with SsoComponent
+    with TokenBuilderComponent
+    with SsoSyncComponent =>
 
   val passwordAuthenticationService = new DefaultPasswordAuthenticationService(
     db, authRepository, userRepository, clientRepository, tokenBuilder, publisher, ssoSync, sso)
 }
 
 trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
-  this: ConfigComponent with
-    DatabaseComponent with
-    RepositoriesComponent with
-    EventsComponent with
-    AsyncComponent with
-    TimeSupport with
-    TokenBuilderComponent with
-    SsoComponent =>
+  this: ConfigComponent
+    with DatabaseComponent
+    with RepositoriesComponent
+    with EventsComponent
+    with AsyncComponent
+    with TimeSupport
+    with TokenBuilderComponent
+    with SsoComponent =>
 
   val refreshTokenService = new DefaultRefreshTokenService(
     db, authRepository, userRepository, clientRepository, config.authServer.refreshTokenLifetimeExtension, tokenBuilder, publisher, sso)
 }
 
 trait DefaultSsoSyncComponent extends SsoSyncComponent {
-  this: ConfigComponent with
-    EventsComponent with
-    AsyncComponent with
-    SsoComponent with
-    DatabaseComponent with
-    RepositoriesComponent =>
+  this: ConfigComponent
+    with EventsComponent
+    with AsyncComponent
+    with SsoComponent
+    with DatabaseComponent
+    with RepositoriesComponent =>
 
   def ssoSync = new DefaultSsoSyncService(db, userRepository, config.authServer.termsVersion, publisher, sso)
 }
 
 trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceComponent {
-  this: ConfigComponent with
-    EventsComponent with
-    AsyncComponent with
-    TimeSupport with
-    SsoComponent with
-    DatabaseComponent with
-    RepositoriesComponent with
-    TokenBuilderComponent with
-    SsoSyncComponent =>
+  this: ConfigComponent
+    with EventsComponent
+    with AsyncComponent
+    with TimeSupport
+    with SsoComponent
+    with DatabaseComponent
+    with RepositoriesComponent
+    with TokenBuilderComponent
+    with SsoSyncComponent =>
 
   val passwordUpdateService = new DefaultPasswordUpdateService(
     db, userRepository, authRepository, config.authServer.passwordResetBaseUrl, tokenBuilder, ssoSync, publisher, sso)
