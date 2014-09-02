@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.17.2 ([#39](https://git.mobcastdev.com/Zuul/auth-service/pull/39) 2014-09-01 17:26:08)
+
+Make things more configurable
+
+### Improvements
+
+In this PR I went over all the TODOs in the code that were about making things configurable and I made them configurable.
+
+I also moved the keys needed for the `TokenBuilder` in the classpath resources so that tests can be run in any server and I solved that glitch that was causing tests to fail at the first run and pass at the second one. I have only a doubt: should we move in the classpath resources the `client.auth.keysDir` value for tests?
+
 ## 0.17.1 ([#38](https://git.mobcastdev.com/Zuul/auth-service/pull/38) 2014-08-29 16:43:26)
 
 Housekeeping - fix all SSO camel casing inconsistencies
