@@ -14,6 +14,7 @@ import com.blinkbox.books.slick.MySQLDatabaseSupport
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
 import com.rabbitmq.client.Connection
+import com.zaxxer.hikari.{HikariDataSource, HikariConfig}
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
@@ -50,9 +51,16 @@ trait DefaultDatabaseComponent extends DatabaseComponent {
   override val driver = MySQLDriver
 
   override val db = {
-    val jdbcUrl = s"jdbc:${config.db.uri.withUserInfo("")}"
-    val Array(user, password) = config.db.uri.getUserInfo.split(':')
-    Database.forURL(jdbcUrl, driver = "com.mysql.jdbc.Driver", user = user, password = password)
+    val c = config.db
+
+    val poolConfig = new HikariConfig(getClass.getResource("/hikari.properties").getPath)
+    poolConfig.addDataSourceProperty("serverName", c.host)
+    poolConfig.addDataSourceProperty("port", c.port.getOrElse(3306))
+    poolConfig.addDataSourceProperty("databaseName", c.db)
+    poolConfig.setUsername(c.user)
+    poolConfig.setPassword(c.pass)
+
+    Database.forDataSource(new HikariDataSource(poolConfig))
   }
 
   override val tables = ZuulTables[DB.Profile](driver)

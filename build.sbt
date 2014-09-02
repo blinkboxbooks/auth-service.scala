@@ -21,6 +21,7 @@ val dependencySettings = Seq(
       "io.spray"                  %   "spray-client"          % sprayV,
       "org.json4s"                %%  "json4s-native"         % json4sV, // for swagger :-/
       "com.typesafe.akka"         %%  "akka-slf4j"            % akkaV,
+      "com.zaxxer"                %   "HikariCP-java6"        % "2.0.1",
       "com.typesafe.slick"        %%  "slick"                 % "2.1.0",
       "commons-lang"              %   "commons-lang"          % "2.6",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
