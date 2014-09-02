@@ -30,7 +30,7 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordUpdateService with ClientAuthenticator[DB#Profile] {
 
-  private val trimmedBaseUrl: String = if (resetBaseUrl.endsWith("/")) resetBaseUrl.dropRight(1) else resetBaseUrl
+  private val trimmedBaseUrl = if (resetBaseUrl.endsWith("/")) resetBaseUrl.dropRight(1) else resetBaseUrl
 
   private def resetUrl(token: SsoPasswordResetToken) = new URL(s"${trimmedBaseUrl}/${token.value}")
 

@@ -21,7 +21,6 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     db: Database,
     authRepo: AuthRepository[Profile],
     userRepo: UserRepository[Profile],
-    cliTokenBuilderentRepo: ClientRepository[Profile], // TODO: This is not used any more, remove it
     tokenBuilder: TokenBuilder,
     events: Publisher,
     ssoSync: SsoSyncService,

@@ -133,7 +133,7 @@ trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticati
     with SsoSyncComponent =>
 
   val passwordAuthenticationService = new DefaultPasswordAuthenticationService(
-    db, authRepository, userRepository, clientRepository, tokenBuilder, publisher, ssoSync, sso)
+    db, authRepository, userRepository, tokenBuilder, publisher, ssoSync, sso)
 }
 
 trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {

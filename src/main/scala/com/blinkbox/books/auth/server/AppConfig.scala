@@ -16,7 +16,7 @@ case class AppConfig(
     db: DatabaseConfig,
     rabbit: RabbitMqConfig,
     authClient: AuthClientConfig,
-    sso: SSOConfig,
+    sso: SsoConfig,
     authServer: AuthServerConfig)
 
 case class KeysConfig(path: String, signingKeyId: String, encryptionKeyId: String) {
@@ -35,7 +35,7 @@ case class AuthServerConfig(
     refreshTokenLifetimeExtension: FiniteDuration) {
 }
 
-case class SSOConfig(
+case class SsoConfig(
     host: String,
     port: Int,
     version: String,
@@ -64,8 +64,8 @@ object AuthServerConfig {
   )
 }
 
-object SSOConfig {
-  def apply(config: Config): SSOConfig = SSOConfig(
+object SsoConfig {
+  def apply(config: Config): SsoConfig = SsoConfig(
     host = config.getString("sso.host"),
     port = config.getInt("sso.port"),
     version = config.getString("sso.version"),
@@ -82,7 +82,7 @@ object AppConfig {
     DatabaseConfig(config, "service.auth.db"),
     RabbitMqConfig(config),
     AuthClientConfig(config),
-    SSOConfig(config),
+    SsoConfig(config),
     AuthServerConfig(config, "service.auth"))
 
   lazy val default: AppConfig = AppConfig((new Configuration {}).config)
