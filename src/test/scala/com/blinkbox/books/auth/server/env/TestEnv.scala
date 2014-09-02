@@ -2,6 +2,7 @@ package com.blinkbox.books.auth.server.env
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data.{Client, _}
@@ -17,6 +18,14 @@ import scala.slick.driver.H2Driver
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
+}
+
+trait TestAsyncComponent extends AsyncComponent {
+  override val actorSystem: ActorSystem = ActorSystem("auth-server")
+  override val apiExecutionContext = actorSystem.dispatcher
+  override val ssoClientExecutionContext = actorSystem.dispatcher
+  override val serviceExecutionContext = actorSystem.dispatcher
+  override val rabbitExecutionContext = actorSystem.dispatcher
 }
 
 trait TestConfigComponent extends ConfigComponent {
@@ -70,7 +79,7 @@ trait TestSsoComponent extends SsoComponent {
 
 class TestEnv extends
     TestConfigComponent with
-    DefaultAsyncComponent with
+    TestAsyncComponent with
     StoppedClockSupport with
     TestSsoComponent with
     DefaultGeoIPComponent with
