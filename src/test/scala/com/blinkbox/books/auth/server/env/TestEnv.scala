@@ -55,12 +55,17 @@ trait TestSsoComponent extends SsoComponent {
 
   val ssoResponse = new SSOResponseMocker
 
-  private val client = new TestSSOClient(config.sso, ssoResponse.nextResponse)
+  private val client = withSsoClientContext { implicit ec =>
+    new TestSSOClient(config.sso, ssoResponse.nextResponse)
+  }
+
   private val tokenDecoder = new SsoAccessTokenDecoder(SsoTestKeyStore) {
     override def validateExpirationTime(expirationTime: Date) = {} // allow expired token for test purposes
   }
 
-  override val sso = new DefaultSso(config.sso, client, tokenDecoder)
+  override val sso = withSsoClientContext { implicit ec =>
+    new DefaultSso(config.sso, client, tokenDecoder)
+  }
 }
 
 class TestEnv extends
@@ -83,6 +88,8 @@ class TestEnv extends
     DefaultSsoSyncComponent with
     DefaultPasswordUpdatedServiceComponent with
     DefaultApiComponent {
+
+  implicit val ec = actorSystem.dispatcher
 
   import driver.simple._
 

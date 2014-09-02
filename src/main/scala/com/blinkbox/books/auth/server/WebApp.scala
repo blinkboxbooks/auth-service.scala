@@ -52,7 +52,7 @@ class WebService extends HttpServiceActor {
 }
 
 object WebApp extends App with Configuration with Loggers {
-  implicit val system = WebAppComponents.system
+  implicit val system = WebAppComponents.actorSystem
   implicit val executionContext = system.dispatcher
   implicit val startTimeout = Timeout(10.seconds)
 

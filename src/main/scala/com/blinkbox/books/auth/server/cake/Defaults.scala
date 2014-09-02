@@ -1,5 +1,7 @@
 package com.blinkbox.books.auth.server.cake
 
+import java.util.concurrent.ForkJoinPool
+
 import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
@@ -25,13 +27,19 @@ trait DefaultConfigComponent extends ConfigComponent {
 
 trait DefaultAsyncComponent extends AsyncComponent {
   override val actorSystem: ActorSystem = ActorSystem("auth-server")
-  override val executionContext: ExecutionContext = actorSystem.dispatcher
+  override val apiExecutionContext = actorSystem.dispatcher
+  override val ssoClientExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool)
+  override val serviceExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool)
+  override val rabbitExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool)
 }
 
 trait DefaultEventsComponent extends EventsComponent {
   this: ConfigComponent with AsyncComponent with TimeSupport =>
+
   private val rabbitConnection: Connection = RabbitMq.reliableConnection(config.rabbit)
-  override val publisher: Publisher = new RabbitMqPublisher(rabbitConnection.createChannel) ~ new LegacyRabbitMqPublisher(rabbitConnection.createChannel)
+  override val publisher: Publisher = withRabbitContext { implicit ec =>
+    new RabbitMqPublisher(rabbitConnection.createChannel) ~ new LegacyRabbitMqPublisher(rabbitConnection.createChannel)
+  }
 }
 
 trait DefaultDatabaseComponent extends DatabaseComponent {
@@ -81,7 +89,9 @@ trait DefaultAuthServiceComponent extends AuthServiceComponent {
     with TimeSupport
     with SsoComponent =>
 
-  val sessionService = new DefaultSessionService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
+  val sessionService = withServiceContext { implicit ec =>
+    new DefaultSessionService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
+  }
 }
 
 trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
@@ -95,8 +105,10 @@ trait DefaultRegistrationServiceComponent extends RegistrationServiceComponent {
     with TokenBuilderComponent
     with SsoComponent =>
 
-  val registrationService = new DefaultRegistrationService(
-    db, authRepository, userRepository, clientRepository, exceptionFilter, config.authServer.termsVersion, tokenBuilder, geoIp, publisher, sso)
+  val registrationService = withServiceContext { implicit ec =>
+    new DefaultRegistrationService(
+      db, authRepository, userRepository, clientRepository, exceptionFilter, config.authServer.termsVersion, tokenBuilder, geoIp, publisher, sso)
+  }
 }
 
 trait DefaultUserServiceComponent extends UserServiceComponent {
@@ -107,7 +119,9 @@ trait DefaultUserServiceComponent extends UserServiceComponent {
     with TimeSupport
     with SsoComponent =>
 
-  val userService = new DefaultUserService(db, userRepository, sso, publisher)
+  val userService = withServiceContext { implicit ec =>
+    new DefaultUserService(db, userRepository, sso, publisher)
+  }
 }
 
 trait DefaultClientServiceComponent extends ClientServiceComponent {
@@ -118,8 +132,10 @@ trait DefaultClientServiceComponent extends ClientServiceComponent {
     with AsyncComponent
     with TimeSupport =>
 
-  val clientService = new DefaultClientService(
-    db, clientRepository, authRepository, userRepository, config.authServer.maxClients, publisher)
+  val clientService = withServiceContext { implicit ec =>
+    new DefaultClientService(
+      db, clientRepository, authRepository, userRepository, config.authServer.maxClients, publisher)
+  }
 }
 
 trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticationServiceComponent {
@@ -132,8 +148,10 @@ trait DefaultPasswordAuthenticationServiceComponent extends PasswordAuthenticati
     with TokenBuilderComponent
     with SsoSyncComponent =>
 
-  val passwordAuthenticationService = new DefaultPasswordAuthenticationService(
-    db, authRepository, userRepository, tokenBuilder, publisher, ssoSync, sso)
+  val passwordAuthenticationService = withServiceContext { implicit ec =>
+    new DefaultPasswordAuthenticationService(
+      db, authRepository, userRepository, tokenBuilder, publisher, ssoSync, sso)
+  }
 }
 
 trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
@@ -146,8 +164,10 @@ trait DefaultRefreshTokenServiceComponent extends RefreshTokenServiceComponent {
     with TokenBuilderComponent
     with SsoComponent =>
 
-  val refreshTokenService = new DefaultRefreshTokenService(
-    db, authRepository, userRepository, clientRepository, config.authServer.refreshTokenLifetimeExtension, tokenBuilder, publisher, sso)
+  val refreshTokenService = withServiceContext { implicit ec =>
+    new DefaultRefreshTokenService(
+      db, authRepository, userRepository, clientRepository, config.authServer.refreshTokenLifetimeExtension, tokenBuilder, publisher, sso)
+  }
 }
 
 trait DefaultSsoSyncComponent extends SsoSyncComponent {
@@ -158,7 +178,9 @@ trait DefaultSsoSyncComponent extends SsoSyncComponent {
     with DatabaseComponent
     with RepositoriesComponent =>
 
-  def ssoSync = new DefaultSsoSyncService(db, userRepository, config.authServer.termsVersion, publisher, sso)
+  def ssoSync = withServiceContext { implicit ec =>
+    new DefaultSsoSyncService(db, userRepository, config.authServer.termsVersion, publisher, sso)
+  }
 }
 
 trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceComponent {
@@ -172,8 +194,10 @@ trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceCompon
     with TokenBuilderComponent
     with SsoSyncComponent =>
 
-  val passwordUpdateService = new DefaultPasswordUpdateService(
-    db, userRepository, authRepository, config.authServer.passwordResetBaseUrl, tokenBuilder, ssoSync, publisher, sso)
+  val passwordUpdateService = withServiceContext { implicit ec =>
+    new DefaultPasswordUpdateService(
+      db, userRepository, authRepository, config.authServer.passwordResetBaseUrl, tokenBuilder, ssoSync, publisher, sso)
+  }
 }
 
 trait DefaultSsoComponent extends SsoComponent {
@@ -181,7 +205,9 @@ trait DefaultSsoComponent extends SsoComponent {
 
   private val keyStore = new FileKeyStore(config.sso.keyStore)
   private val tokenDecoder = new SsoAccessTokenDecoder(keyStore)
-  override val sso = new DefaultSso(config.sso, new DefaultClient(config.sso), tokenDecoder)
+  override val sso = withSsoClientContext { implicit ec =>
+    new DefaultSso(config.sso, new DefaultClient(config.sso), tokenDecoder)(ssoClientExecutionContext)
+  }
 }
 
 trait DefaultApiComponent {
@@ -195,9 +221,11 @@ trait DefaultApiComponent {
     with ConfigComponent
     with AsyncComponent =>
 
-  val authenticator: ContextAuthenticator[User] = new ZuulTokenAuthenticator(
-    new ZuulTokenDeserializer(new ZuulTokenDecoder(config.authClient.keysDir.getAbsolutePath)),
-    _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker
+  val authenticator: ContextAuthenticator[User] = withApiExecutionContext { implicit ec =>
+    new ZuulTokenAuthenticator(
+      new ZuulTokenDeserializer(new ZuulTokenDecoder(config.authClient.keysDir.getAbsolutePath)),
+      _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker
+  }
 
   private val zuulApi = new AuthApi(config.service,
     userService,
