@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.{UserPatch, PasswordCredentials, SSOConfig, UserRegistration}
+import com.blinkbox.books.auth.server.{UserPatch, PasswordCredentials, SsoConfig, UserRegistration}
 import com.typesafe.scalalogging.slf4j.StrictLogging
 import org.json4s.JsonAST.{JField, JObject, JString}
 import spray.client.pipelining._
@@ -60,7 +60,7 @@ trait Sso {
   // def systemStatus(): Future[SystemStatus]
 }
 
-class DefaultSso(config: SSOConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends Sso with StrictLogging {
+class DefaultSso(config: SsoConfig, client: Client, tokenDecoder: SsoAccessTokenDecoder)(implicit ec: ExecutionContext) extends Sso with StrictLogging {
   import com.blinkbox.books.auth.server.sso.Serialization.json4sUnmarshaller
 
   private def versioned(uri: String) = s"/${config.version}$uri"

@@ -47,7 +47,7 @@ class UpdateUserSpecs extends ApiSpecBase[UserInfoTestEnv] {
   it should "return a 401 if the user is not present on our database but it is available on SSO" in {
     env.ssoSuccessfulJohnDoeInfo()
 
-    val token = TokenBuilder.issueAccessToken(
+    val token = env.tokenBuilder.issueAccessToken(
       env.userA.copy(id = UserId(10)), None, env.refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
 
     Patch("/users/10", userPatch) ~> addCredentials(OAuth2BearerToken(token.access_token)) ~> route ~> check {

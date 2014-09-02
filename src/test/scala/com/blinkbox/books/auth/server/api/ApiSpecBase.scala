@@ -6,6 +6,7 @@ import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.{TokenStatus, ZuulRequestExceptionSerializer}
 import com.blinkbox.books.json.DefaultFormats
+import com.typesafe.config.ConfigFactory
 import org.json4s.ext.EnumNameSerializer
 import org.json4s.jackson.Serialization
 import org.json4s.{Formats, MappingException}
@@ -51,13 +52,10 @@ trait AuthorisationTestHelpers {
 abstract class ApiSpecBase[E <: TestEnv] extends FlatSpec
   with Matchers
   with ScalatestRouteTest
-  with HttpService
   with BeforeAndAfterEach
   with FormDataUnmarshallers
   with JsonUnmarshallers
   with AuthorisationTestHelpers {
-
-  def actorRefFactory = system
 
   protected def newEnv: E
 
@@ -66,6 +64,10 @@ abstract class ApiSpecBase[E <: TestEnv] extends FlatSpec
 
   val userUriExpr = """\/users\/(\d+)""".r
   val clientUriExpr = """\/clients\/(\d+)""".r
+
+  // Do not load the application configuration for the test actor system as it will be loaded later on. This is not optimal
+  // but it solves the problem of having placeholders in the configuration that are resolved during the environment initialization.
+  override def testConfig = ConfigFactory.empty()
 
   override def beforeEach() {
     env = newEnv

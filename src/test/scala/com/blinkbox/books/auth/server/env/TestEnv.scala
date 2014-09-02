@@ -10,6 +10,7 @@ import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.slick.H2DatabaseSupport
 import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.joda.time.Duration
 
 import scala.slick.driver.H2Driver
@@ -19,10 +20,15 @@ trait StoppedClockSupport extends TimeSupport {
 }
 
 trait TestConfigComponent extends ConfigComponent {
-  Option(getClass.getResource("/sso_public.key")).map(_.getFile) match {
-    case Some(uri) => System.setProperty("SSO_KEYSTORE", uri)
-    case None => sys.error("Cannot find test key resource")
+  private def getResourcePath(resource: String) = Option(getClass.getResource(resource)).map(_.getFile) match {
+    case Some(uri) => uri
+    case None => sys.error(s"Cannot find resource: $resource")
   }
+
+  System.setProperty("SSO_KEYSTORE", getResourcePath("/sso_public.key"))
+  System.setProperty("AUTH_KEYS_PATH", getResourcePath("/auth_keys"))
+
+  ConfigFactory.invalidateCaches()
 
   override val config = AppConfig.default
 }
@@ -66,6 +72,7 @@ class TestEnv extends
     TestEventsComponent with
     TestDatabaseComponent with
     TestPasswordHasherComponent with
+    DefaultTokenBuilderComponent with
     DefaultRepositoriesComponent with
     DefaultUserServiceComponent with
     DefaultClientServiceComponent with
@@ -136,10 +143,10 @@ class TestEnv extends
 
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
-  val tokenInfoA1 = TokenBuilder.issueAccessToken(
+  val tokenInfoA1 = tokenBuilder.issueAccessToken(
     userA, None, refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
 
-  val tokenInfoA1WithoutSSO = TokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
+  val tokenInfoA1WithoutSSO = tokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 
   val resetCredentials = ResetTokenCredentials(SsoPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
 

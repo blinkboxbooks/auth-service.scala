@@ -1,14 +1,14 @@
 package com.blinkbox.books.auth.server.sso
 
 import akka.actor.{ActorRef, ActorSystem}
-import com.blinkbox.books.auth.server.SSOConfig
+import com.blinkbox.books.auth.server.SsoConfig
 import org.scalatest.Matchers._
 import spray.http.{MediaTypes, HttpEntity, HttpRequest, HttpResponse}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class TestSSOClient(
-    config: SSOConfig,
+    config: SsoConfig,
     nextResponse: () => Future[HttpResponse])(implicit ec: ExecutionContext, sys: ActorSystem) extends DefaultClient(config) {
 
   private val commonAssertions: HttpRequest => Unit = { req =>

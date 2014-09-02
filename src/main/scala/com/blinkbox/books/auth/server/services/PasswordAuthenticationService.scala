@@ -21,7 +21,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     db: Database,
     authRepo: AuthRepository[Profile],
     userRepo: UserRepository[Profile],
-    clientRepo: ClientRepository[Profile], // TODO: This is not used any more, remove it
+    tokenBuilder: TokenBuilder,
     events: Publisher,
     ssoSync: SsoSyncService,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordAuthenticationService with ClientAuthenticator[Profile] {
@@ -48,7 +48,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
       client          <- getClient(credentials, user)
       token           <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken)
       _               <- events.publish(UserAuthenticated(user, client))
-    } yield TokenBuilder.issueAccessToken(user, client, token, Some(ssoCredentials), includeRefreshToken = true)
+    } yield tokenBuilder.issueAccessToken(user, client, token, Some(ssoCredentials), includeRefreshToken = true)
 
   } transform(identity, {
     case SsoUnauthorized => Failures.invalidUsernamePassword

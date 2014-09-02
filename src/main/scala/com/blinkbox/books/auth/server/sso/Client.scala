@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.io.IO
 import akka.pattern.ask
 import akka.util.Timeout
-import com.blinkbox.books.auth.server.SSOConfig
+import com.blinkbox.books.auth.server.SsoConfig
 import spray.can.Http
 import spray.client.pipelining._
 import spray.http._
@@ -20,7 +20,7 @@ trait Client {
 }
 
 trait SprayClient extends Client {
-  val config: SSOConfig
+  val config: SsoConfig
   val system: ActorSystem
   val ec: ExecutionContext
 
@@ -56,4 +56,4 @@ trait SprayClient extends Client {
     dataPipeline[T](credentials).flatMap(_(req))
 }
 
-class DefaultClient(val config: SSOConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient
+class DefaultClient(val config: SsoConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient

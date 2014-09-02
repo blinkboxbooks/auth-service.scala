@@ -34,6 +34,7 @@ object WebAppComponents extends
   DefaultEventsComponent with
   DefaultDatabaseComponent with
   DefaultPasswordHasherComponent with
+  DefaultTokenBuilderComponent with
   DefaultRepositoriesComponent with
   DefaultUserServiceComponent with
   DefaultClientServiceComponent with

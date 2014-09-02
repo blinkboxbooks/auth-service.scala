@@ -6,7 +6,7 @@ import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.Sso
-import com.blinkbox.books.auth.server.{AppConfig, PasswordHasher}
+import com.blinkbox.books.auth.server.{TokenBuilder, AppConfig, PasswordHasher}
 import com.blinkbox.books.slick.{BaseRepositoriesComponent, BaseDatabaseComponent}
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
@@ -36,6 +36,10 @@ trait DatabaseComponent extends BaseDatabaseComponent {
 
 trait PasswordHasherComponent {
   def passwordHasher: PasswordHasher
+}
+
+trait TokenBuilderComponent {
+  def tokenBuilder: TokenBuilder
 }
 
 trait RepositoriesComponent extends BaseRepositoriesComponent {

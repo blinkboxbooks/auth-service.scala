@@ -6,7 +6,9 @@ import com.blinkbox.books.auth.server.events.{Publisher, UserAuthenticated}
 import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, Sso, SsoCredentials}
 import com.blinkbox.books.slick.DatabaseSupport
 import com.blinkbox.books.time.Clock
+import org.joda.time.Duration
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RefreshTokenService {
@@ -19,6 +21,8 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
     authRepo: AuthRepository[DB#Profile],
     userRepo: UserRepository[DB#Profile],
     clientRepo: ClientRepository[DB#Profile],
+    tokenLifetimeExtension: FiniteDuration,
+    tokenBuilder: TokenBuilder,
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
   extends RefreshTokenService with ClientAuthenticator[DB#Profile] {
@@ -51,7 +55,8 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
   }
 
   private def extendTokenLifetime(token: RefreshToken, ssoRefreshToken: Option[SsoRefreshToken]): Future[Unit] = Future {
-    db.withSession { implicit session => authRepo.extendRefreshTokenLifetime(token, ssoRefreshToken)}
+    val timeSpan = Duration.millis(tokenLifetimeExtension.toMillis)
+    db.withSession { implicit session => authRepo.extendRefreshTokenLifetime(token, ssoRefreshToken, timeSpan)}
   }
 
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = {
@@ -65,7 +70,7 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
         _         <- checkAuthorization(token, client)
         ssoCreds  <- ssoFuture
         user      <- userFuture
-      } yield (token, user, client, ssoCreds, TokenBuilder.issueAccessToken(user, client, token, ssoCreds))
+      } yield (token, user, client, ssoCreds, tokenBuilder.issueAccessToken(user, client, token, ssoCreds))
     }
 
     tokenFuture.onSuccess {
