@@ -9,6 +9,7 @@ import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSso, FileKeyStore, SsoAccessTokenDecoder}
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
+import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.rabbitmq.RabbitMq
 import com.blinkbox.books.slick.MySQLDatabaseSupport
 import com.blinkbox.books.spray._
@@ -28,10 +29,10 @@ trait DefaultConfigComponent extends ConfigComponent {
 
 trait DefaultAsyncComponent extends AsyncComponent {
   override val actorSystem: ActorSystem = ActorSystem("auth-server")
-  override val apiExecutionContext = actorSystem.dispatcher
-  override val ssoClientExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool)
-  override val serviceExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool)
-  override val rabbitExecutionContext = ExecutionContext.fromExecutorService(new ForkJoinPool)
+  override val apiExecutionContext = DiagnosticExecutionContext(actorSystem.dispatcher)
+  override val ssoClientExecutionContext = DiagnosticExecutionContext(ExecutionContext.fromExecutorService(new ForkJoinPool))
+  override val serviceExecutionContext = DiagnosticExecutionContext(ExecutionContext.fromExecutorService(new ForkJoinPool))
+  override val rabbitExecutionContext = DiagnosticExecutionContext(ExecutionContext.fromExecutorService(new ForkJoinPool))
 }
 
 trait DefaultEventsComponent extends EventsComponent {
