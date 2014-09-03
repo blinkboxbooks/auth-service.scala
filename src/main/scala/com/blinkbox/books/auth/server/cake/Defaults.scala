@@ -229,7 +229,7 @@ trait DefaultApiComponent {
     with ConfigComponent
     with AsyncComponent =>
 
-  val authenticator: ContextAuthenticator[User] = withApiExecutionContext { implicit ec =>
+  val authenticator: ContextAuthenticator[User] = withApiContext { implicit ec =>
     new ZuulTokenAuthenticator(
       new ZuulTokenDeserializer(new ZuulTokenDecoder(config.authClient.keysDir.getAbsolutePath)),
       _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker

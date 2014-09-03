@@ -30,7 +30,7 @@ trait AsyncComponent {
   def withServiceContext[T](f: ExecutionContext => T) = f(serviceExecutionContext)
   def withRabbitContext[T](f: ExecutionContext => T) = f(rabbitExecutionContext)
   def withSsoClientContext[T](f: ExecutionContext => T) = f(ssoClientExecutionContext)
-  def withApiExecutionContext[T](f: ExecutionContext => T) = f(apiExecutionContext)
+  def withApiContext[T](f: ExecutionContext => T) = f(apiExecutionContext)
 }
 
 trait EventsComponent {
