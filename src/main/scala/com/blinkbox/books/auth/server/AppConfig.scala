@@ -1,19 +1,23 @@
 package com.blinkbox.books.auth.server
 
-import java.nio.file.{Path, Files, Paths}
+import java.nio.file.{Files, Path, Paths}
+import java.util.Properties
 import java.util.concurrent.TimeUnit
 
 import com.blinkbox.books.config._
 import com.blinkbox.books.rabbitmq.RabbitMqConfig
 import com.typesafe.config.Config
+import com.zaxxer.hikari
 import spray.http.{BasicHttpCredentials, HttpCredentials}
 
+import scala.collection.convert.Wrappers
 import scala.concurrent.duration._
 
 case class AppConfig(
     service: ApiConfig,
     swagger: SwaggerConfig,
     db: DatabaseConfig,
+    hikari: HikariConfig,
     rabbit: RabbitMqConfig,
     authClient: AuthClientConfig,
     sso: SsoConfig,
@@ -44,6 +48,88 @@ case class SsoConfig(
     keyStore: String) {
 
   require(Files.exists(Paths.get(keyStore)), s"SSO key-store file not found: $keyStore")
+}
+
+case class HikariConfig(
+    dataSourceClassName: String,
+    autoCommit: Option[Boolean],
+    readOnly: Option[Boolean],
+    transactionIsolation: Option[String],
+    catalog: Option[String],
+    connectionTimeout: Option[FiniteDuration],
+    idleTimeout: Option[FiniteDuration],
+    maxLifetime: Option[FiniteDuration],
+    leakDetectionThreshold: Option[FiniteDuration],
+    initializationFailFast: Option[Boolean],
+    jdbc4ConnectionTest: Option[Boolean],
+    connectionTestQuery: Option[String],
+    connectionInitSql: Option[String],
+    minimumIdle: Option[Int],
+    maximumPoolSize: Option[Int],
+    poolName: Option[String],
+    dataSourceProperties: Properties
+) {
+  def get: hikari.HikariConfig = {
+    val c = new hikari.HikariConfig()
+
+    c.setDataSourceClassName(dataSourceClassName)
+
+    autoCommit.foreach(c.setAutoCommit)
+    readOnly.foreach(c.setReadOnly)
+    transactionIsolation.foreach(c.setTransactionIsolation)
+    catalog.foreach(c.setCatalog)
+    connectionTimeout.map(_.toMillis).foreach(c.setConnectionTimeout)
+    idleTimeout.map(_.toMillis).foreach(c.setIdleTimeout)
+    maxLifetime.map(_.toMillis).foreach(c.setMaxLifetime)
+    leakDetectionThreshold.map(_.toMillis).foreach(c.setLeakDetectionThreshold)
+    initializationFailFast.foreach(c.setInitializationFailFast)
+    jdbc4ConnectionTest.foreach(c.setJdbc4ConnectionTest)
+    connectionTestQuery.foreach(c.setConnectionTestQuery)
+    connectionInitSql.foreach(c.setConnectionInitSql)
+    minimumIdle.foreach(c.setMinimumIdle)
+    maximumPoolSize.foreach(c.setMaximumPoolSize)
+    poolName.foreach(c.setPoolName)
+
+    c.setDataSourceProperties(dataSourceProperties)
+
+    c
+  }
+}
+
+object HikariConfig {
+  implicit class ConfigExtensions(config: Config) {
+    def getFiniteDuration(path: String): FiniteDuration = config.getDuration(path, TimeUnit.MILLISECONDS).millis
+    def getFiniteDurationOption(path: String): Option[FiniteDuration] =
+      if (config.hasPath(path)) Some(getFiniteDuration(path)) else None
+  }
+
+  def apply(config: Config, prefix: String): HikariConfig = {
+    val dataSourceProps = new Properties()
+
+    Wrappers.JSetWrapper(config.getConfig(s"$prefix.dataSource").entrySet()) foreach { entry =>
+      dataSourceProps.setProperty(entry.getKey, entry.getValue.render)
+    }
+
+    HikariConfig(
+      config.getString(s"$prefix.dataSourceClassName"),
+      config.getBooleanOption(s"$prefix.autoCommit"),
+      config.getBooleanOption(s"$prefix.readOnly"),
+      config.getStringOption(s"$prefix.transactionIsolation"),
+      config.getStringOption(s"$prefix.catalog"),
+      config.getFiniteDurationOption(s"$prefix.connectionTimeout"),
+      config.getFiniteDurationOption(s"$prefix.idleTimeout"),
+      config.getFiniteDurationOption(s"$prefix.maxLifetime"),
+      config.getFiniteDurationOption(s"$prefix.leakDetectionThreshold"),
+      config.getBooleanOption(s"$prefix.initializationFailFast"),
+      config.getBooleanOption(s"$prefix.jdbc4ConnectionTest"),
+      config.getStringOption(s"$prefix.connectionTestQuery"),
+      config.getStringOption(s"$prefix.connectionInitSql"),
+      config.getIntOption(s"$prefix.minimumIdle"),
+      config.getIntOption(s"$prefix.maximumPoolSize"),
+      config.getStringOption(s"$prefix.poolName"),
+      dataSourceProps
+    )
+  }
 }
 
 object KeysConfig {
@@ -80,6 +166,7 @@ object AppConfig {
     ApiConfig(config, "service.auth.api.public"),
     SwaggerConfig(config, 1),
     DatabaseConfig(config, "service.auth.db"),
+    HikariConfig(config, "service.auth.hikari"),
     RabbitMqConfig(config),
     AuthClientConfig(config),
     SsoConfig(config),

@@ -3,11 +3,11 @@ package com.blinkbox.books.auth.server.cake
 import java.util.concurrent.ForkJoinPool
 
 import akka.actor.ActorSystem
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSso, FileKeyStore, SsoAccessTokenDecoder}
-import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.rabbitmq.RabbitMq
@@ -15,7 +15,7 @@ import com.blinkbox.books.slick.MySQLDatabaseSupport
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
 import com.rabbitmq.client.Connection
-import com.zaxxer.hikari.{HikariDataSource, HikariConfig}
+import com.zaxxer.hikari.HikariDataSource
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
@@ -54,7 +54,7 @@ trait DefaultDatabaseComponent extends DatabaseComponent {
   override val db = {
     val c = config.db
 
-    val poolConfig = new HikariConfig(getClass.getResource("/hikari.properties").getPath)
+    val poolConfig = config.hikari.get
     poolConfig.addDataSourceProperty("serverName", c.host)
     poolConfig.addDataSourceProperty("port", c.port.getOrElse(3306))
     poolConfig.addDataSourceProperty("databaseName", c.db)
