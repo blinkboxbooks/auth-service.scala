@@ -1,15 +1,15 @@
 package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.Elevation
-import com.blinkbox.books.auth.server.env.TokenStatusEnv
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import com.blinkbox.books.auth.server.{TokenStatus, SessionInfo}
 import spray.http.HttpHeaders.`WWW-Authenticate`
 import spray.http.{HttpEntity, OAuth2BearerToken, StatusCodes}
 
-class SessionSpecs extends ApiSpecBase[TokenStatusEnv] {
+class SessionSpecs extends ApiSpecBase[TestEnv] {
 
-  override def newEnv = new TokenStatusEnv
+  override def newEnv = new TestEnv
 
   "The service" should "return session information for a valid and critically elevated token" in {
     env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)

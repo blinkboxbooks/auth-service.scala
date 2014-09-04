@@ -1,13 +1,13 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.env.{TokenStatusEnv, CommonResponder, TestEnv}
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.{FlatSpec, Matchers}
 import spray.http.StatusCodes
 
 class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
 
-  "The SSO client" should "return a successful future if the SSO service replies with a 204" in new TokenStatusEnv {
+  "The SSO client" should "return a successful future if the SSO service replies with a 204" in new TestEnv {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     whenReady(sso.tokenStatus(SsoRefreshToken("some-access-token")))(_ should matchPattern {
@@ -15,7 +15,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
     })
   }
 
-  it should "signal a request failure if the SSO service replies with a 400" in new TestEnv with CommonResponder {
+  it should "signal a request failure if the SSO service replies with a 400" in new TestEnv {
     ssoInvalidRequest("Some error")
 
     failingWith[SsoInvalidRequest](sso.tokenStatus(SsoRefreshToken("some-access-token"))) should matchPattern {
@@ -23,7 +23,7 @@ class TokenStatusSpecs extends FlatSpec with Matchers with SpecBase with FailHel
     }
   }
 
-  it should "signal an authentication failure in the SSO service" in new TestEnv with CommonResponder {
+  it should "signal an authentication failure in the SSO service" in new TestEnv {
     ssoResponse(StatusCodes.Unauthorized)
 
     failingWith[SsoUnauthorized.type](sso.tokenStatus(SsoRefreshToken("some-access-token")))

@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.UserRegistration
-import com.blinkbox.books.auth.server.env.RegistrationTestEnv
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.{FlatSpec, Matchers}
 import spray.http._
@@ -9,7 +9,7 @@ import spray.http._
 class RegistrationSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
   val reg = UserRegistration("A name", "A surname", "anusername@test.tst", "a-password", true, true, None, None, None, None)
 
-  "The SSO client" should "return token credentials for a valid response from the SSO service" in new RegistrationTestEnv {
+  "The SSO client" should "return token credentials for a valid response from the SSO service" in new TestEnv {
     ssoSuccessfulRegistration()
 
     whenReady(sso.register(reg)) { cred =>
@@ -19,13 +19,13 @@ class RegistrationSpecs extends FlatSpec with Matchers with SpecBase with FailHe
     }
   }
 
-  it should "signal a conflict if the SSO service signals that the username is already taken" in new RegistrationTestEnv {
+  it should "signal a conflict if the SSO service signals that the username is already taken" in new TestEnv {
     ssoConflict()
 
     failingWith[SsoConflict.type](sso.register(reg))
   }
 
-  it should "signal an invalid request if the SSO service signals validation errors" in new RegistrationTestEnv {
+  it should "signal an invalid request if the SSO service signals validation errors" in new TestEnv {
     val err = "Password does not meet minimum requirements"
     ssoInvalidRequest(err)
 

@@ -10,37 +10,37 @@ import scala.concurrent.duration._
 
 class DefaultPasswordUpdateServiceSpecs extends SpecBase {
 
-  "The password change endpoint" should "report a success if the SSO service accepts a password change request" in new TestEnv with CommonResponder {
+  "The password change endpoint" should "report a success if the SSO service accepts a password change request" in new TestEnv {
     ssoNoContent()
 
     whenReady(passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) { _ => }
   }
 
-  it should "report a ZuulRequestException if the SSO service doesn't recognize the old password" in new TestEnv with CommonResponder {
+  it should "report a ZuulRequestException if the SSO service doesn't recognize the old password" in new TestEnv {
     ssoResponse(StatusCodes.Forbidden)
 
     failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) should equal(Failures.oldPasswordInvalid)
   }
 
-  it should "report a ZuulRequestException if the SSO service doesn't accept the new password because it doesn't meet requirements" in new TestEnv with CommonResponder {
+  it should "report a ZuulRequestException if the SSO service doesn't accept the new password because it doesn't meet requirements" in new TestEnv {
     ssoInvalidRequest("Password does not meet minimum requirements")
 
     failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) should equal(Failures.passwordTooShort)
   }
 
-  it should "report a ZuulTooManyRequestException if the SSO service respond with a too-many-request response" in new TestEnv with CommonResponder {
+  it should "report a ZuulTooManyRequestException if the SSO service respond with a too-many-request response" in new TestEnv {
     ssoTooManyRequests(20)
 
     failingWith[ZuulTooManyRequestException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) should equal(Failures.tooManyRequests(20.seconds))
   }
 
-  it should "report a ZuulAuthorizationException if the user does not have an SSO access token" in new TestEnv with CommonResponder {
+  it should "report a ZuulAuthorizationException if the user does not have an SSO access token" in new TestEnv {
     ssoNoInvocation()
 
     failingWith[ZuulAuthorizationException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 
-  "The reset-token generation function" should "provide a success and send an email for a successful SSO response" in new PasswordResetEnv {
+  "The reset-token generation function" should "provide a success and send an email for a successful SSO response" in new TestEnv {
     ssoGenerateResetToken
 
     whenReady(passwordUpdateService.generatePasswordResetToken("foo@bar.baz")) { _ =>
@@ -48,7 +48,7 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
     }
   }
 
-  it should "provide a success but not send any email for an unsuccessful SSO response" in new PasswordResetEnv {
+  it should "provide a success but not send any email for an unsuccessful SSO response" in new TestEnv {
     ssoUserNotFound
 
     whenReady(passwordUpdateService.generatePasswordResetToken("foo@bar.baz")) { _ =>
@@ -56,7 +56,7 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
     }
   }
 
-  "The password reset function" should "return client-specific authentication credentials if SSO accepts the given reset token" in new PasswordResetEnv {
+  "The password reset function" should "return client-specific authentication credentials if SSO accepts the given reset token" in new TestEnv {
     ssoSuccessfulAuthentication()
     ssoSuccessfulUserAInfo()
     preSyncUser(userIdA)
@@ -68,26 +68,26 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
     }
   }
 
-  it should "raise a ZuulRequestException if SSO doesn't accept the provided reset token" in new PasswordResetEnv {
+  it should "raise a ZuulRequestException if SSO doesn't accept the provided reset token" in new TestEnv {
     ssoUnsuccessfulAuthentication()
 
     failingWith[ZuulRequestException](passwordUpdateService.resetPassword(resetCredentials)) should equal(Failures.invalidPasswordResetToken)
   }
 
-  "The password reset token validation function" should "return a successful future if SSO validates the given reset token" in new TokenStatusEnv {
+  "The password reset token validation function" should "return a successful future if SSO validates the given reset token" in new TestEnv {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None, "password_reset")
 
     whenReady(passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken("res3tt0ken"))) { _ => }
   }
 
-  it should "raise a ZuulRequestException if SSO signals an invalid token" in new TokenStatusEnv {
+  it should "raise a ZuulRequestException if SSO signals an invalid token" in new TestEnv {
     ssoSessionInfo(SsoTokenStatus.Invalid, SsoTokenElevation.None, "password_reset")
 
     val ex = failingWith[ZuulRequestException](passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken("res3tt0ken")))
     ex should equal(Failures.invalidPasswordResetToken)
   }
 
-  it should "raise a ZuulRequestException if the token is not a password_reset in SSO response" in new TokenStatusEnv {
+  it should "raise a ZuulRequestException if the token is not a password_reset in SSO response" in new TestEnv {
     ssoSessionInfo(SsoTokenStatus.Invalid, SsoTokenElevation.None, "refresh")
 
     val ex = failingWith[ZuulRequestException](passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken("res3tt0ken")))

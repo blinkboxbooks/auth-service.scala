@@ -2,10 +2,10 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.env.RegistrationTestEnv
+import com.blinkbox.books.auth.server.env.TestEnv
 import spray.http._
 
-class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
+class RegistrationSpecs extends ApiSpecBase[TestEnv] {
 
   val regDataSimple = Map(
     "grant_type" -> "urn:blinkbox:oauth:grant-type:registration",
@@ -24,7 +24,7 @@ class RegistrationSpecs extends ApiSpecBase[RegistrationTestEnv] {
     "client_os" -> "An OS"
   )
 
-  override def newEnv = new RegistrationTestEnv
+  override def newEnv = new TestEnv
 
   "The service" should "allow the registration of a new user without a client" in {
     env.ssoSuccessfulRegistration()

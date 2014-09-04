@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.env.RegistrationTestEnv
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
@@ -23,7 +23,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     token.user_uri should equal(s"/users/$regId")
   }
 
-  "The registration service" should "register a user without a client and no IP" in new RegistrationTestEnv {
+  "The registration service" should "register a user without a client and no IP" in new TestEnv {
     ssoSuccessfulRegistration()
 
     import driver.simple._
@@ -41,7 +41,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "register a user with a client" in new RegistrationTestEnv {
+  it should "register a user with a client" in new TestEnv {
     ssoSuccessfulRegistration()
 
     whenReady(registrationService.registerUser(clientReg, None)) { token =>
@@ -59,13 +59,13 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "correctly signal when an username is already registered with the SSO service" in new RegistrationTestEnv {
+  it should "correctly signal when an username is already registered with the SSO service" in new TestEnv {
     ssoConflict()
 
     failingWith[ZuulRequestException](registrationService.registerUser(clientReg, None)) should equal(Failures.usernameAlreadyTaken)
   }
 
-  it should "correctly signal when the SSO service returns validation errors" in new RegistrationTestEnv {
+  it should "correctly signal when the SSO service returns validation errors" in new TestEnv {
     val err = "Validation errors"
     ssoInvalidRequest(err)
 

@@ -96,7 +96,8 @@ class TestEnv extends
     DefaultRefreshTokenServiceComponent with
     DefaultSsoSyncComponent with
     DefaultPasswordUpdatedServiceComponent with
-    DefaultApiComponent {
+    DefaultApiComponent with
+    SsoResponder {
 
   implicit val ec = actorSystem.dispatcher
 

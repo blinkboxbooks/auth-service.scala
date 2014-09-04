@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.data.{User, UserId}
-import com.blinkbox.books.auth.server.env.{CommonResponder, TestEnv, UserInfoResponder}
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.auth.server.sso.SsoUserId
 import com.blinkbox.books.auth.server.{Failures, ZuulAuthorizationException, ZuulUnknownException}
@@ -12,7 +12,7 @@ class DefaultUserServiceSpecs extends SpecBase {
   import com.blinkbox.books.testkit.TestH2.tables._
   import driver.simple._
 
-  "The user service" should "retrieve an user and update its data with data coming from SSO" in new TestEnv with UserInfoResponder {
+  "The user service" should "retrieve an user and update its data with data coming from SSO" in new TestEnv {
     ssoSuccessfulJohnDoeInfo()
 
     whenReady(userService.getUserInfo()(authenticatedUserA)) { infoOpt =>
@@ -35,7 +35,7 @@ class DefaultUserServiceSpecs extends SpecBase {
     }
   }
 
-  it should "signal an unverified identity when retrieving an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
+  it should "signal an unverified identity when retrieving an user that doesn't exist on our local system but exists in SSO" in new TestEnv {
     ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
@@ -46,19 +46,19 @@ class DefaultUserServiceSpecs extends SpecBase {
     failingWith[ZuulAuthorizationException](userService.getUserInfo()(authenticatedUserA)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when retrieving an user that doesn't have an SSO access token" in new TestEnv with CommonResponder {
+  it should "signal an unverified identity when retrieving an user that doesn't have an SSO access token" in new TestEnv {
     ssoNoInvocation()
 
     failingWith[ZuulAuthorizationException](userService.getUserInfo()(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when retrieving an user that doesn't exist on SSO" in new TestEnv with CommonResponder {
+  it should "signal an unverified identity when retrieving an user that doesn't exist on SSO" in new TestEnv {
     ssoResponse(StatusCodes.Unauthorized, HttpEntity.Empty)
 
     failingWith[ZuulUnknownException](userService.getUserInfo()(authenticatedUserA))
   }
 
-  it should "update an user given new details and return updated user information" in new TestEnv with UserInfoResponder {
+  it should "update an user given new details and return updated user information" in new TestEnv {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
@@ -89,7 +89,7 @@ class DefaultUserServiceSpecs extends SpecBase {
     }
   }
 
-  it should "signal an unverified identity when updating an user that doesn't exist on our local system but exists in SSO" in new TestEnv with UserInfoResponder {
+  it should "signal an unverified identity when updating an user that doesn't exist on our local system but exists in SSO" in new TestEnv {
     ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
@@ -100,13 +100,13 @@ class DefaultUserServiceSpecs extends SpecBase {
     failingWith[ZuulAuthorizationException](userService.updateUser(fullUserPatch)(authenticatedUserA)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when updating an user that doesn't have an SSO access token" in new TestEnv with CommonResponder {
+  it should "signal an unverified identity when updating an user that doesn't have an SSO access token" in new TestEnv {
     ssoNoInvocation()
 
     failingWith[ZuulAuthorizationException](userService.updateUser(fullUserPatch)(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when updating an user that doesn't exist on SSO" in new TestEnv with CommonResponder {
+  it should "signal an unverified identity when updating an user that doesn't exist on SSO" in new TestEnv {
     ssoResponse(StatusCodes.Unauthorized, HttpEntity.Empty)
 
     failingWith[ZuulUnknownException](userService.updateUser(fullUserPatch)(authenticatedUserA))

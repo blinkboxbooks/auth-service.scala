@@ -1,12 +1,12 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.env.PasswordResetEnv
+import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.{FlatSpec, Matchers}
 
 class GeneratePasswordResetTokenSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
 
-  "The SSO client" should "return token credentials for a valid response from the SSO service" in new PasswordResetEnv {
+  "The SSO client" should "return token credentials for a valid response from the SSO service" in new TestEnv {
     ssoGenerateResetToken
 
     whenReady(sso.generatePasswordResetToken("foo@bar.com"))(_ should matchPattern {
@@ -14,7 +14,7 @@ class GeneratePasswordResetTokenSpecs extends FlatSpec with Matchers with SpecBa
     })
   }
 
-  it should "return an error if the user is not found in the SSO service" in new PasswordResetEnv {
+  it should "return an error if the user is not found in the SSO service" in new TestEnv {
     ssoUserNotFound
 
     failingWith[SsoNotFound.type](sso.generatePasswordResetToken("foo@bar.com")) should equal(SsoNotFound)
