@@ -47,8 +47,7 @@ object WebAppComponents extends
   DefaultApiComponent
 
 class WebService extends HttpServiceActor {
-  val route = WebAppComponents.zuulRoutes ~ respondWithHeader(`Access-Control-Allow-Origin`(AllOrigins)) { WebAppComponents.swaggerRoutes }
-  def receive = runRoute(route)
+  def receive = runRoute(WebAppComponents.zuulRoutes)
 }
 
 object WebApp extends App with Configuration with Loggers {

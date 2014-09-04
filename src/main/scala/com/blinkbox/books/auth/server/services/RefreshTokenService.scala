@@ -90,7 +90,7 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
       }
     }
 
-    val ssoRevocation = zuulToken flatMap { r => r.ssoRefreshToken.fold(Future.successful())(ssoT => sso.revokeToken(ssoT)) }
+    val ssoRevocation = zuulToken flatMap { r => r.ssoRefreshToken.fold(Future.successful(()))(ssoT => sso.revokeToken(ssoT)) }
 
     ssoRevocation flatMap { _ =>
       zuulToken.map { zt =>

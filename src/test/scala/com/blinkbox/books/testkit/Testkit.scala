@@ -49,12 +49,8 @@ class PublisherSpy extends Publisher {
 
   override def publish(event: Event): Future[Unit] = {
     events ::= event
-    Future.successful()
+    Future.successful(())
   }
-}
-
-object PublisherDummy extends Publisher {
-  override def publish(event: Event): Future[Unit] = Future.successful()
 }
 
 trait FailHelper extends Assertions with AsyncAssertions with PatienceConfiguration {

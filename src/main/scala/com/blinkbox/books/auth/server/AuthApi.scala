@@ -9,7 +9,6 @@ import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.spray._
 import com.blinkbox.books.spray.Directives
-import com.wordnik.swagger.annotations._
 import org.slf4j.LoggerFactory
 import spray.http.HttpHeaders.{RawHeader, `WWW-Authenticate`}
 import spray.http.StatusCodes._
@@ -18,65 +17,6 @@ import spray.routing._
 import spray.httpx.unmarshalling.{Deserializer, FormDataUnmarshallers}
 import com.blinkbox.books.auth.User
 import spray.routing.authentication.ContextAuthenticator
-
-@Api(value = "/user", description = "An API for managing widgets.", protocols = "https",
-     produces = "application/vnd.blinkboxbooks.data.v1+json", consumes = "application/vnd.blinkboxbooks.data.v1+json")
-trait AuthRoutes extends HttpService {
-
-  @ApiOperation(position = 0, httpMethod = "POST", response = classOf[User], value = "Creates a user")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "user", required = true, dataType = "NewUser", paramType = "body", value = "The user to create")
-  ))
-  @ApiResponses(Array(
-    new ApiResponse(code = 400, message = "The user details were incomplete or invalid"),
-    new ApiResponse(code = 401, message = "We're not sure who you are")
-  ))
-  def registerUser: Route
-
-//  @ApiOperation(position = 1, httpMethod = "GET", response = classOf[User], responseContainer = "ListPage", value = "Gets a list of users")
-//  @ApiImplicitParams(Array(
-//    new ApiImplicitParam(name = "offset", required = false, dataType = "Int", paramType = "query", value = "The offset into the list at which to start returning results"),
-//    new ApiImplicitParam(name = "count", required = false, dataType = "Int", paramType = "query", value = "The maximum number of results to return")
-//  ))
-//  @ApiResponses(Array(
-//    new ApiResponse(code = 400, message = "offset is less than zero, or count is less than one"),
-//    new ApiResponse(code = 401, message = "We're not sure who you are")
-//  ))
-//  def list: Route
-//
-//  @ApiOperation(position = 2, httpMethod = "GET", response = classOf[User], value = "Gets a user by id")
-//  @ApiImplicitParams(Array(
-//    new ApiImplicitParam(name = "id", required = true, dataType = "String", paramType = "path", value = "The user id")
-//  ))
-//  @ApiResponses(Array(
-//    new ApiResponse(code = 401, message = "We're not sure who you are"),
-//    new ApiResponse(code = 403, message = "You're not allowed to access that user"),
-//    new ApiResponse(code = 404, message = "That user doesn't exist")
-//  ))
-//  def getById: Route
-//
-//  @ApiOperation(position = 3, httpMethod = "PATCH", response = classOf[User], value = "Updates a user")
-//  @ApiImplicitParams(Array(
-//    new ApiImplicitParam(name = "id", required = true, dataType = "String", paramType = "path", value = "The user id"),
-//    new ApiImplicitParam(name = "user", required = true, dataType = "UserPatch", paramType = "body", value = "The updated user details")
-//  ))
-//  @ApiResponses(Array(
-//    new ApiResponse(code = 400, message = "The user details were invalid"),
-//    new ApiResponse(code = 401, message = "We're not sure who you are"),
-//    new ApiResponse(code = 404, message = "That user doesn't exist")
-//  ))
-//  def updateById: Route
-//
-//  @ApiOperation(position = 4, httpMethod = "DELETE", response = classOf[User], value = "Deletes a user")
-//  @ApiImplicitParams(Array(
-//    new ApiImplicitParam(name = "id", required = true, dataType = "String", paramType = "path", value = "The user id")
-//  ))
-//  @ApiResponses(Array(
-//    new ApiResponse(code = 401, message = "We're not sure who you are"),
-//    new ApiResponse(code = 404, message = "That user doesn't exist")
-//  ))
-//  def deleteById: Route
-}
 
 class AuthApi(
     config: ApiConfig,
@@ -88,7 +28,7 @@ class AuthApi(
     refreshTokenService: RefreshTokenService,
     passwordUpdateService: PasswordUpdateService,
     authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
-  extends AuthRoutes with Directives with FormDataUnmarshallers {
+  extends HttpService with Directives with FormDataUnmarshallers {
 
   implicit val log = LoggerFactory.getLogger(classOf[AuthApi])
   implicit val executionContext = DiagnosticExecutionContext(actorRefFactory.dispatcher)
