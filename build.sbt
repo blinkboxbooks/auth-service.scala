@@ -24,7 +24,7 @@ val dependencySettings = Seq(
       "com.zaxxer"                %   "HikariCP-java6"        % "2.0.1",
       "commons-lang"              %   "commons-lang"          % "2.6",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
-      "com.blinkbox.books"        %%  "common-config"         % "1.0.1",
+      "com.blinkbox.books"        %%  "common-config"         % "1.1.0",
       "com.blinkbox.books"        %%  "common-slick"          % "0.1.0",
       "com.blinkbox.books"        %%  "common-spray"          % "0.15.0",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.5.0",
