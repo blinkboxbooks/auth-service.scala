@@ -20,10 +20,17 @@ trait ConfigComponent {
 
 trait AsyncComponent {
   def actorSystem: ActorSystem
-  def executionContext: ExecutionContext
+  def rabbitExecutionContext: ExecutionContext
+  def serviceExecutionContext: ExecutionContext
+  def apiExecutionContext: ExecutionContext
+  def ssoClientExecutionContext: ExecutionContext
 
-  implicit lazy val ec = executionContext
-  implicit lazy val system = actorSystem
+  implicit lazy val as = actorSystem
+
+  def withServiceContext[T](f: ExecutionContext => T) = f(serviceExecutionContext)
+  def withRabbitContext[T](f: ExecutionContext => T) = f(rabbitExecutionContext)
+  def withSsoClientContext[T](f: ExecutionContext => T) = f(ssoClientExecutionContext)
+  def withApiContext[T](f: ExecutionContext => T) = f(apiExecutionContext)
 }
 
 trait EventsComponent {

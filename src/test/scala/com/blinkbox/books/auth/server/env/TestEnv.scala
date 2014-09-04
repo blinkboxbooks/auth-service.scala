@@ -2,6 +2,7 @@ package com.blinkbox.books.auth.server.env
 
 import java.util.Date
 
+import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data.{Client, _}
@@ -17,6 +18,14 @@ import scala.slick.driver.H2Driver
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
+}
+
+trait TestAsyncComponent extends AsyncComponent {
+  override val actorSystem: ActorSystem = ActorSystem("auth-server")
+  override val apiExecutionContext = actorSystem.dispatcher
+  override val ssoClientExecutionContext = actorSystem.dispatcher
+  override val serviceExecutionContext = actorSystem.dispatcher
+  override val rabbitExecutionContext = actorSystem.dispatcher
 }
 
 trait TestConfigComponent extends ConfigComponent {
@@ -55,17 +64,22 @@ trait TestSsoComponent extends SsoComponent {
 
   val ssoResponse = new SSOResponseMocker
 
-  private val client = new TestSSOClient(config.sso, ssoResponse.nextResponse)
+  private val client = withSsoClientContext { implicit ec =>
+    new TestSSOClient(config.sso, ssoResponse.nextResponse)
+  }
+
   private val tokenDecoder = new SsoAccessTokenDecoder(SsoTestKeyStore) {
     override def validateExpirationTime(expirationTime: Date) = {} // allow expired token for test purposes
   }
 
-  override val sso = new DefaultSso(config.sso, client, tokenDecoder)
+  override val sso = withSsoClientContext { implicit ec =>
+    new DefaultSso(config.sso, client, tokenDecoder)
+  }
 }
 
 class TestEnv extends
     TestConfigComponent with
-    DefaultAsyncComponent with
+    TestAsyncComponent with
     StoppedClockSupport with
     TestSsoComponent with
     DefaultGeoIPComponent with
@@ -83,6 +97,8 @@ class TestEnv extends
     DefaultSsoSyncComponent with
     DefaultPasswordUpdatedServiceComponent with
     DefaultApiComponent {
+
+  implicit val ec = actorSystem.dispatcher
 
   import driver.simple._
 
