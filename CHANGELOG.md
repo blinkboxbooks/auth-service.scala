@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.17.4 ([#42](https://git.mobcastdev.com/Zuul/auth-service/pull/42) 2014-09-04 12:15:03)
+
+Remove project code in favour of common libraries
+
+### Improvements
+
+* Remove slick database abstraction code and use common-slick instead
+* Remove code reading `FiniteDuration` from Typesafe Config and use common-config instead
+
 ## 0.17.3 ([#40](https://git.mobcastdev.com/Zuul/auth-service/pull/40) 2014-09-02 16:07:41)
 
 Execution contexts and connection pooling
