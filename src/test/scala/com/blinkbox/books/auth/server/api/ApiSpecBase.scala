@@ -74,6 +74,10 @@ abstract class ApiSpecBase[E <: TestEnv] extends FlatSpec
     route = env.zuulRoutes
   }
 
+  override def afterEach(): Unit = {
+    env.actorSystem.shutdown()
+  }
+
   def jsonResponseAs[T: FromResponseUnmarshaller: ClassTag]: T = {
     mediaType should equal(MediaTypes.`application/json`)
     responseAs[T]
