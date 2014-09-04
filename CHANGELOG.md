@@ -1,5 +1,17 @@
 # Zuul Server Change Log
 
+## 0.17.3 ([#40](https://git.mobcastdev.com/Zuul/auth-service/pull/40) 2014-09-02 16:07:41)
+
+Execution contexts and connection pooling
+
+### Improvements
+
+In this PR I split the one execution context we were using into multiple of them so that heavy load on one part of the application won't block another part of it. The execution contexts I introduced are all `ForkJoinPool` instances with default configuration; this is just to get started with it and we can tune the details for each execution context as we prefer anyway.
+
+I also introduced a connection pooling library: HikariCP. I had some experience with c3p0 and I did read some article about DHCP, c3p0, tomcat jdbc pool and BoneCP; in the and I chose this library because of its simplicity (the smaller code-base overall), its lock-free design and because it doesn't seem to have any negative comment around (e.g. c3p0 seems to be quite deadlock-prone and hard to tune). I am open to discussion aroud this choice anyway.
+
+An interesting article on some connection pools: http://blog.trustiv.co.uk/2014/06/battle-connection-pools
+
 ## 0.17.2 ([#39](https://git.mobcastdev.com/Zuul/auth-service/pull/39) 2014-09-01 17:26:08)
 
 Make things more configurable
