@@ -6,13 +6,12 @@ import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.Publisher
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.Sso
-import com.blinkbox.books.auth.server.{TokenBuilder, AppConfig, PasswordHasher}
-import com.blinkbox.books.slick.{BaseRepositoriesComponent, BaseDatabaseComponent}
+import com.blinkbox.books.auth.server.{AppConfig, PasswordHasher, TokenBuilder}
+import com.blinkbox.books.slick
 import spray.routing.Route
 import spray.routing.authentication.ContextAuthenticator
 
 import scala.concurrent.ExecutionContext
-import scala.reflect.ClassTag
 
 trait ConfigComponent {
   def config: AppConfig
@@ -37,7 +36,7 @@ trait EventsComponent {
   def publisher: Publisher
 }
 
-trait DatabaseComponent extends BaseDatabaseComponent {
+trait DatabaseComponent extends slick.DatabaseComponent {
   type Tables = ZuulTables[DB.Profile]
 }
 
@@ -49,7 +48,7 @@ trait TokenBuilderComponent {
   def tokenBuilder: TokenBuilder
 }
 
-trait RepositoriesComponent extends BaseRepositoriesComponent {
+trait RepositoriesComponent extends slick.RepositoriesComponent {
   this: DatabaseComponent =>
   def authRepository: AuthRepository[DB.Profile]
   def userRepository: UserRepository[DB.Profile]

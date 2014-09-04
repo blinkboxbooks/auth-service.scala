@@ -36,8 +36,7 @@ case class AuthServerConfig(
     termsVersion: String,
     passwordResetBaseUrl: String,
     keysConfig: KeysConfig,
-    refreshTokenLifetimeExtension: FiniteDuration) {
-}
+    refreshTokenLifetimeExtension: FiniteDuration)
 
 case class SsoConfig(
     host: String,
@@ -97,12 +96,6 @@ case class HikariConfig(
 }
 
 object HikariConfig {
-  implicit class ConfigExtensions(config: Config) {
-    def getFiniteDuration(path: String): FiniteDuration = config.getDuration(path, TimeUnit.MILLISECONDS).millis
-    def getFiniteDurationOption(path: String): Option[FiniteDuration] =
-      if (config.hasPath(path)) Some(getFiniteDuration(path)) else None
-  }
-
   def apply(config: Config, prefix: String): HikariConfig = {
     val dataSourceProps = new Properties()
 
@@ -146,7 +139,7 @@ object AuthServerConfig {
     termsVersion = config.getString(s"$prefix.termsVersion"),
     passwordResetBaseUrl = config.getString(s"$prefix.passwordResetBaseUrl"),
     keysConfig = KeysConfig(config, s"$prefix.keys"),
-    refreshTokenLifetimeExtension = config.getDuration(s"$prefix.refreshTokenLifetimeExtension", TimeUnit.MILLISECONDS).millis
+    refreshTokenLifetimeExtension = config.getFiniteDuration(s"$prefix.refreshTokenLifetimeExtension")
   )
 }
 
@@ -156,7 +149,7 @@ object SsoConfig {
     port = config.getInt("sso.port"),
     version = config.getString("sso.version"),
     credentials = BasicHttpCredentials(config.getString("sso.credentials.username"), config.getString("sso.credentials.password")),
-    timeout = config.getDuration("sso.timeout", TimeUnit.MILLISECONDS).millis,
+    timeout = config.getFiniteDuration("sso.timeout"),
     keyStore = config.getString("sso.keyStore")
   )
 }
