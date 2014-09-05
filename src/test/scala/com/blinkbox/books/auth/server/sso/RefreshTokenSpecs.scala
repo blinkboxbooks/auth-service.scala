@@ -1,9 +1,5 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.env.TestEnv
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.{FlatSpec, Matchers}
-
 class RefreshTokenSpecs extends SpecBase {
 
   import env._

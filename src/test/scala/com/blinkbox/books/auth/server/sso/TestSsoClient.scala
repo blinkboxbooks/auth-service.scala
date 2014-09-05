@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.sso
 import akka.actor.{ActorRef, ActorSystem}
 import com.blinkbox.books.auth.server.SsoConfig
 import org.scalatest.Matchers._
-import spray.http.{MediaTypes, HttpEntity, HttpRequest, HttpResponse}
+import spray.http.{HttpEntity, HttpRequest, HttpResponse, MediaTypes}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 

@@ -3,8 +3,7 @@ package com.blinkbox.books.auth.server.api
 import java.lang.reflect.InvocationTargetException
 
 import com.blinkbox.books.auth.Elevation
-import com.blinkbox.books.auth.server.env
-import com.blinkbox.books.auth.server.{TokenStatus, ZuulRequestExceptionSerializer}
+import com.blinkbox.books.auth.server.{TokenStatus, ZuulRequestExceptionSerializer, env}
 import com.blinkbox.books.json.DefaultFormats
 import com.typesafe.config.ConfigFactory
 import org.json4s.ext.EnumNameSerializer

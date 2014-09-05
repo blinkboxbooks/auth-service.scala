@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.env
-import com.blinkbox.books.testkit.FailHelper
+import com.blinkbox.books.test.FailHelper
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FlatSpec, Matchers}

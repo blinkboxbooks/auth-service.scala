@@ -1,12 +1,7 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Span}
-import org.scalatest.{FlatSpec, Matchers}
+import com.blinkbox.books.auth.server.data.UserId
 
 // TODO: IP-related scenarios and scenarios with failures from SSO are not being tested at the moment, add those tests
 class DefaultRegistrationServiceSpecs extends SpecBase {

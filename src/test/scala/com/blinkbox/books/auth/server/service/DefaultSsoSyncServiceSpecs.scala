@@ -1,9 +1,8 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.data.{UserId, User}
-import com.blinkbox.books.auth.server.env.TestEnv
-import com.blinkbox.books.auth.server.events.{UserUpdated, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{SsoUnknownException, SsoUserId, SsoAccessToken}
+import com.blinkbox.books.auth.server.data.{User, UserId}
+import com.blinkbox.books.auth.server.events.{UserRegistered, UserUpdated}
+import com.blinkbox.books.auth.server.sso.{SsoAccessToken, SsoUserId}
 
 class DefaultSsoSyncServiceSpecs extends SpecBase {
 

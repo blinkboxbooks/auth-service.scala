@@ -1,18 +1,10 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidClient, InvalidGrant, InvalidRequest}
-import com.blinkbox.books.auth.server.data.{UserId, User}
-import com.blinkbox.books.auth.server.env.TestEnv
-import com.blinkbox.books.auth.server.events.{UserUpdated, UserAuthenticated, UserRegistered}
-import com.blinkbox.books.auth.server.sso.SsoCredentials
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Span}
-import org.scalatest.{FlatSpec, Matchers}
-import spray.http.{HttpEntity, StatusCodes, HttpResponse}
-
-import scala.concurrent.duration.FiniteDuration
+import com.blinkbox.books.auth.server.data.{User, UserId}
+import com.blinkbox.books.auth.server.events.{UserAuthenticated, UserRegistered, UserUpdated}
+import spray.http.{HttpEntity, HttpResponse, StatusCodes}
 
 class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
 

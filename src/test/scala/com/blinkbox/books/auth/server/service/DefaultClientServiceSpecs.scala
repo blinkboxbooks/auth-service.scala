@@ -9,8 +9,8 @@ import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientUpdated}
 class DefaultClientServiceSpecs extends SpecBase {
 
   import env._
-  import env.tables._
   import env.driver.simple._
+  import env.tables._
 
   "The user service" should "list active clients for registered users" in {
     whenReady(clientService.listClients()(authenticatedUserA)) { list =>

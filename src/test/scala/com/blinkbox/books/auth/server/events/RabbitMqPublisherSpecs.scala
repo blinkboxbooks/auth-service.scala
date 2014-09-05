@@ -3,12 +3,12 @@ package com.blinkbox.books.auth.server.events
 import java.nio.charset.StandardCharsets
 
 import com.blinkbox.books.auth.server.data
+import com.blinkbox.books.json.DefaultFormats
 import com.blinkbox.books.schemas.events.client.v2.{Client, ClientId}
 import com.blinkbox.books.schemas.events.user.v2._
 import com.blinkbox.books.test.MockitoSyrup
 import com.blinkbox.books.time.StoppedClock
 import com.rabbitmq.client.{AMQP, Channel}
-import com.blinkbox.books.json.DefaultFormats
 import org.json4s.jackson.Serialization
 import org.mockito.Matchers
 import org.mockito.Matchers._
@@ -37,7 +37,7 @@ object RabbitMqPublisherSpecs {
 }
 
 class RabbitMqPublisherSpecs extends FlatSpec with BeforeAndAfter with ScalaFutures with MockitoSyrup {
-  import RabbitMqPublisherSpecs._
+  import com.blinkbox.books.auth.server.events.RabbitMqPublisherSpecs._
 
   implicit override val patienceConfig = PatienceConfig(timeout = Span(1000, Millis), interval = Span(20, Millis))
   implicit val formats = DefaultFormats

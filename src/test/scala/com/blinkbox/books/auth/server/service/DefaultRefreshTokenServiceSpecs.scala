@@ -1,14 +1,8 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidGrant, InvalidClient}
-import com.blinkbox.books.auth.server.data.RefreshTokenId
-import com.blinkbox.books.auth.server.sso.{SsoUnknownException, SsoUnauthorized}
-import com.blinkbox.books.auth.server.{ZuulRequestException, RefreshTokenCredentials}
-import com.blinkbox.books.auth.server.env.TestEnv
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.time.{Millis, Span}
-import org.scalatest.{FlatSpec, Matchers}
-import org.scalatest.concurrent.ScalaFutures
+import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidClient, InvalidGrant}
+import com.blinkbox.books.auth.server.sso.SsoUnknownException
+import com.blinkbox.books.auth.server.{RefreshTokenCredentials, ZuulRequestException}
 import spray.http.StatusCodes
 
 class DefaultRefreshTokenServiceSpecs extends SpecBase {

@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.env
 
-import org.scalatest.{BeforeAndAfterAll, Suite, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 
 trait SpecBase extends BeforeAndAfterEach with BeforeAndAfterAll {
   this: Suite =>

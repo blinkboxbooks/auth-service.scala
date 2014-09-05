@@ -1,9 +1,8 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.env._
+import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.events.UserPasswordResetRequested
 import com.blinkbox.books.auth.server.sso._
-import com.blinkbox.books.auth.server._
 import spray.http.StatusCodes
 
 import scala.concurrent.duration._

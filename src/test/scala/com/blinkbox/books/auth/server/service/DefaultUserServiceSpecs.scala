@@ -1,7 +1,6 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.data.{User, UserId}
-import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.auth.server.sso.SsoUserId
 import com.blinkbox.books.auth.server.{Failures, ZuulAuthorizationException, ZuulUnknownException}
@@ -10,8 +9,8 @@ import spray.http.{HttpEntity, StatusCodes}
 class DefaultUserServiceSpecs extends SpecBase {
 
   import env._
-  import env.tables._
   import env.driver.simple._
+  import env.tables._
 
   "The user service" should "retrieve an user and update its data with data coming from SSO" in {
     ssoSuccessfulJohnDoeInfo()

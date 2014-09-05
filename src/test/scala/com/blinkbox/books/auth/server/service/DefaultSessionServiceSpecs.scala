@@ -2,9 +2,8 @@ package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode.InvalidToken
 import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason.UnverifiedIdentity
-import com.blinkbox.books.auth.server.env.TestEnv
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
-import com.blinkbox.books.auth.server.{TokenStatus, SessionInfo, ZuulAuthorizationException}
+import com.blinkbox.books.auth.server.{SessionInfo, TokenStatus, ZuulAuthorizationException}
 import com.blinkbox.books.auth.{Elevation, User}
 import spray.http.StatusCodes
 
