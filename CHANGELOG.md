@@ -1,5 +1,17 @@
 # Zuul Server Change Log
 
+## 0.17.5 ([#43](https://git.mobcastdev.com/Zuul/auth-service/pull/43) 2014-09-05 12:29:05)
+
+Update Scala & Optimize test environments
+
+### Improvements
+
+* Update to Scala 2.11.2
+* Simplify tests by unifying all test environments
+* Marginally quicker execution time (circa 20% quicker on development box for a full test run)
+* Reduce resource leaks in tests (from 792/801 live/peak threads to 22/35 on a full test run)
+
+
 ## 0.17.4 ([#42](https://git.mobcastdev.com/Zuul/auth-service/pull/42) 2014-09-04 12:15:03)
 
 Remove project code in favour of common libraries
