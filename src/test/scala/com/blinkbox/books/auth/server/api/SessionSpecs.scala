@@ -33,8 +33,6 @@ class SessionSpecs extends ApiSpecBase {
   }
 
   it should "return session information for a valid token that doesn't have a corresponding SSO token" in {
-    env.ssoNoInvocation()
-
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1WithoutSSO.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
 
@@ -58,8 +56,6 @@ class SessionSpecs extends ApiSpecBase {
   }
 
   it should "not extend an user session if the authenticated user doesn't have an SSO token" in {
-    env.ssoNoInvocation()
-
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1WithoutSSO.access_token)) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
       header[`WWW-Authenticate`] shouldBe defined

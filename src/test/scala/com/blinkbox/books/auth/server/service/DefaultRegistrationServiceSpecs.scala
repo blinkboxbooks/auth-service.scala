@@ -21,7 +21,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
   }
 
   "The registration service" should "register a user without a client and no IP" in {
-    ssoSuccessfulRegistration()
+    ssoSuccessfulRegistrationAndLink()
 
     import driver.simple._
 
@@ -39,7 +39,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
   }
 
   it should "register a user with a client" in {
-    ssoSuccessfulRegistration()
+    ssoSuccessfulRegistrationAndLink()
 
     whenReady(registrationService.registerUser(clientReg, None)) { token =>
 

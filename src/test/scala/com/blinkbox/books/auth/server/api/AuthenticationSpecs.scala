@@ -79,8 +79,6 @@ class AuthenticationSpecs extends ApiSpecBase {
   }
 
   it should "reject incomplete client information" in {
-    env.ssoUnsuccessfulAuthentication()
-
     Post("/oauth2/token", FormData(validCredentialsWithClient - "client_secret")) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 
@@ -158,8 +156,6 @@ class AuthenticationSpecs extends ApiSpecBase {
   }
 
   it should "reject an invalid refresh token" in {
-    env.ssoNoInvocation()
-
     Post("/oauth2/token", FormData(validRefreshTokenCredentials.updated("refresh_token", "invalid"))) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 
@@ -170,8 +166,6 @@ class AuthenticationSpecs extends ApiSpecBase {
   }
 
   it should "reject a valid refresh token with invalid client information" in {
-    env.ssoNoInvocation()
-
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient.updated("client_id", "invalid"))) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 
@@ -182,8 +176,6 @@ class AuthenticationSpecs extends ApiSpecBase {
   }
 
   it should "reject a valid refresh token with de-registered client information" in {
-    env.ssoNoInvocation()
-
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithDeregisteredClient)) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 
@@ -194,8 +186,6 @@ class AuthenticationSpecs extends ApiSpecBase {
   }
 
   it should "reject a revoked refresh token" in {
-    env.ssoNoInvocation()
-
     Post("/oauth2/token", FormData(revokedRefreshTokenCredentials)) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 
@@ -206,8 +196,6 @@ class AuthenticationSpecs extends ApiSpecBase {
   }
 
   it should "reject a refresh token if the associated client credentials are not provided" in {
-    env.ssoNoInvocation()
-
     Post("/oauth2/token", FormData(validRefreshTokenCredentialsWithClient - "client_id" - "client_secret")) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 

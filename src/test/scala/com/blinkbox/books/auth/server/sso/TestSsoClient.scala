@@ -29,6 +29,8 @@ class TestSsoClient(
 class SsoResponseMocker {
   private var ssoResponse = List.empty[Promise[HttpResponse]]
 
+  def isDone = ssoResponse.isEmpty
+
   def complete(completions: (Promise[HttpResponse] => Unit)*): Unit = {
     for (c <- completions) {
       val p = Promise[HttpResponse]
@@ -41,7 +43,7 @@ class SsoResponseMocker {
     case p :: ps =>
       ssoResponse = ps
       p.future
-    case _ => sys.error("Expected SSO response mock, got nothing")
+    case _ => sys.error("Unexpected SSO invocation")
   }
 
   def reset(): Unit = { ssoResponse = Nil }

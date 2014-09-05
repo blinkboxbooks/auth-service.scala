@@ -79,8 +79,6 @@ trait SsoResponseFixtures {
 trait SsoResponder extends SsoResponseFixtures {
   this: TestSsoComponent =>
 
-  def ssoNoInvocation() = ssoResponse.complete(_.failure(new IllegalStateException("No invocation for SSO was expected")))
-
   def ssoInvalidRequest(description: String, error: String = "invalid_request"): Unit = ssoResponse.complete(
     _.success(HttpResponse(StatusCodes.BadRequest,
       HttpEntity(ContentTypes.`application/json`, invalidRequestJson(description, error).getBytes)))
@@ -99,6 +97,10 @@ trait SsoResponder extends SsoResponseFixtures {
   )
 
   def ssoSuccessfulRegistration(): Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes)))
+  )
+
+  def ssoSuccessfulRegistrationAndLink(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes))),
       _.success(HttpResponse(StatusCodes.NoContent))
     )
