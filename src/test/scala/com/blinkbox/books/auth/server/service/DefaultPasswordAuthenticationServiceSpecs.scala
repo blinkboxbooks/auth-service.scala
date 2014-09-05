@@ -1,24 +1,18 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidClient, InvalidGrant, InvalidRequest}
-import com.blinkbox.books.auth.server.data.{UserId, User}
-import com.blinkbox.books.auth.server.env.{RegistrationResponder, UserInfoResponder, AuthenticationTestEnv}
-import com.blinkbox.books.auth.server.events.{UserUpdated, UserAuthenticated, UserRegistered}
-import com.blinkbox.books.auth.server.sso.SsoCredentials
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Span}
-import org.scalatest.{FlatSpec, Matchers}
-import spray.http.{HttpEntity, StatusCodes, HttpResponse}
-
-import scala.concurrent.duration.FiniteDuration
+import com.blinkbox.books.auth.server.data.{User, UserId}
+import com.blinkbox.books.auth.server.events.{UserAuthenticated, UserRegistered, UserUpdated}
+import spray.http.{HttpEntity, HttpResponse, StatusCodes}
 
 class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
 
+  import env._
+
   val dummyCreds = PasswordCredentials("foo", "bar", None, None)
 
-  "The password authentication service" should "create an access token for valid user credentials without a client and not providing an IP" in new AuthenticationTestEnv {
+  "The password authentication service" should "create an access token for valid user credentials without a client and not providing an IP" in {
     ssoSuccessfulAuthentication()
     ssoSuccessfulUserAInfo()
 
@@ -38,7 +32,7 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "create an access token for valid user credentials with a client and not providing an IP" in new AuthenticationTestEnv {
+  it should "create an access token for valid user credentials with a client and not providing an IP" in {
     ssoSuccessfulAuthentication()
     ssoSuccessfulUserAInfo()
 
@@ -60,14 +54,14 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "not create an access token and signal an error when providing wrong username/password pairs" in new AuthenticationTestEnv {
+  it should "not create an access token and signal an error when providing wrong username/password pairs" in {
     ssoUnsuccessfulAuthentication()
     failingWith[ZuulRequestException](passwordAuthenticationService.authenticate(dummyCreds, None)) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
-  it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in new AuthenticationTestEnv {
+  it should "not create an access token and signal an error when providing correct username/password pairs but wrong client details" in {
     ssoSuccessfulAuthentication()
     ssoSuccessfulUserAInfo()
 
@@ -76,7 +70,7 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "not create an access token and signal an error when the SSO service answers with a bad-request error" in new AuthenticationTestEnv {
+  it should "not create an access token and signal an error when the SSO service answers with a bad-request error" in {
     val err = "Invalid username or password"
     ssoInvalidRequest(err)
 
@@ -85,7 +79,7 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "not create an access token and signal an error when the SSO service throttles requests" in new AuthenticationTestEnv {
+  it should "not create an access token and signal an error when the SSO service throttles requests" in {
     ssoTooManyRequests(10)
 
     failingWith[ZuulTooManyRequestException](passwordAuthenticationService.authenticate(dummyCreds, None)) should matchPattern {
@@ -93,7 +87,7 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "create an access token and register an user in the system if the SSO returns a success but we don't have an user in our database" in new AuthenticationTestEnv with UserInfoResponder {
+  it should "create an access token and register an user in the system if the SSO returns a success but we don't have an user in our database" in {
     ssoSuccessfulAuthentication()
     ssoSuccessfulJohnDoeInfo()
     ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent, HttpEntity.Empty))) // Link request
@@ -108,7 +102,7 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "create an access token and link an user if the SSO returns a success but the user in our database is not yet linked" in new AuthenticationTestEnv with UserInfoResponder {
+  it should "create an access token and link an user if the SSO returns a success but the user in our database is not yet linked" in {
     ssoSuccessfulAuthentication()
     ssoResponse.complete(_.success(HttpResponse(StatusCodes.NoContent, HttpEntity.Empty))) // Link request
     ssoSuccessfulJohnDoeInfo()

@@ -76,7 +76,7 @@ trait SsoResponseFixtures {
   }""".stripMargin
 }
 
-trait CommonResponder extends SsoResponseFixtures {
+trait SsoResponder extends SsoResponseFixtures {
   this: TestSsoComponent =>
 
   def ssoNoInvocation() = ssoResponse.complete(_.failure(new IllegalStateException("No invocation for SSO was expected")))
@@ -97,19 +97,11 @@ trait CommonResponder extends SsoResponseFixtures {
   def ssoTooManyRequests(retryAfter: Int): Unit = ssoResponse.complete(
     _.success(HttpResponse(StatusCodes.TooManyRequests, HttpEntity.Empty, RawHeader("Retry-After", retryAfter.toString) :: Nil))
   )
-}
-
-trait RegistrationResponder extends CommonResponder {
-  this: TestSsoComponent =>
 
   def ssoSuccessfulRegistration(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes))),
       _.success(HttpResponse(StatusCodes.NoContent))
     )
-}
-
-trait AuthenticationResponder extends CommonResponder {
-  this: TestSsoComponent =>
 
   def ssoSuccessfulAuthentication(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes)))
@@ -118,10 +110,6 @@ trait AuthenticationResponder extends CommonResponder {
   def ssoUnsuccessfulAuthentication(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.Unauthorized, HttpEntity.Empty))
     )
-}
-
-trait UserInfoResponder extends CommonResponder {
-  this: TestSsoComponent =>
 
   def ssoSuccessfulJohnDoeInfo(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, johnDoeInfoJson.getBytes)))
@@ -130,19 +118,11 @@ trait UserInfoResponder extends CommonResponder {
   def ssoSuccessfulUserAInfo(): Unit = ssoResponse.complete(
     _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, userAInfoJson.getBytes)))
   )
-}
-
-trait TokenStatusResponder extends CommonResponder {
-  this: TestSsoComponent =>
 
   def ssoSessionInfo(status: SsoTokenStatus, elevation: SsoTokenElevation, tokenType: String = "refresh"): Unit =
     ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, sessionInfoJson(status, elevation, tokenType).getBytes)))
     )
-}
-
-trait PasswordResetResponder extends CommonResponder {
-  this: TestSsoComponent =>
 
   def ssoGenerateResetToken: Unit = ssoResponse.complete(
     _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, resetTokenJson.getBytes)))
@@ -152,17 +132,3 @@ trait PasswordResetResponder extends CommonResponder {
     _.success(HttpResponse(StatusCodes.NotFound, HttpEntity.Empty))
   )
 }
-
-class RegistrationTestEnv extends TestEnv with RegistrationResponder
-
-class AuthenticationTestEnv extends TestEnv with AuthenticationResponder with UserInfoResponder
-
-class LinkTestEnv extends TestEnv with CommonResponder
-
-class RefreshTestEnv extends TestEnv with AuthenticationResponder
-
-class UserInfoTestEnv extends TestEnv with UserInfoResponder
-
-class TokenStatusEnv extends TestEnv with TokenStatusResponder
-
-class PasswordResetEnv extends TestEnv with PasswordResetResponder with AuthenticationResponder with UserInfoResponder with TokenStatusResponder

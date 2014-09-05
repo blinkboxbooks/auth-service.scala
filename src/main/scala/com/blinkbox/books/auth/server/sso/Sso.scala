@@ -135,7 +135,7 @@ class DefaultSso(config: SsoConfig, client: Client, tokenDecoder: SsoAccessToken
   }
 
   def linkAccount(token: SsoAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit] = {
-    logger.debug("Linking account", id)
+    logger.debug("Linking account")
     client.unitRequest(Post(versioned(C.LinkUri), FormData(Map(
       "service_user_id" -> id.external,
       "service_allow_marketing" -> allowMarketing.toString,

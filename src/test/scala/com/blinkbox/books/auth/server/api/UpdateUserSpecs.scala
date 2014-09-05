@@ -1,14 +1,11 @@
 package com.blinkbox.books.auth.server.api
 
+import com.blinkbox.books.auth.server.UserInfo
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, SsoAccessToken, SsoCredentials}
-import com.blinkbox.books.auth.server.{TokenBuilder, UserInfo}
-import com.blinkbox.books.auth.server.env.UserInfoTestEnv
-import spray.http.{FormData, StatusCodes, OAuth2BearerToken}
+import com.blinkbox.books.auth.server.sso.{SsoAccessToken, SsoCredentials, SsoRefreshToken}
+import spray.http.{FormData, OAuth2BearerToken, StatusCodes}
 
-class UpdateUserSpecs extends ApiSpecBase[UserInfoTestEnv] {
-
-  override def newEnv = new UserInfoTestEnv
+class UpdateUserSpecs extends ApiSpecBase {
 
   val userPatch = FormData(Map(
     "first_name" -> "Foo",

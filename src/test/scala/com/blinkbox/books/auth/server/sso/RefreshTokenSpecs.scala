@@ -1,12 +1,10 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.env.RefreshTestEnv
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.{FlatSpec, Matchers}
+class RefreshTokenSpecs extends SpecBase {
 
-class RefreshTokenSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
+  import env._
 
-  "The SSO client" should "complete correctly return sso credentials if the SSO service returns a successful response" in new RefreshTestEnv {
+  "The SSO client" should "complete correctly return sso credentials if the SSO service returns a successful response" in {
     ssoSuccessfulAuthentication()
 
     whenReady(sso.refresh(SsoRefreshToken("some-refresh-token"))) { creds =>
@@ -16,7 +14,7 @@ class RefreshTokenSpecs extends FlatSpec with Matchers with SpecBase with FailHe
     }
   }
 
-  it should "correctly handle a bad-request response from the SSO service" in new RefreshTestEnv {
+  it should "correctly handle a bad-request response from the SSO service" in {
     val err = "The request is invalid"
     ssoInvalidRequest(err)
 

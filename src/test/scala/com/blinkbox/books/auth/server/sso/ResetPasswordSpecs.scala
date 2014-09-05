@@ -1,13 +1,12 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.env.{AuthenticationTestEnv, CommonResponder, TestEnv}
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.{FlatSpec, Matchers}
 import spray.http.StatusCodes
 
-class ResetPasswordSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
+class ResetPasswordSpecs extends SpecBase {
 
-  "The SSO client" should "return sso credentials if a valid reset token and a new password are provided" in new AuthenticationTestEnv {
+  import env._
+
+  "The SSO client" should "return sso credentials if a valid reset token and a new password are provided" in {
     ssoSuccessfulAuthentication()
 
     whenReady(sso.resetPassword(SsoPasswordResetToken("some-token"), "new-password"))(_ should matchPattern {
@@ -15,7 +14,7 @@ class ResetPasswordSpecs extends FlatSpec with Matchers with SpecBase with FailH
     })
   }
 
-  it should "signal a request failure if the SSO service replies with a 400" in new TestEnv with CommonResponder {
+  it should "signal a request failure if the SSO service replies with a 400" in {
     ssoInvalidRequest("Some error")
 
     failingWith[SsoInvalidRequest](sso.resetPassword(SsoPasswordResetToken("some-token"), "new-password")) should matchPattern {
@@ -23,7 +22,7 @@ class ResetPasswordSpecs extends FlatSpec with Matchers with SpecBase with FailH
     }
   }
 
-  it should "signal an authentication failure in the SSO service" in new TestEnv with CommonResponder {
+  it should "signal an authentication failure in the SSO service" in {
     ssoResponse(StatusCodes.Unauthorized)
 
     failingWith[SsoUnauthorized.type](sso.resetPassword(SsoPasswordResetToken("some-token"), "new-password"))

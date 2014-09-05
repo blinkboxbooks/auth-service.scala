@@ -1,15 +1,12 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.env.RegistrationTestEnv
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Span}
-import org.scalatest.{FlatSpec, Matchers}
+import com.blinkbox.books.auth.server.data.UserId
 
 // TODO: IP-related scenarios and scenarios with failures from SSO are not being tested at the moment, add those tests
 class DefaultRegistrationServiceSpecs extends SpecBase {
+
+  import env._
 
   val simpleReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true, None, None, None, None)
   val clientReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true,
@@ -23,7 +20,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     token.user_uri should equal(s"/users/$regId")
   }
 
-  "The registration service" should "register a user without a client and no IP" in new RegistrationTestEnv {
+  "The registration service" should "register a user without a client and no IP" in {
     ssoSuccessfulRegistration()
 
     import driver.simple._
@@ -41,7 +38,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "register a user with a client" in new RegistrationTestEnv {
+  it should "register a user with a client" in {
     ssoSuccessfulRegistration()
 
     whenReady(registrationService.registerUser(clientReg, None)) { token =>
@@ -59,13 +56,13 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "correctly signal when an username is already registered with the SSO service" in new RegistrationTestEnv {
+  it should "correctly signal when an username is already registered with the SSO service" in {
     ssoConflict()
 
     failingWith[ZuulRequestException](registrationService.registerUser(clientReg, None)) should equal(Failures.usernameAlreadyTaken)
   }
 
-  it should "correctly signal when the SSO service returns validation errors" in new RegistrationTestEnv {
+  it should "correctly signal when the SSO service returns validation errors" in {
     val err = "Validation errors"
     ssoInvalidRequest(err)
 

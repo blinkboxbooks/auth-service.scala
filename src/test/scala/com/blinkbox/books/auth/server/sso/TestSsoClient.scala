@@ -3,11 +3,11 @@ package com.blinkbox.books.auth.server.sso
 import akka.actor.{ActorRef, ActorSystem}
 import com.blinkbox.books.auth.server.SsoConfig
 import org.scalatest.Matchers._
-import spray.http.{MediaTypes, HttpEntity, HttpRequest, HttpResponse}
+import spray.http.{HttpEntity, HttpRequest, HttpResponse, MediaTypes}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-class TestSSOClient(
+class TestSsoClient(
     config: SsoConfig,
     nextResponse: () => Future[HttpResponse])(implicit ec: ExecutionContext, sys: ActorSystem) extends DefaultClient(config) {
 
@@ -26,7 +26,7 @@ class TestSSOClient(
   }
 }
 
-class SSOResponseMocker {
+class SsoResponseMocker {
   private var ssoResponse = List.empty[Promise[HttpResponse]]
 
   def complete(completions: (Promise[HttpResponse] => Unit)*): Unit = {
@@ -43,4 +43,6 @@ class SSOResponseMocker {
       p.future
     case _ => sys.error("Expected SSO response mock, got nothing")
   }
+
+  def reset(): Unit = { ssoResponse = Nil }
 }

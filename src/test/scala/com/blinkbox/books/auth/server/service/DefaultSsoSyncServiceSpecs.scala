@@ -1,13 +1,14 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.data.{UserId, User}
-import com.blinkbox.books.auth.server.env.{UserInfoResponder, TestEnv}
-import com.blinkbox.books.auth.server.events.{UserUpdated, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{SsoUnknownException, SsoUserId, SsoAccessToken}
+import com.blinkbox.books.auth.server.data.{User, UserId}
+import com.blinkbox.books.auth.server.events.{UserRegistered, UserUpdated}
+import com.blinkbox.books.auth.server.sso.{SsoAccessToken, SsoUserId}
 
 class DefaultSsoSyncServiceSpecs extends SpecBase {
 
-  "The Sso sync service" should "create an user if a None is provide" in new TestEnv with UserInfoResponder {
+  import env._
+
+  "The Sso sync service" should "create an user if a None is provide" in {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
@@ -28,7 +29,7 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
     }
   }
 
-  it should "link and update an user if one not having SSO id has been provided" in new TestEnv with UserInfoResponder {
+  it should "link and update an user if one not having SSO id has been provided" in {
     ssoNoContent()
     ssoSuccessfulJohnDoeInfo()
 
@@ -49,7 +50,7 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
     }
   }
 
-  it should "update an user if one having SSO id has been provided" in new TestEnv with UserInfoResponder {
+  it should "update an user if one having SSO id has been provided" in {
     ssoSuccessfulJohnDoeInfo()
 
     whenReady(ssoSync(Some(userA), SsoAccessToken("some-access-token"))){ user =>

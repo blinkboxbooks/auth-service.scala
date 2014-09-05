@@ -1,12 +1,10 @@
 package com.blinkbox.books.auth.server.sso
 
-import com.blinkbox.books.auth.server.env.UserInfoTestEnv
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.{FlatSpec, Matchers}
+class UserInfoSpecs extends SpecBase {
 
-class UserInfoSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
+  import env._
 
-  "The SSO client" should "retrieve user information if the SSO service responds with a success" in new UserInfoTestEnv {
+  "The SSO client" should "retrieve user information if the SSO service responds with a success" in {
     ssoSuccessfulJohnDoeInfo()
 
     whenReady(sso.userInfo(SsoAccessToken("some-access-token"))) { userInfo =>

@@ -9,12 +9,14 @@ import com.blinkbox.books.auth.server.data.{Client, _}
 import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.slick.H2DatabaseSupport
-import com.blinkbox.books.testkit.{PublisherSpy, TestH2}
+import com.blinkbox.books.testkit.PublisherSpy
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
+import org.h2.jdbc.JdbcSQLException
 import org.joda.time.Duration
 
 import scala.slick.driver.H2Driver
+import scala.slick.jdbc.JdbcBackend.Database
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
@@ -45,7 +47,10 @@ trait TestConfigComponent extends ConfigComponent {
 trait TestDatabaseComponent extends DatabaseComponent {
   val DB = new H2DatabaseSupport
 
-  override val db = TestH2.db
+  override val db = {
+    val threadId = Thread.currentThread().getId()
+    Database.forURL(s"jdbc:h2:mem:auth$threadId;DB_CLOSE_DELAY=-1;MODE=MYSQL;DATABASE_TO_UPPER=FALSE", driver = "org.h2.Driver")
+  }
   override val driver = H2Driver
   override val tables = ZuulTables[DB.Profile](driver)
 }
@@ -62,10 +67,10 @@ trait TestPasswordHasherComponent extends PasswordHasherComponent {
 trait TestSsoComponent extends SsoComponent {
   this: ConfigComponent with AsyncComponent =>
 
-  val ssoResponse = new SSOResponseMocker
+  val ssoResponse = new SsoResponseMocker
 
   private val client = withSsoClientContext { implicit ec =>
-    new TestSSOClient(config.sso, ssoResponse.nextResponse)
+    new TestSsoClient(config.sso, ssoResponse.nextResponse)
   }
 
   private val tokenDecoder = new SsoAccessTokenDecoder(SsoTestKeyStore) {
@@ -96,7 +101,8 @@ class TestEnv extends
     DefaultRefreshTokenServiceComponent with
     DefaultSsoSyncComponent with
     DefaultPasswordUpdatedServiceComponent with
-    DefaultApiComponent {
+    DefaultApiComponent with
+    SsoResponder {
 
   implicit val ec = actorSystem.dispatcher
 
@@ -178,9 +184,28 @@ class TestEnv extends
     users.filter(_.id === id).map(_.ssoId).update(Some(SsoUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
   }
 
-  db.withSession { implicit session =>
-    tables.users ++= Seq(userA, userB, userC)
-    tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
-    tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
+  def cleanup(): Unit = {
+    import tables.driver.simple._
+
+    db.withSession { implicit session =>
+      val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl
+
+      try {
+        ddl.drop
+      } catch { case _: JdbcSQLException => /* Do nothing */ }
+
+      ddl.create
+    }
+
+    db.withSession { implicit session =>
+      tables.users ++= Seq(userA, userB, userC)
+      tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
+      tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
+    }
+
+    publisher.events = Nil
+    ssoResponse.reset()
   }
+
+  cleanup()
 }

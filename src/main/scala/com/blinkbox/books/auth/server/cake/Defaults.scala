@@ -219,7 +219,7 @@ trait DefaultSsoComponent extends SsoComponent {
   }
 }
 
-trait DefaultApiComponent {
+trait DefaultApiComponent extends ApiComponent {
   this: AuthServiceComponent
     with ClientServiceComponent
     with UserServiceComponent
@@ -245,8 +245,6 @@ trait DefaultApiComponent {
     refreshTokenService,
     passwordUpdateService,
     authenticator)
-  private val swaggerApi = new SwaggerApi(config.swagger)
 
-  val zuulRoutes: Route = zuulApi.routes
-  val swaggerRoutes: Route = swaggerApi.routes
+  override val zuulRoutes: Route = zuulApi.routes
 }

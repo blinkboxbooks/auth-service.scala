@@ -1,22 +1,21 @@
 package com.blinkbox.books.auth.server.sso
 
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.env.LinkTestEnv
-import com.blinkbox.books.testkit.FailHelper
-import org.scalatest.{FlatSpec, Matchers}
 
-class LinkSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
+class LinkSpecs extends SpecBase {
+
+  import env._
 
   val accessToken = SsoAccessToken("some-access-token")
   val userId = UserId(123)
 
-  "The SSO client" should "complete correctly a link request if the SSO service respond with a success" in new LinkTestEnv {
+  "The SSO client" should "complete correctly a link request if the SSO service respond with a success" in {
     ssoNoContent()
 
     whenReady(sso.linkAccount(accessToken, userId, true, "1.0")) { _ => }
   }
 
-  it should "correctly convert a bad-request response from the SSO service" in new LinkTestEnv {
+  it should "correctly convert a bad-request response from the SSO service" in {
     val err = "The request is not valid"
     ssoInvalidRequest(err)
 
@@ -25,7 +24,7 @@ class LinkSpecs extends FlatSpec with Matchers with SpecBase with FailHelper {
     }
   }
 
-  it should "correctly handle conflict responses if the account is already linked" in new LinkTestEnv {
+  it should "correctly handle conflict responses if the account is already linked" in {
     ssoConflict()
 
     failingWith[SsoConflict.type](sso.linkAccount(accessToken, userId, true, "1.0"))

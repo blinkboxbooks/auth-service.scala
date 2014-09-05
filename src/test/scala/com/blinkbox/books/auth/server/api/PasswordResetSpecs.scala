@@ -2,15 +2,11 @@ package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
-import com.blinkbox.books.auth.server.env.{PasswordResetEnv, AuthenticationTestEnv}
 import com.blinkbox.books.auth.server.events.UserPasswordResetRequested
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
-import com.blinkbox.books.schemas.events.user.v2.User.PasswordResetRequested
-import spray.http.{HttpEntity, FormData, StatusCodes}
+import spray.http.{FormData, HttpEntity, StatusCodes}
 
-class PasswordResetSpecs extends ApiSpecBase[PasswordResetEnv] {
-
-  override def newEnv = new PasswordResetEnv
+class PasswordResetSpecs extends ApiSpecBase {
 
   "The service" should "generate a password reset email and respond with an empty 200 response if SSO responds with a success" in {
     env.ssoGenerateResetToken
