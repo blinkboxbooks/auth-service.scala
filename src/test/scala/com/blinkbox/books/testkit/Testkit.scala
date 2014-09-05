@@ -15,29 +15,6 @@ import scala.slick.driver.H2Driver
 import scala.slick.jdbc.JdbcBackend.Database
 import scala.util.{Try, Success, Failure}
 
-object TestH2 {
-  val tables = ZuulTables(H2Driver)
-
-  def db = {
-    val threadId = Thread.currentThread().getId()
-    val database = Database.forURL(s"jdbc:h2:mem:auth$threadId;DB_CLOSE_DELAY=-1;MODE=MYSQL;DATABASE_TO_UPPER=FALSE", driver = "org.h2.Driver")
-
-    import tables.driver.simple._
-
-    database.withSession { implicit session =>
-      val ddl = (tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl)
-
-      try {
-        ddl.drop
-      } catch { case _: JdbcSQLException => /* Do nothing */ }
-
-      ddl.create
-    }
-
-    database
-  }
-}
-
 object TestGeoIP {
   def geoIpStub(stubValue: String = "GB") = new GeoIP {
     override def countryCode(address: RemoteAddress): String = stubValue

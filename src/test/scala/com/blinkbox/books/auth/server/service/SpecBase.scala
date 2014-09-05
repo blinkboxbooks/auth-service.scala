@@ -1,10 +1,13 @@
 package com.blinkbox.books.auth.server.service
 
+import com.blinkbox.books.auth.server.env
 import com.blinkbox.books.testkit.FailHelper
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Span, Millis}
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.time.{Millis, Span}
+import org.scalatest.{FlatSpec, Matchers}
 
-class SpecBase  extends FlatSpec with Matchers with ScalaFutures with FailHelper {
+import scala.language.experimental.macros
+
+class SpecBase extends FlatSpec with env.SpecBase with Matchers with ScalaFutures with FailHelper {
   implicit override val patienceConfig = PatienceConfig(timeout = Span(3000, Millis), interval = Span(100, Millis))
 }

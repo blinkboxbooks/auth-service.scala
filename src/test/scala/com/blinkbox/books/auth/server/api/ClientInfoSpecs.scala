@@ -1,14 +1,11 @@
 package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server.ClientInfo
-import com.blinkbox.books.auth.server.env.TestEnv
 import spray.http.CacheDirectives.`no-store`
 import spray.http.HttpHeaders.{RawHeader, `Cache-Control`}
 import spray.http.{OAuth2BearerToken, StatusCodes}
 
-class ClientInfoSpecs extends ApiSpecBase[TestEnv] {
-
-  override def newEnv = new TestEnv
+class ClientInfoSpecs extends ApiSpecBase {
 
   "The service" should "return client info for an SSO user's client" in {
     Get("/clients/1") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {

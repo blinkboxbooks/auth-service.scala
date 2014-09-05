@@ -11,6 +11,8 @@ import org.scalatest.{FlatSpec, Matchers}
 // TODO: IP-related scenarios and scenarios with failures from SSO are not being tested at the moment, add those tests
 class DefaultRegistrationServiceSpecs extends SpecBase {
 
+  import env._
+
   val simpleReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true, None, None, None, None)
   val clientReg = UserRegistration("New First", "New Last", "new.user@test.tst", "new-password", true, true,
     Some("New Name"), Some("New Brand"), Some("New Model"), Some("New OS"))
@@ -23,7 +25,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     token.user_uri should equal(s"/users/$regId")
   }
 
-  "The registration service" should "register a user without a client and no IP" in new TestEnv {
+  "The registration service" should "register a user without a client and no IP" in {
     ssoSuccessfulRegistration()
 
     import driver.simple._
@@ -41,7 +43,7 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "register a user with a client" in new TestEnv {
+  it should "register a user with a client" in {
     ssoSuccessfulRegistration()
 
     whenReady(registrationService.registerUser(clientReg, None)) { token =>
@@ -59,13 +61,13 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
     }
   }
 
-  it should "correctly signal when an username is already registered with the SSO service" in new TestEnv {
+  it should "correctly signal when an username is already registered with the SSO service" in {
     ssoConflict()
 
     failingWith[ZuulRequestException](registrationService.registerUser(clientReg, None)) should equal(Failures.usernameAlreadyTaken)
   }
 
-  it should "correctly signal when the SSO service returns validation errors" in new TestEnv {
+  it should "correctly signal when the SSO service returns validation errors" in {
     val err = "Validation errors"
     ssoInvalidRequest(err)
 

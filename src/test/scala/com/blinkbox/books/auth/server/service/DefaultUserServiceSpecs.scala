@@ -9,10 +9,11 @@ import spray.http.{HttpEntity, StatusCodes}
 
 class DefaultUserServiceSpecs extends SpecBase {
 
-  import com.blinkbox.books.testkit.TestH2.tables._
-  import driver.simple._
+  import env._
+  import env.tables._
+  import env.driver.simple._
 
-  "The user service" should "retrieve an user and update its data with data coming from SSO" in new TestEnv {
+  "The user service" should "retrieve an user and update its data with data coming from SSO" in {
     ssoSuccessfulJohnDoeInfo()
 
     whenReady(userService.getUserInfo()(authenticatedUserA)) { infoOpt =>
@@ -35,7 +36,7 @@ class DefaultUserServiceSpecs extends SpecBase {
     }
   }
 
-  it should "signal an unverified identity when retrieving an user that doesn't exist on our local system but exists in SSO" in new TestEnv {
+  it should "signal an unverified identity when retrieving an user that doesn't exist on our local system but exists in SSO" in {
     ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
@@ -46,19 +47,19 @@ class DefaultUserServiceSpecs extends SpecBase {
     failingWith[ZuulAuthorizationException](userService.getUserInfo()(authenticatedUserA)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when retrieving an user that doesn't have an SSO access token" in new TestEnv {
+  it should "signal an unverified identity when retrieving an user that doesn't have an SSO access token" in {
     ssoNoInvocation()
 
     failingWith[ZuulAuthorizationException](userService.getUserInfo()(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when retrieving an user that doesn't exist on SSO" in new TestEnv {
+  it should "signal an unverified identity when retrieving an user that doesn't exist on SSO" in {
     ssoResponse(StatusCodes.Unauthorized, HttpEntity.Empty)
 
     failingWith[ZuulUnknownException](userService.getUserInfo()(authenticatedUserA))
   }
 
-  it should "update an user given new details and return updated user information" in new TestEnv {
+  it should "update an user given new details and return updated user information" in {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
@@ -89,7 +90,7 @@ class DefaultUserServiceSpecs extends SpecBase {
     }
   }
 
-  it should "signal an unverified identity when updating an user that doesn't exist on our local system but exists in SSO" in new TestEnv {
+  it should "signal an unverified identity when updating an user that doesn't exist on our local system but exists in SSO" in {
     ssoSuccessfulJohnDoeInfo()
 
     db.withSession { implicit session =>
@@ -100,13 +101,13 @@ class DefaultUserServiceSpecs extends SpecBase {
     failingWith[ZuulAuthorizationException](userService.updateUser(fullUserPatch)(authenticatedUserA)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when updating an user that doesn't have an SSO access token" in new TestEnv {
+  it should "signal an unverified identity when updating an user that doesn't have an SSO access token" in {
     ssoNoInvocation()
 
     failingWith[ZuulAuthorizationException](userService.updateUser(fullUserPatch)(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 
-  it should "signal an unverified identity when updating an user that doesn't exist on SSO" in new TestEnv {
+  it should "signal an unverified identity when updating an user that doesn't exist on SSO" in {
     ssoResponse(StatusCodes.Unauthorized, HttpEntity.Empty)
 
     failingWith[ZuulUnknownException](userService.updateUser(fullUserPatch)(authenticatedUserA))

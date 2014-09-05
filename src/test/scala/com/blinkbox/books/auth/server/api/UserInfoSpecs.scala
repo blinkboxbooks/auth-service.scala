@@ -1,14 +1,11 @@
 package com.blinkbox.books.auth.server.api
 
+import com.blinkbox.books.auth.server.UserInfo
 import com.blinkbox.books.auth.server.data.UserId
-import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, SsoCredentials, SsoAccessToken}
-import com.blinkbox.books.auth.server.{TokenBuilder, UserInfo}
-import com.blinkbox.books.auth.server.env.TestEnv
-import spray.http.{StatusCodes, OAuth2BearerToken}
+import com.blinkbox.books.auth.server.sso.{SsoAccessToken, SsoCredentials, SsoRefreshToken}
+import spray.http.{OAuth2BearerToken, StatusCodes}
 
-class UserInfoSpecs extends ApiSpecBase[TestEnv] {
-
-  override def newEnv = new TestEnv
+class UserInfoSpecs extends ApiSpecBase {
 
   "The service" should "return user info for an authenticated user that is present on SSO" in {
     env.ssoSuccessfulJohnDoeInfo()

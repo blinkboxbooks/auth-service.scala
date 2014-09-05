@@ -7,7 +7,9 @@ import com.blinkbox.books.auth.server.sso.{SsoUnknownException, SsoUserId, SsoAc
 
 class DefaultSsoSyncServiceSpecs extends SpecBase {
 
-  "The Sso sync service" should "create an user if a None is provide" in new TestEnv {
+  import env._
+
+  "The Sso sync service" should "create an user if a None is provide" in {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
@@ -28,7 +30,7 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
     }
   }
 
-  it should "link and update an user if one not having SSO id has been provided" in new TestEnv {
+  it should "link and update an user if one not having SSO id has been provided" in {
     ssoNoContent()
     ssoSuccessfulJohnDoeInfo()
 
@@ -49,7 +51,7 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
     }
   }
 
-  it should "update an user if one having SSO id has been provided" in new TestEnv {
+  it should "update an user if one having SSO id has been provided" in {
     ssoSuccessfulJohnDoeInfo()
 
     whenReady(ssoSync(Some(userA), SsoAccessToken("some-access-token"))){ user =>

@@ -13,7 +13,9 @@ import spray.http.StatusCodes
 
 class DefaultRefreshTokenServiceSpecs extends SpecBase {
 
-  it should "refresh a valid refresh token given the associated client credentials" in new TestEnv {
+  import env._
+
+  it should "refresh a valid refresh token given the associated client credentials" in {
     ssoSuccessfulAuthentication()
 
     val refreshFuture = refreshTokenService.refreshAccessToken(
@@ -35,7 +37,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
     }
   }
 
-  it should "refresh a valid refresh token even if we don't have an SSO token for that" in new TestEnv {
+  it should "refresh a valid refresh token even if we don't have an SSO token for that" in {
     ssoNoInvocation()
     removeSSOTokens()
 
@@ -58,7 +60,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
     }
   }
 
-  it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in new TestEnv {
+  it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in {
     ssoSuccessfulAuthentication()
 
     val refreshFuture = refreshTokenService.refreshAccessToken(
@@ -69,7 +71,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
     }
   }
 
-  it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in new TestEnv {
+  it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in {
     ssoNoInvocation()
 
     val correctClientFuture = refreshTokenService.refreshAccessToken(
@@ -85,13 +87,13 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
     }
   }
 
-  it should "revoke a valid refresh token" in new TestEnv {
+  it should "revoke a valid refresh token" in {
     ssoNoContent()
 
     whenReady(refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token)) { _ =>  }
   }
 
-  it should "signal an error when revoking an invalid refresh token" in new TestEnv {
+  it should "signal an error when revoking an invalid refresh token" in {
     ssoNoInvocation()
 
     failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken("foo-token")) should matchPattern {
@@ -99,7 +101,7 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
     }
   }
 
-  it should "signal an error when revoking an already revoked refresh token" in new TestEnv {
+  it should "signal an error when revoking an already revoked refresh token" in {
     ssoNoInvocation()
 
     failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken(refreshTokenClientA3.token)) should matchPattern {
@@ -107,14 +109,14 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
     }
   }
 
-  it should "revoke a zuul token even if it doesn't have a corresponding SSO token" in new TestEnv {
+  it should "revoke a zuul token even if it doesn't have a corresponding SSO token" in {
     ssoNoInvocation()
     removeSSOTokens()
 
     whenReady(refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token)) { _ => }
   }
 
-  it should "fail with an exception and not revoke a zuul token if SSO signals an error removing the corresponding SSO token" in new TestEnv {
+  it should "fail with an exception and not revoke a zuul token if SSO signals an error removing the corresponding SSO token" in {
     ssoResponse(StatusCodes.BadRequest)
     failingWith[SsoUnknownException](refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token))
 

@@ -1,11 +1,8 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.env.TestEnv
 import spray.http.{FormData, HttpEntity, OAuth2BearerToken, StatusCodes}
 
-class UpdatePasswordSpecs extends ApiSpecBase[TestEnv] {
-
-  override def newEnv = new TestEnv
+class UpdatePasswordSpecs extends ApiSpecBase {
 
   val passwordRequest = FormData(Map(
     "old_password" -> "Foo",

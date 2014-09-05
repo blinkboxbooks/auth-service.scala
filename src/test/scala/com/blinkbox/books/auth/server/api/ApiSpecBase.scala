@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.api
 import java.lang.reflect.InvocationTargetException
 
 import com.blinkbox.books.auth.Elevation
-import com.blinkbox.books.auth.server.env.TestEnv
+import com.blinkbox.books.auth.server.env
 import com.blinkbox.books.auth.server.{TokenStatus, ZuulRequestExceptionSerializer}
 import com.blinkbox.books.json.DefaultFormats
 import com.typesafe.config.ConfigFactory
@@ -49,7 +49,8 @@ trait AuthorisationTestHelpers {
     }
 }
 
-abstract class ApiSpecBase[E <: TestEnv] extends FlatSpec
+abstract class ApiSpecBase extends FlatSpec
+  with env.SpecBase
   with Matchers
   with ScalatestRouteTest
   with BeforeAndAfterEach
@@ -57,10 +58,7 @@ abstract class ApiSpecBase[E <: TestEnv] extends FlatSpec
   with JsonUnmarshallers
   with AuthorisationTestHelpers {
 
-  protected def newEnv: E
-
-  var env: E = _
-  var route: Route = _
+  var route: Route = env.zuulRoutes
 
   val userUriExpr = """\/users\/(\d+)""".r
   val clientUriExpr = """\/clients\/(\d+)""".r
@@ -68,15 +66,6 @@ abstract class ApiSpecBase[E <: TestEnv] extends FlatSpec
   // Do not load the application configuration for the test actor system as it will be loaded later on. This is not optimal
   // but it solves the problem of having placeholders in the configuration that are resolved during the environment initialization.
   override def testConfig = ConfigFactory.empty()
-
-  override def beforeEach() {
-    env = newEnv
-    route = env.zuulRoutes
-  }
-
-  override def afterEach(): Unit = {
-    env.actorSystem.shutdown()
-  }
 
   def jsonResponseAs[T: FromResponseUnmarshaller: ClassTag]: T = {
     mediaType should equal(MediaTypes.`application/json`)
