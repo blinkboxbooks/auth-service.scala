@@ -1,7 +1,7 @@
 // This is needed due to a bug in the scala reflection that makes tests intermittently fail.
 // See: https://issues.scala-lang.org/browse/SI-6240
 val testSettings = Seq(
-  parallelExecution in Test := false
+  parallelExecution in Test := true
 )
 
 val buildSettings = Seq(
