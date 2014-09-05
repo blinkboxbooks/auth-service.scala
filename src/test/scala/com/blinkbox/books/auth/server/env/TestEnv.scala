@@ -188,7 +188,7 @@ class TestEnv extends
     import tables.driver.simple._
 
     db.withSession { implicit session =>
-      val ddl = (tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl)
+      val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl
 
       try {
         ddl.drop
