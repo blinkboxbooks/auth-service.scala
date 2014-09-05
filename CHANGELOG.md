@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.17.6 ([#44](https://git.mobcastdev.com/Zuul/auth-service/pull/44) 2014-09-05 15:10:09)
+
+Strict check if SSO client expectations are met
+
+### Improvements
+
+* Introduce more strictness so that a test fails also if an expected SSO call has not been performed
+* Remove useless code
+* Re-enable parallel test execution; as strange as it may seem, in the current test structure it seems to be working fine
+
 ## 0.17.5 ([#43](https://git.mobcastdev.com/Zuul/auth-service/pull/43) 2014-09-05 12:29:05)
 
 Update Scala & Optimize test environments
