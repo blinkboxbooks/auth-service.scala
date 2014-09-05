@@ -49,8 +49,6 @@ class RegistrationSpecs extends ApiSpecBase {
   }
 
   it should "not allow the registration of a new user with partial client data" in {
-    env.ssoNoInvocation()
-
     Post("/oauth2/token", FormData(regDataFull - "client_model")) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
 

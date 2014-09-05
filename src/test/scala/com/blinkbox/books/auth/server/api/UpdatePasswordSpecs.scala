@@ -44,8 +44,6 @@ class UpdatePasswordSpecs extends ApiSpecBase {
   }
 
   it should "report an Unauthorized if the user does not have an SSO access token" in {
-    env.ssoNoInvocation()
-
     Post("/password/change", passwordRequest) ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1WithoutSSO.access_token)) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
     }

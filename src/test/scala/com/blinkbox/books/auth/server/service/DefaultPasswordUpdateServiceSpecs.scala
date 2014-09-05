@@ -36,8 +36,6 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
   }
 
   it should "report a ZuulAuthorizationException if the user does not have an SSO access token" in {
-    ssoNoInvocation()
-
     failingWith[ZuulAuthorizationException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 

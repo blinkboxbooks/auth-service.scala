@@ -58,8 +58,6 @@ class DefaultSessionServiceSpecs extends SpecBase {
   }
 
   it should "use zuul information to provide status of an access token that is not bound to any SSO token" in {
-    ssoNoInvocation()
-
     val u = user.copy(claims = user.claims - "sso/at")
 
     whenReady(sessionService.querySession()(u))(_ should matchPattern {
@@ -77,8 +75,6 @@ class DefaultSessionServiceSpecs extends SpecBase {
   }
 
   it should "not extend an user session if the authenticated user doesn't have an SSO token" in {
-    ssoNoInvocation()
-
     val u = user.copy(claims = user.claims - "sso/at")
 
     failingWith[ZuulAuthorizationException](sessionService.extendSession()(u)) should matchPattern {

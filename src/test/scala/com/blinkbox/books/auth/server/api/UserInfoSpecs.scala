@@ -20,16 +20,12 @@ class UserInfoSpecs extends ApiSpecBase {
   }
 
   it should "return a 404 if an user id different from the authenticated user is requested" in {
-    env.ssoNoInvocation()
-
     Get("/users/2") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.NotFound)
     }
   }
 
   it should "return a 401 if the authenticated user doesn't have an SSO access token" in {
-    env.ssoNoInvocation()
-
     Get("/users/1") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1WithoutSSO.access_token)) ~> route ~> check {
       status should equal(StatusCodes.Unauthorized)
     }

@@ -47,8 +47,6 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "signal an unverified identity when retrieving an user that doesn't have an SSO access token" in {
-    ssoNoInvocation()
-
     failingWith[ZuulAuthorizationException](userService.getUserInfo()(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 
@@ -101,8 +99,6 @@ class DefaultUserServiceSpecs extends SpecBase {
   }
 
   it should "signal an unverified identity when updating an user that doesn't have an SSO access token" in {
-    ssoNoInvocation()
-
     failingWith[ZuulAuthorizationException](userService.updateUser(fullUserPatch)(authenticatedUserB)) should equal(Failures.unverifiedIdentity)
   }
 

@@ -46,7 +46,5 @@ class SsoResponseMocker {
     case _ => sys.error("Unexpected SSO invocation")
   }
 
-  def reset(): Unit = {
-    ssoResponse = Nil
-  }
+  def reset(): Unit = { ssoResponse = Nil }
 }

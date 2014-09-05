@@ -79,9 +79,6 @@ trait SsoResponseFixtures {
 trait SsoResponder extends SsoResponseFixtures {
   this: TestSsoComponent =>
 
-  // TODO: This should probably be removed
-  def ssoNoInvocation() = ssoResponse.reset()
-
   def ssoInvalidRequest(description: String, error: String = "invalid_request"): Unit = ssoResponse.complete(
     _.success(HttpResponse(StatusCodes.BadRequest,
       HttpEntity(ContentTypes.`application/json`, invalidRequestJson(description, error).getBytes)))

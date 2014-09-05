@@ -32,7 +32,6 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
   }
 
   it should "refresh a valid refresh token even if we don't have an SSO token for that" in {
-    ssoNoInvocation()
     removeSSOTokens()
 
     val refreshFuture = refreshTokenService.refreshAccessToken(
@@ -66,8 +65,6 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
   }
 
   it should "not refresh an invalid refresh token and signal an error whether or not correct client credentials are provided" in {
-    ssoNoInvocation()
-
     val correctClientFuture = refreshTokenService.refreshAccessToken(
       RefreshTokenCredentials("foo-token", Some(clientInfoA1.client_id), Some("test-secret-a1")))
 
@@ -88,23 +85,18 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
   }
 
   it should "signal an error when revoking an invalid refresh token" in {
-    ssoNoInvocation()
-
     failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken("foo-token")) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
   it should "signal an error when revoking an already revoked refresh token" in {
-    ssoNoInvocation()
-
     failingWith[ZuulRequestException](refreshTokenService.revokeRefreshToken(refreshTokenClientA3.token)) should matchPattern {
       case ZuulRequestException(_, InvalidGrant, None) =>
     }
   }
 
   it should "revoke a zuul token even if it doesn't have a corresponding SSO token" in {
-    ssoNoInvocation()
     removeSSOTokens()
 
     whenReady(refreshTokenService.revokeRefreshToken(refreshTokenClientA1.token)) { _ => }
