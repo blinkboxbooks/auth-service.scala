@@ -2,7 +2,7 @@ package com.blinkbox.books.auth.server.cake
 
 import java.util.concurrent.ForkJoinPool
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRefFactory, ActorSystem}
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
@@ -16,7 +16,8 @@ import com.blinkbox.books.spray._
 import com.blinkbox.books.time._
 import com.rabbitmq.client.Connection
 import com.zaxxer.hikari.HikariDataSource
-import spray.routing.Route
+import spray.http.Uri.Path
+import spray.routing.RouteConcatenation._
 import spray.routing.authentication.ContextAuthenticator
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -246,5 +247,10 @@ trait DefaultApiComponent extends ApiComponent {
     passwordUpdateService,
     authenticator)
 
-  override val zuulRoutes: Route = zuulApi.routes
+  private val healthApi = new HealthCheckHttpService {
+    override val basePath = Path./
+    override implicit def actorRefFactory = actorSystem
+  }
+
+  override val routes = healthApi.routes ~ zuulApi.routes
 }

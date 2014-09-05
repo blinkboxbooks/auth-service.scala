@@ -41,18 +41,6 @@ class AuthApi(
   val RefreshTokenId = IntNumber.map(data.RefreshTokenId(_))
   val ResetToken = Deserializer.fromFunction2Converter((s: String) => SsoPasswordResetToken(s))
 
-
-//  first_name (required)
-//  last_name (required)
-//  username (required)
-//  password (required)
-//  accepted_terms_and_conditions (required)
-//  allow_marketing_communications (required)
-//  client_name (required to register client simultaneously)
-//  client_brand (required to register client simultaneously)
-//  client_model (required to register client simultaneously)
-//  client_os(required to register client simultaneously)
-
   val registerUser: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
     formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>
       extract(_.request.clientIP) { clientIP =>

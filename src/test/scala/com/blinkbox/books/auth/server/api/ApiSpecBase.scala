@@ -57,7 +57,7 @@ abstract class ApiSpecBase extends FlatSpec
   with JsonUnmarshallers
   with AuthorisationTestHelpers {
 
-  var route: Route = env.zuulRoutes
+  var route: Route = env.routes
 
   val userUriExpr = """\/users\/(\d+)""".r
   val clientUriExpr = """\/clients\/(\d+)""".r

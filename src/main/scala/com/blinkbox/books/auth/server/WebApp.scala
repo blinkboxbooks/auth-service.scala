@@ -1,8 +1,6 @@
 package com.blinkbox.books.auth.server
 
-import akka.actor.{ActorSystem, Props}
-import akka.io.{IO, Tcp}
-import akka.pattern.ask
+import akka.actor.Props
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.services.GeoIP
@@ -10,15 +8,11 @@ import com.blinkbox.books.config.Configuration
 import com.blinkbox.books.logging.Loggers
 import com.blinkbox.books.spray._
 import com.blinkbox.books.time.SystemTimeSupport
-import com.typesafe.scalalogging.slf4j.StrictLogging
 import spray.can.Http
-import spray.http.HttpHeaders.`Access-Control-Allow-Origin`
-import spray.http.{AllOrigins, RemoteAddress}
+import spray.http.RemoteAddress
 import spray.routing._
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.Success
 
 // TODO: Real GeoIP checking
 object DummyGeoIP extends GeoIP {
@@ -47,7 +41,7 @@ object WebAppComponents extends
   DefaultApiComponent
 
 class WebService extends HttpServiceActor {
-  def receive = runRoute(WebAppComponents.zuulRoutes)
+  def receive = runRoute(WebAppComponents.routes)
 }
 
 object WebApp extends App with Configuration with Loggers {

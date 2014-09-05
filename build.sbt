@@ -18,13 +18,11 @@ val dependencySettings = Seq(
     val sprayV = "1.3.1"
     Seq(
       "io.spray"                  %%  "spray-client"          % sprayV,
-      "com.typesafe.akka"         %%  "akka-slf4j"            % akkaV,
       "com.zaxxer"                %   "HikariCP-java6"        % "2.0.1",
       "commons-lang"              %   "commons-lang"          % "2.6",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
-      "com.blinkbox.books"        %%  "common-config"         % "1.1.0",
       "com.blinkbox.books"        %%  "common-slick"          % "0.1.1",
-      "com.blinkbox.books"        %%  "common-spray"          % "0.16.0",
+      "com.blinkbox.books"        %%  "common-spray"          % "0.16.1",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.5.1",
       "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "6.0.4",
       "com.blinkbox.books.hermes" %%  "message-schemas"       % "0.6.2",
