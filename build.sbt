@@ -16,10 +16,8 @@ val dependencySettings = Seq(
   libraryDependencies ++= {
     val akkaV = "2.3.5"
     val sprayV = "1.3.1"
-    val json4sV = "3.2.10"
     Seq(
       "io.spray"                  %%  "spray-client"          % sprayV,
-      "org.json4s"                %%  "json4s-native"         % json4sV, // for swagger :-/
       "com.typesafe.akka"         %%  "akka-slf4j"            % akkaV,
       "com.zaxxer"                %   "HikariCP-java6"        % "2.0.1",
       "commons-lang"              %   "commons-lang"          % "2.6",
