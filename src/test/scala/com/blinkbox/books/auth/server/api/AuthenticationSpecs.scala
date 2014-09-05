@@ -79,7 +79,7 @@ class AuthenticationSpecs extends ApiSpecBase {
   }
 
   it should "reject incomplete client information" in {
-    env.ssoUnsuccessfulAuthentication()
+    env.ssoNoInvocation()
 
     Post("/oauth2/token", FormData(validCredentialsWithClient - "client_secret")) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)

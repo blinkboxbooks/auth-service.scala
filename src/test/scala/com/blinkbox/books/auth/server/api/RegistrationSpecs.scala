@@ -24,7 +24,7 @@ class RegistrationSpecs extends ApiSpecBase {
   )
 
   "The service" should "allow the registration of a new user without a client" in {
-    env.ssoSuccessfulRegistration()
+    env.ssoSuccessfulRegistrationAndLink()
 
     Post("/oauth2/token", FormData(regDataSimple)) ~> route ~> check {
       status should equal(StatusCodes.OK)
@@ -36,7 +36,7 @@ class RegistrationSpecs extends ApiSpecBase {
   }
 
   it should "allow the registration of a new user with a client" in {
-    env.ssoSuccessfulRegistration()
+    env.ssoSuccessfulRegistrationAndLink()
 
     Post("/oauth2/token", FormData(regDataFull)) ~> route ~> check {
       status should equal(StatusCodes.OK)
