@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.18.1 ([#46](https://git.mobcastdev.com/Zuul/auth-service/pull/46) 2014-09-08 13:48:38)
+
+Update dependencies
+
+### Bug fixes
+
+- Dependencies updated to include a later version of common-config that
+ensures substitutions in configuration are resolved before using it.
+
 ## 0.18.0 ([#45](https://git.mobcastdev.com/Zuul/auth-service/pull/45) 2014-09-05 16:42:42)
 
 Added health check endpoints
