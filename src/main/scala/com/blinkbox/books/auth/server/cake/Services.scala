@@ -97,7 +97,7 @@ trait SsoComponent {
 
 trait ApiComponent {
   def authenticator: ContextAuthenticator[User]
-  def zuulRoutes: Route
+  def routes: Route
 }
 
 trait WebComponent {
