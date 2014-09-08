@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.18.0 ([#45](https://git.mobcastdev.com/Zuul/auth-service/pull/45) 2014-09-05 16:42:42)
+
+Added health check endpoints
+
+### New features
+
+- Now responds to the standard health check endpoints, although there
+aren’t any proper health checks at the moment.
+
 ## 0.17.6 ([#44](https://git.mobcastdev.com/Zuul/auth-service/pull/44) 2014-09-05 15:10:09)
 
 Strict check if SSO client expectations are met
