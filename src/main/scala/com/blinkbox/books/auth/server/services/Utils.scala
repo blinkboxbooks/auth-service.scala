@@ -5,6 +5,7 @@ import java.io.File
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.maxmind.geoip2.DatabaseReader.Builder
+import com.maxmind.geoip2.exception.GeoIp2Exception
 import spray.http.RemoteAddress
 
 import scala.slick.profile.BasicProfile
@@ -60,7 +61,8 @@ class MaxMindGeoIP extends GeoIP {
   override def countryCode(address: RemoteAddress): Option[String] = address.toOption.flatMap { a =>
     Try(db.country(a).getCountry.getIsoCode) match {
       case Success(r) => Some(r)
-      case Failure(ex) => None
+      case Failure(ex: GeoIp2Exception) => None
+      case Failure(ex: Throwable) => throw ex
     }
   }
 }

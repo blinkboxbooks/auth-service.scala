@@ -74,12 +74,52 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
      failingWith[ZuulRequestException](registrationService.registerUser(simpleReg, Some(RemoteAddress("8.8.8.8")))) should equal(Failures.notInTheUK)
   }
 
-  it should "correctly reject registrations from addressess that cannot be resolved to a country" in {
-    failingWith[ZuulRequestException](registrationService.registerUser(simpleReg, Some(RemoteAddress("127.0.0.1")))) should equal(Failures.notInTheUK)
+  it should "correctly reject registrations from global IPs that cannot be resolved to a country" in {
+    // This test uses the 6to4 Relay Anycast IP class which is global but not geo-locable (192.88.99.0/24)
+    failingWith[ZuulRequestException](registrationService.registerUser(simpleReg, Some(RemoteAddress("192.88.99.1")))) should equal(Failures.notInTheUK)
   }
 
   it should "correctly reject registrations where terms and conditions have not been accepted" in {
     failingWith[ZuulRequestException](registrationService.registerUser(simpleReg.copy(acceptedTerms = false), None)) should equal(Failures.termsAndConditionsNotAccepted)
+  }
+
+  it should "correctly accept registrations from a loopback address" in {
+    ssoSuccessfulRegistrationAndLink()
+
+    import driver.simple._
+
+    val addr = Some(RemoteAddress("127.0.0.1"))
+
+    whenReady(registrationService.registerUser(simpleReg, addr)) { token =>
+      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first.value }
+      assertUserRegistered(token, regId)
+    }
+  }
+
+  it should "correctly accept registrations from a link-local address" in {
+    ssoSuccessfulRegistrationAndLink()
+
+    import driver.simple._
+
+    val addr = Some(RemoteAddress("169.254.0.1"))
+
+    whenReady(registrationService.registerUser(simpleReg, addr)) { token =>
+      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first.value }
+      assertUserRegistered(token, regId)
+    }
+  }
+
+  it should "correctly accept registrations from a private address" in {
+    ssoSuccessfulRegistrationAndLink()
+
+    import driver.simple._
+
+    val addr = Some(RemoteAddress("192.168.0.1"))
+
+    whenReady(registrationService.registerUser(simpleReg, addr)) { token =>
+      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first.value }
+      assertUserRegistered(token, regId)
+    }
   }
 
   it should "correctly accept registrations from the UK" in {
