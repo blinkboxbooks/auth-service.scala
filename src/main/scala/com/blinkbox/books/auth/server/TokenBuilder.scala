@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
@@ -9,7 +9,7 @@ import com.blinkbox.books.auth.server.sso.SsoCredentials
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
-import org.joda.time.{DateTimeZone, DateTime}
+import org.joda.time.{DateTime, DateTimeZone}
 
 trait TokenBuilder {
   def issueAccessToken(

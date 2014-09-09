@@ -2,13 +2,13 @@ package com.blinkbox.books.auth.server.cake
 
 import java.util.concurrent.ForkJoinPool
 
-import akka.actor.{ActorRefFactory, ActorSystem}
+import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{LegacyRabbitMqPublisher, Publisher, RabbitMqPublisher}
 import com.blinkbox.books.auth.server.services._
-import com.blinkbox.books.auth.server.sso.{DefaultClient, DefaultSso, FileKeyStore, SsoAccessTokenDecoder}
-import com.blinkbox.books.auth.{Elevation, User, ZuulTokenDecoder, ZuulTokenDeserializer}
+import com.blinkbox.books.auth.server.sso._
+import com.blinkbox.books.auth.{User, ZuulTokenDecoder, ZuulTokenDeserializer}
 import com.blinkbox.books.logging.DiagnosticExecutionContext
 import com.blinkbox.books.rabbitmq.RabbitMq
 import com.blinkbox.books.slick.MySQLDatabaseSupport
@@ -18,9 +18,8 @@ import com.rabbitmq.client.Connection
 import com.zaxxer.hikari.HikariDataSource
 import spray.http.Uri.Path
 import spray.routing.RouteConcatenation._
-import spray.routing.authentication.ContextAuthenticator
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.slick.driver.MySQLDriver
 import scala.slick.jdbc.JdbcBackend.Database
 
@@ -228,13 +227,14 @@ trait DefaultApiComponent extends ApiComponent {
     with PasswordAuthenticationServiceComponent
     with RefreshTokenServiceComponent
     with PasswordUpdateServiceComponent
+    with SsoComponent
     with ConfigComponent
     with AsyncComponent =>
 
-  val authenticator: ContextAuthenticator[User] = withApiContext { implicit ec =>
-    new ZuulTokenAuthenticator(
+  val authenticator: ElevatedContextAuthenticator[User] = withApiContext { implicit ec =>
+    new BearerTokenAuthenticator(
       new ZuulTokenDeserializer(new ZuulTokenDecoder(config.authClient.keysDir.getAbsolutePath)),
-      _ => Future.successful(Elevation.Critical)) // TODO: Use a real in-proc elevation checker
+      new SsoElevationChecker(sso))
   }
 
   private val zuulApi = new AuthApi(config.service,

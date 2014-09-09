@@ -2,21 +2,20 @@ package com.blinkbox.books.auth.server
 
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
+import com.blinkbox.books.auth.Elevation._
+import com.blinkbox.books.auth.User
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.{SsoPasswordResetToken, SsoUnknownException}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
-import com.blinkbox.books.spray._
-import com.blinkbox.books.spray.Directives
+import com.blinkbox.books.spray.{Directives, _}
 import org.slf4j.LoggerFactory
+import spray.http.HttpEntity
 import spray.http.HttpHeaders.{RawHeader, `WWW-Authenticate`}
 import spray.http.StatusCodes._
-import spray.http.{HttpEntity, HttpChallenge}
-import spray.routing._
 import spray.httpx.unmarshalling.{Deserializer, FormDataUnmarshallers}
-import com.blinkbox.books.auth.User
-import spray.routing.authentication.ContextAuthenticator
+import spray.routing._
 
 class AuthApi(
     config: ApiConfig,
@@ -27,14 +26,14 @@ class AuthApi(
     passwordAuthenticationService: PasswordAuthenticationService,
     refreshTokenService: RefreshTokenService,
     passwordUpdateService: PasswordUpdateService,
-    authenticator: ContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
+    authenticator: ElevatedContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends HttpService with Directives with FormDataUnmarshallers {
 
   implicit val log = LoggerFactory.getLogger(classOf[AuthApi])
   implicit val executionContext = DiagnosticExecutionContext(actorRefFactory.dispatcher)
   implicit val timeout: Timeout = config.timeout
 
-  import Serialization._
+  import com.blinkbox.books.auth.server.Serialization._
 
   val UserId = IntNumber.map(data.UserId(_))
   val ClientId = IntNumber.map(data.ClientId(_))
@@ -113,7 +112,7 @@ class AuthApi(
 
   val querySession: Route = get {
     path("session") {
-      authenticate(authenticator) { implicit user =>
+      authenticate(authenticator.withElevation(Unelevated)) { implicit user =>
         onSuccess(sessionService.querySession) { sessionInfo =>
           uncacheable(OK, sessionInfo)
         }
@@ -123,7 +122,7 @@ class AuthApi(
 
   val renewSession: Route = post {
     path("session") {
-      authenticate(authenticator) { implicit user =>
+      authenticate(authenticator.withElevation(Unelevated)) { implicit user =>
         onSuccess(sessionService.extendSession) { sessionInfo =>
           uncacheable(OK, sessionInfo)
         }
@@ -145,7 +144,7 @@ class AuthApi(
 
   val listClients: Route = get {
     path("clients") {
-      authenticate(authenticator) { implicit user =>
+      authenticate(authenticator.withElevation(Unelevated)) { implicit user =>
         onSuccess(clientService.listClients) { clients =>
           uncacheable(OK, clients)
         }
@@ -155,7 +154,7 @@ class AuthApi(
 
   val getClientById: Route = get {
     path("clients" / ClientId) { id =>
-      authenticate(authenticator) { implicit user =>
+      authenticate(authenticator.withElevation(Unelevated)) { implicit user =>
         onSuccess(clientService.getClientById(id)) {
           case Some(client) => uncacheable(OK, client)
           case None => complete(NotFound, None)
@@ -199,7 +198,7 @@ class AuthApi(
 
   val passwordChange: Route = post {
     path("password" / "change") {
-      authenticate(authenticator) { implicit user =>
+      authenticate(authenticator.withElevation(Unelevated)) { implicit user =>
         formFields('old_password, 'new_password) { (oldPassword, newPassword) =>
           onSuccess(passwordUpdateService.updatePassword(oldPassword, newPassword)) { _ =>
             complete(OK, None)
@@ -242,15 +241,12 @@ class AuthApi(
   def exceptionHandler = ExceptionHandler {
     case e: ZuulRequestException => complete(BadRequest, e)
     case e: ZuulAuthorizationException =>
-      val commonChallenges = HttpChallenge("Bearer realm", "blinkbox.com") ::
-        HttpChallenge("error", ZuulAuthorizationErrorCode.toString(e.code)) ::
-        HttpChallenge("error_description", e.message) :: Nil
-
-      val challenges = e.reason.fold(commonChallenges) {
-        r => HttpChallenge("error_reason", ZuulAuthorizationErrorReason.toString(r)) :: commonChallenges
-      }
-
-      respondWithHeader(`WWW-Authenticate`.apply(challenges)) { complete(Unauthorized, None) }
+      val params =
+        Some("error" -> ZuulAuthorizationErrorCode.toString(e.code)) ::
+        e.reason.map(r => "error_reason" -> ZuulAuthorizationErrorReason.toString(r)) ::
+        Some("error_description" -> e.message) :: Nil
+      val challenge = new BearerHttpChallenge(params.flatten.toMap)
+      respondWithHeader(`WWW-Authenticate`(challenge)) { complete(Unauthorized, None) }
     case ZuulTooManyRequestException(_, retryAfter) =>
       respondWithHeader(RawHeader("Retry-After", retryAfter.toSeconds.toString)) {
         complete(TooManyRequests, HttpEntity.Empty)

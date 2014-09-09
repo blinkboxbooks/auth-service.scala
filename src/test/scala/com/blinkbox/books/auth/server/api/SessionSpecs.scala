@@ -9,7 +9,7 @@ import spray.http.{OAuth2BearerToken, StatusCodes}
 class SessionSpecs extends ApiSpecBase {
 
   "The service" should "return session information for a valid and critically elevated token" in {
-    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
+    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical, tokenType = "access")
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
@@ -21,7 +21,7 @@ class SessionSpecs extends ApiSpecBase {
   }
 
   it should "return session information for a valid non elevated token" in {
-    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None)
+    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None, tokenType = "access")
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
@@ -57,8 +57,7 @@ class SessionSpecs extends ApiSpecBase {
 
   it should "not extend an user session if the authenticated user doesn't have an SSO token" in {
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1WithoutSSO.access_token)) ~> route ~> check {
-      status should equal(StatusCodes.Unauthorized)
-      header[`WWW-Authenticate`] shouldBe defined
+      assertUnauthorisedWithUnverifiedIdentity()
     }
   }
 
@@ -66,8 +65,7 @@ class SessionSpecs extends ApiSpecBase {
     env.ssoResponse(StatusCodes.Unauthorized)
 
     Post("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
-      status should equal(StatusCodes.Unauthorized)
-      header[`WWW-Authenticate`] shouldBe defined
+      assertUnauthorisedWithUnverifiedIdentity()
     }
   }
 }
