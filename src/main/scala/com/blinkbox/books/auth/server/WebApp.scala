@@ -14,11 +14,6 @@ import spray.routing._
 
 import scala.concurrent.duration._
 
-// TODO: Real GeoIP checking
-object DummyGeoIP extends GeoIP {
-  override def countryCode(address: RemoteAddress): String = "GB"
-}
-
 object WebAppComponents extends
   DefaultConfigComponent with
   DefaultAsyncComponent with

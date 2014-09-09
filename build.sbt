@@ -9,7 +9,8 @@ val buildSettings = Seq(
   organization := "com.blinkbox.books.zuul",
   version := scala.util.Try(scala.io.Source.fromFile("VERSION").mkString.trim).getOrElse("0.0.0"),
   scalaVersion := "2.11.2",
-  scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.7")
+  scalacOptions := Seq("-unchecked", "-deprecation", "-feature", "-encoding", "utf8", "-target:jvm-1.7"),
+  unmanagedResourceDirectories in Compile += file("./var")
 )
 
 val dependencySettings = Seq(
@@ -21,6 +22,7 @@ val dependencySettings = Seq(
       "com.zaxxer"                %   "HikariCP-java6"        % "2.0.1",
       "commons-lang"              %   "commons-lang"          % "2.6",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
+      "com.maxmind.geoip2"        %   "geoip2"                % "0.9.0",
       "com.blinkbox.books"        %%  "common-slick"          % "0.1.1",
       "com.blinkbox.books"        %%  "common-spray"          % "0.16.2",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.6.0",

@@ -7,8 +7,8 @@ import spray.http.RemoteAddress
 import scala.concurrent.Future
 
 object TestGeoIP {
-  def geoIpStub(stubValue: String = "GB") = new GeoIP {
-    override def countryCode(address: RemoteAddress): String = stubValue
+  def geoIpStub(stubValue: Option[String] = Some("GB")) = new GeoIP {
+    override def countryCode(address: RemoteAddress): Option[String] = stubValue
   }
 }
 

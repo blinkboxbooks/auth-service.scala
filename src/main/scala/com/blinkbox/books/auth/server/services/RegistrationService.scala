@@ -35,7 +35,7 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
       if (!registration.acceptedTerms)
         Future.failed(Failures.termsAndConditionsNotAccepted)
 
-      else if (clientIp.isDefined && clientIp.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
+      else if (clientIp.isDefined && clientIp.flatMap(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
         Future.failed(Failures.notInTheUK)
 
       registration

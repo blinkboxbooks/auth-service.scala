@@ -86,7 +86,7 @@ trait DefaultRepositoriesComponent extends RepositoriesComponent {
 }
 
 trait DefaultGeoIPComponent extends GeoIPComponent {
-  def geoIp = DummyGeoIP
+  def geoIp = new MaxMindGeoIP
 }
 
 trait DefaultAuthServiceComponent extends AuthServiceComponent {

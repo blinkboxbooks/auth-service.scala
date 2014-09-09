@@ -1,10 +1,14 @@
 package com.blinkbox.books.auth.server.services
 
+import java.io.File
+
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
+import com.maxmind.geoip2.DatabaseReader.Builder
 import spray.http.RemoteAddress
 
 import scala.slick.profile.BasicProfile
+import scala.util.{Success, Failure, Try}
 
 trait ClientAuthenticator[Profile <: BasicProfile] {
   protected def authenticateClient(
@@ -43,5 +47,20 @@ trait ClientInfoFactory {
 }
 
 trait GeoIP {
-  def countryCode(address: RemoteAddress): String
+  def countryCode(address: RemoteAddress): Option[String]
+}
+
+class MaxMindGeoIP extends GeoIP {
+  private val geoIpDb = new File(getClass.getResource("/geoip/GeoIP2-Country.mmdb").toURI.getPath)
+
+  require(geoIpDb.exists(), "Cannot find GeoIP database")
+
+  private val db = new Builder(geoIpDb).build()
+
+  override def countryCode(address: RemoteAddress): Option[String] = address.toOption.flatMap { a =>
+    Try(db.country(a).getCountry.getIsoCode) match {
+      case Success(r) => Some(r)
+      case Failure(ex) => None
+    }
+  }
 }
