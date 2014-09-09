@@ -31,15 +31,11 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
 
   private def validateRegistration(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[UserRegistration] =
-    Future {
       if (!registration.acceptedTerms)
         Future.failed(Failures.termsAndConditionsNotAccepted)
-
       else if (clientIp.isDefined && clientIp.flatMap(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
         Future.failed(Failures.notInTheUK)
-
-      registration
-    }
+      else Future.successful(registration)
 
   private def persistDetails(registration: UserRegistration, credentials: SsoCredentials): Future[(User, Option[UserClient], RefreshToken)] =
     Future {

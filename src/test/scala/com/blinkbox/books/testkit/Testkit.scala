@@ -6,12 +6,6 @@ import spray.http.RemoteAddress
 
 import scala.concurrent.Future
 
-object TestGeoIP {
-  def geoIpStub(stubValue: Option[String] = Some("GB")) = new GeoIP {
-    override def countryCode(address: RemoteAddress): Option[String] = stubValue
-  }
-}
-
 class PublisherSpy extends Publisher {
   var events = List.empty[Event]
 
