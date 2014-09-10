@@ -19,3 +19,9 @@ project/target/
 target/
 
 *.rpmmacros
+
+.cache
+.classpath
+.idea_modules
+.project
+.settings

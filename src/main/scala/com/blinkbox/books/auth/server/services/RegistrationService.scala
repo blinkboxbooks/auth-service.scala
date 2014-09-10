@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.services
 
+import java.net.InetAddress
 import java.sql.DataTruncation
 
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
@@ -30,16 +31,18 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
 
+  private def isLocal(addr: RemoteAddress): Boolean =
+    addr.toOption.fold(false)(ip => ip.isLinkLocalAddress || ip.isLoopbackAddress || ip.isSiteLocalAddress)
+
+  private def rejectCountry(clientIp: RemoteAddress): Boolean =
+    !isLocal(clientIp) && geoIP.countryCode(clientIp).fold(false)(s => s != "GB" && s != "IE")
+
   private def validateRegistration(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[UserRegistration] =
-    Future {
       if (!registration.acceptedTerms)
         Future.failed(Failures.termsAndConditionsNotAccepted)
-
-      else if (clientIp.isDefined && clientIp.map(geoIP.countryCode).filter(s => s == "GB" || s == "IE").isEmpty)
+      else if (clientIp.fold(false)(rejectCountry))
         Future.failed(Failures.notInTheUK)
-
-      registration
-    }
+      else Future.successful(registration)
 
   private def persistDetails(registration: UserRegistration, credentials: SsoCredentials): Future[(User, Option[UserClient], RefreshToken)] =
     Future {
