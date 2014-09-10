@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.20.0 ([#47](https://git.mobcastdev.com/Zuul/auth-service/pull/47) 2014-09-09 10:13:31)
+
+Introduce real GeoIP checking
+
+### New Features
+
+* Update GeoIP submodule with the latest file from MaxMind
+* Implement GeoIP checking on registration and some tests
+* Implement test for terms and conditions and fix an issue on that
+
 ## 0.19.0 ([#48](https://git.mobcastdev.com/Zuul/auth-service/pull/48) 2014-09-09 13:13:32)
 
 Added SSO elevation support
