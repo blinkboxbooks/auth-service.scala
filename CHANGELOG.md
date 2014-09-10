@@ -1,5 +1,22 @@
 # Zuul Server Change Log
 
+## 0.19.0 ([#48](https://git.mobcastdev.com/Zuul/auth-service/pull/48) 2014-09-09 13:13:32)
+
+Added SSO elevation support
+
+### New features
+
+- Now uses the SSO session info endpoint to check elevation status of requests where required.
+- The correct elevation levels are now applied to the API endpoints.
+
+### Bug fixes
+
+- `Authorization` header challenges are now constructed correctly.
+
+### Improvements
+
+- API test timeout is now 3 seconds to prevent spurious failures when setup takes a while.
+
 ## 0.18.2 ([#49](https://git.mobcastdev.com/Zuul/auth-service/pull/49) 2014-09-09 16:36:02)
 
 Fix name length
