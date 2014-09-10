@@ -120,9 +120,9 @@ class TestEnv extends
 
   def fullUserPatch = UserPatch(Some("Updated First"), Some("Updated Last"), Some("updated@test.tst"), Some(false), None)
 
-  val authenticatedUserA = AuthenticatedUser(userIdA.value, None, Map[String, AnyRef]("sso/at" -> "some-access-token"))
-  val authenticatedUserB = AuthenticatedUser(userIdB.value, None, Map.empty)
-  val authenticatedUserC = AuthenticatedUser(userIdC.value, None, Map.empty)
+  val authenticatedUserA = AuthenticatedUser(userIdA.value, None, "bbb-access-token", Map[String, AnyRef]("sso/at" -> "some-access-token"))
+  val authenticatedUserB = AuthenticatedUser(userIdB.value, None, "bbb-access-token", Map.empty)
+  val authenticatedUserC = AuthenticatedUser(userIdC.value, None, "bbb-access-token", Map.empty)
 
   val clientIdA1 = ClientId(1)
   val clientIdA2 = ClientId(2)

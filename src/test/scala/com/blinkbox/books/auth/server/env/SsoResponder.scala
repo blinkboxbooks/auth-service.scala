@@ -121,10 +121,9 @@ trait SsoResponder extends SsoResponseFixtures {
     _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, userAInfoJson.getBytes)))
   )
 
-  def ssoSessionInfo(status: SsoTokenStatus, elevation: SsoTokenElevation, tokenType: String = "refresh"): Unit =
-    ssoResponse.complete(
-      _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, sessionInfoJson(status, elevation, tokenType).getBytes)))
-    )
+  def ssoSessionInfo(status: SsoTokenStatus, elevation: SsoTokenElevation, tokenType: String = "refresh"): Unit = ssoResponse.complete(
+    _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, sessionInfoJson(status, elevation, tokenType).getBytes)))
+  )
 
   def ssoGenerateResetToken: Unit = ssoResponse.complete(
     _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, resetTokenJson.getBytes)))

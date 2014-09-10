@@ -36,10 +36,10 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     userInfoFromUser(updatedUser)
   }
 
-  override def updateUser(patch: UserPatch)(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = user.ssoAccessToken map { at =>
+  override def updateUser(patch: UserPatch)(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = user.ssoAccessToken.map(SsoAccessToken.apply) map { at =>
     getSyncedUser(UserId(user.id), at) flatMap { userOpt =>
       userOpt map { user =>
-        val p = Promise[Option[UserInfo]]
+        val p = Promise[Option[UserInfo]]()
 
         sso.updateUser(at, patch).onComplete {
           case Success(_) => p.success(Some(updateLocalUser(user, patch)))
@@ -47,9 +47,9 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
         }
 
         p.future
-      } getOrElse(Future.successful(None))
+      } getOrElse Future.successful(None)
     }
-  } getOrElse (Future.failed(Failures.unverifiedIdentity))
+  } getOrElse Future.failed(Failures.unverifiedIdentity)
 
   private def userFromDb(id: UserId): Future[Option[User]] = Future {
     db.withSession { implicit session =>
@@ -90,7 +90,8 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     }
   }
 
-  override def getUserInfo()(implicit user: AuthenticatedUser): Future[Option[UserInfo]] = user.ssoAccessToken map { at =>
-    getSyncedUser(UserId(user.id), at).map(_.map(userInfoFromUser))
-  } getOrElse(Future.failed(Failures.unverifiedIdentity))
+  override def getUserInfo()(implicit user: AuthenticatedUser): Future[Option[UserInfo]] =
+    user.ssoAccessToken.map(SsoAccessToken.apply) map { at =>
+      getSyncedUser(UserId(user.id), at).map(_.map(userInfoFromUser))
+    } getOrElse Future.failed(Failures.unverifiedIdentity)
 }

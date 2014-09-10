@@ -3,10 +3,9 @@ package com.blinkbox.books.auth.server.services
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
-import com.blinkbox.books.auth.server.sso.{SsoUnauthorized, Sso, SsoAccessToken, SsoTokenElevation}
+import com.blinkbox.books.auth.server.sso.{Sso, SsoAccessToken, SsoTokenElevation, SsoUnauthorized}
 import com.blinkbox.books.auth.{Elevation, User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
-import shapeless.Typeable._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.slick.profile.BasicProfile
@@ -65,11 +64,12 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   }
 
   override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] =
-    user.ssoAccessToken.fold(sessionInfoFromUser(user))(querySessionWithSSO)
+    user.ssoAccessToken.map(SsoAccessToken.apply).fold(sessionInfoFromUser(user))(querySessionWithSSO)
 
-  override def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo] = user.ssoAccessToken.map { at =>
-    sso.extendSession(at)
-      .flatMap(_ => querySession())
-      .transform(identity, { case SsoUnauthorized => Failures.unverifiedIdentity })
-  } getOrElse(Future.failed(Failures.unverifiedIdentity))
+  override def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo] =
+    user.ssoAccessToken.map(SsoAccessToken.apply).map { at =>
+      sso.extendSession(at)
+        .flatMap(_ => querySession())
+        .transform(identity, { case SsoUnauthorized => Failures.unverifiedIdentity })
+    } getOrElse Future.failed(Failures.unverifiedIdentity)
 }

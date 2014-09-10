@@ -11,7 +11,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
 
   import env._
 
-  implicit val user = User(Map(
+  implicit val user = User("bbb-access-token", Map(
     "sub" -> "urn:blinkbox:zuul:user:1",
     "zl/rti" -> Int.box(1),
     "sso/at" -> "some-access-token"

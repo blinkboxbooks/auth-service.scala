@@ -1,13 +1,14 @@
 package com.blinkbox.books.auth.server.api
 
 import com.blinkbox.books.auth.server.ClientList
+import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import spray.http.CacheDirectives.`no-store`
 import spray.http.HttpHeaders.{RawHeader, `Cache-Control`}
 import spray.http.{OAuth2BearerToken, StatusCodes}
 
 class ClientListSpecs extends ApiSpecBase {
 
-  "The service" should "return a client list for an SSO user's clients" in {
+  "The service" should "return a client list for an SSO user with a critically elevated access token" in {
     Get("/clients") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
       jsonResponseAs[ClientList] should equal(ClientList(List(env.clientInfoA1, env.clientInfoA2)))

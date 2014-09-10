@@ -49,13 +49,13 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
   }
 
   override def updatePassword(oldPassword: String, newPassword: String)(implicit user: AuthenticatedUser): Future[Unit] =
-    user.ssoAccessToken.map {
+    user.ssoAccessToken.map(SsoAccessToken.apply).map {
       at => sso.updatePassword(at, oldPassword, newPassword) transform(identity, {
         case SsoForbidden => Failures.oldPasswordInvalid
         case SsoInvalidRequest(_) => Failures.passwordTooShort
         case SsoTooManyRequests(retryAfter) => Failures.tooManyRequests(retryAfter)
       })
-    } getOrElse (Future.failed(Failures.unverifiedIdentity))
+    } getOrElse Future.failed(Failures.unverifiedIdentity)
 
   override def generatePasswordResetToken(username: String): Future[Unit] =
     (for {

@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException
 import com.blinkbox.books.auth.Elevation
 import com.blinkbox.books.auth.server.{TokenStatus, ZuulRequestExceptionSerializer, env}
 import com.blinkbox.books.json.DefaultFormats
+import com.blinkbox.books.spray.BearerTokenAuthenticator
 import com.typesafe.config.ConfigFactory
 import org.json4s.ext.EnumNameSerializer
 import org.json4s.jackson.Serialization
@@ -16,6 +17,7 @@ import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.testkit.ScalatestRouteTest
 
+import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
 trait JsonUnmarshallers {
@@ -37,15 +39,28 @@ trait AuthorisationTestHelpers {
 
   def shouldBeUnauthorisedWithMissingAccessToken(request: HttpRequest, route: Route): Unit =
     request ~> route ~> check {
-      status should equal(StatusCodes.Unauthorized)
-      header[`WWW-Authenticate`] should equal(Some(`WWW-Authenticate`(HttpChallenge("Bearer", "", Map()))))
+      assertUnauthorisedWithMissingAccessToken()
     }
 
   def shouldBeUnauthorisedWithInvalidAccessToken(request: HttpRequest, route: Route): Unit =
     request ~> addCredentials(OAuth2BearerToken("faketoken")) ~> route ~> check {
-      status should equal(StatusCodes.Unauthorized)
-      header[`WWW-Authenticate`] should equal(Some(`WWW-Authenticate`(HttpChallenge("Bearer", "", Map("error" -> "invalid_token", "error_description" -> "The access token is invalid")))))
+      assetUnauthorisedWithInvalidAccessToken()
     }
+
+  def assertUnauthorisedWithMissingAccessToken() {
+    status should equal(StatusCodes.Unauthorized)
+    header[`WWW-Authenticate`] should equal(Some(`WWW-Authenticate`(HttpChallenge("Bearer", "", Map()))))
+  }
+
+  def assetUnauthorisedWithInvalidAccessToken() {
+    status should equal(StatusCodes.Unauthorized)
+    header[`WWW-Authenticate`] should equal(Some(`WWW-Authenticate`(HttpChallenge("Bearer", "", Map("error" -> "invalid_token", "error_description" -> "The access token is invalid")))))
+  }
+
+  def assertUnauthorisedWithUnverifiedIdentity() {
+    status should equal(StatusCodes.Unauthorized)
+    header[`WWW-Authenticate`] should equal(Some(BearerTokenAuthenticator.unverifiedIdentityHeaders.head))
+  }
 }
 
 abstract class ApiSpecBase extends FlatSpec
@@ -56,6 +71,8 @@ abstract class ApiSpecBase extends FlatSpec
   with FormDataUnmarshallers
   with JsonUnmarshallers
   with AuthorisationTestHelpers {
+
+  implicit val routeTestTimeout = RouteTestTimeout(3.seconds)
 
   var route: Route = env.routes
 

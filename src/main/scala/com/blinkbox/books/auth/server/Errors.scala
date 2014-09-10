@@ -81,7 +81,7 @@ object Failures {
   def invalidPasswordResetToken = ZuulRequestException("The password-reset token is invalid.", InvalidGrant)
   def invalidRefreshToken = ZuulRequestException("The refresh token is invalid.", InvalidGrant)
   def refreshTokenNotAuthorized = ZuulRequestException("Your client is not authorised to use this refresh token", InvalidClient)
-  def unverifiedIdentity = ZuulAuthorizationException("Access token is invalid", InvalidToken, Some(UnverifiedIdentity))
+  def unverifiedIdentity = ZuulAuthorizationException("You need to re-verify your identity", InvalidToken, Some(UnverifiedIdentity))
   def termsAndConditionsNotAccepted = ZuulRequestException("You must accept the terms and conditions", InvalidRequest)
   def passwordTooShort = ZuulRequestException("Password must be at least 6 characters", InvalidRequest)
   def notInTheUK = ZuulRequestException("You must be in the UK to register", InvalidRequest, Some(CountryGeoBlocked))

@@ -16,7 +16,7 @@ trait SpecBase extends BeforeAndAfterEach with BeforeAndAfterAll {
     super.withFixture(test) match {
       case Succeeded =>
         if (env.ssoResponse.isDone) Succeeded
-        else Failed("Expected SSO invocations, none received")
+        else Failed("Expected more SSO invocations than were received")
       case x => x
     }
   }
