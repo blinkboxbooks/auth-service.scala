@@ -74,9 +74,18 @@ class DefaultRegistrationServiceSpecs extends SpecBase {
      failingWith[ZuulRequestException](registrationService.registerUser(simpleReg, Some(RemoteAddress("8.8.8.8")))) should equal(Failures.notInTheUK)
   }
 
-  it should "correctly reject registrations from global IPs that cannot be resolved to a country" in {
+  it should "correctly accept registrations from global IPs that cannot be resolved to a country" in {
+    ssoSuccessfulRegistrationAndLink()
+
+    import driver.simple._
+
     // This test uses the 6to4 Relay Anycast IP class which is global but not geo-locable (192.88.99.0/24)
-    failingWith[ZuulRequestException](registrationService.registerUser(simpleReg, Some(RemoteAddress("192.88.99.1")))) should equal(Failures.notInTheUK)
+    val addr = Some(RemoteAddress("192.88.99.1"))
+
+    whenReady(registrationService.registerUser(simpleReg, addr)) { token =>
+      val regId = db.withSession { implicit session => tables.users.sortBy(_.id.desc).map(_.id).first.value }
+      assertUserRegistered(token, regId)
+    }
   }
 
   it should "correctly reject registrations where terms and conditions have not been accepted" in {

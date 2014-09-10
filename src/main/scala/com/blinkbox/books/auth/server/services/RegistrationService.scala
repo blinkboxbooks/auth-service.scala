@@ -31,17 +31,16 @@ class DefaultRegistrationService[DB <: DatabaseSupport](
     events: Publisher,
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends RegistrationService {
 
-  private def isLocal(ip: InetAddress): Boolean = ip.isLinkLocalAddress || ip.isLoopbackAddress || ip.isSiteLocalAddress
+  private def isLocal(addr: RemoteAddress): Boolean =
+    addr.toOption.fold(false)(ip => ip.isLinkLocalAddress || ip.isLoopbackAddress || ip.isSiteLocalAddress)
 
   private def rejectCountry(clientIp: RemoteAddress): Boolean =
-    geoIP.
-      countryCode(clientIp).
-      fold(clientIp.toOption.map(ip => !isLocal(ip)).getOrElse(false))(s => s != "GB" && s != "IE")
+    !isLocal(clientIp) && geoIP.countryCode(clientIp).fold(false)(s => s != "GB" && s != "IE")
 
   private def validateRegistration(registration: UserRegistration, clientIp: Option[RemoteAddress]): Future[UserRegistration] =
       if (!registration.acceptedTerms)
         Future.failed(Failures.termsAndConditionsNotAccepted)
-      else if (clientIp.map(rejectCountry).getOrElse(false))
+      else if (clientIp.fold(false)(rejectCountry))
         Future.failed(Failures.notInTheUK)
       else Future.successful(registration)
 

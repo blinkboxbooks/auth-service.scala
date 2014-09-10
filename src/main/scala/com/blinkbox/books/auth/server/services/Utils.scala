@@ -62,7 +62,7 @@ class MaxMindGeoIP extends GeoIP {
     Try(db.country(a).getCountry.getIsoCode) match {
       case Success(r) => Some(r)
       case Failure(ex: GeoIp2Exception) => None
-      case Failure(ex: Throwable) => throw ex
+      case Failure(ex) => throw ex
     }
   }
 }
