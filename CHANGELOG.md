@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.18.2 ([#49](https://git.mobcastdev.com/Zuul/auth-service/pull/49) 2014-09-09 16:36:02)
+
+Fix name length
+
+### Bugfix
+
+* Increase the length of first_name and last_name on the users table to match SSO limitations.
+
+
 ## 0.18.1 ([#46](https://git.mobcastdev.com/Zuul/auth-service/pull/46) 2014-09-08 13:48:38)
 
 Update dependencies
