@@ -145,10 +145,10 @@ Feature: Registration
       | password | aY9!w |
 
     Examples: Name too long
-      The first name and/or last name can't be more than fifty characters
-      | detail     | value                                                |
-      | first name | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
-      | last name  | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz |
+      The first name and/or last name can't be more than sixty-four characters
+      | detail     | value                                                             |
+      | first name | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm |
+      | last name  | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm |
 
   Scenario Outline: Registering while geolocated in permitted countries
     Given my IP address would geolocate me in <country>
