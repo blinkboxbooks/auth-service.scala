@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.20.1 ([#51](https://git.mobcastdev.com/Zuul/auth-service/pull/51) 2014-09-11 14:46:37)
+
+CP-1826 Fix failure for unelevated token and unify TokenStatus with SessionStatus
+
+### Bugfix
+
+* Fix failure on `GET /session` when the SSO token is unelevated
+* Unify `TokenStatus` and `SessionStatus` 
+
 ## 0.20.0 ([#47](https://git.mobcastdev.com/Zuul/auth-service/pull/47) 2014-09-09 10:13:31)
 
 Introduce real GeoIP checking
