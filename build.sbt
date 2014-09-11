@@ -25,7 +25,7 @@ val dependencySettings = Seq(
       "com.maxmind.geoip2"        %   "geoip2"                % "0.9.0",
       "com.blinkbox.books"        %%  "common-slick"          % "0.1.1",
       "com.blinkbox.books"        %%  "common-spray"          % "0.16.2",
-      "com.blinkbox.books"        %%  "common-spray-auth"     % "0.6.0",
+      "com.blinkbox.books"        %%  "common-spray-auth"     % "0.7.0",
       "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "6.0.5",
       "com.blinkbox.books.hermes" %%  "message-schemas"       % "0.6.2",
       "com.blinkbox.books"        %%  "common-scala-test"     % "0.3.0"   % "test",
