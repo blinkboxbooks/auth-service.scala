@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class SsoElevationChecker(sso: Sso)(implicit executionContext: ExecutionContext) extends ElevationChecker {
   override def apply(user: User) =
     user.ssoAccessToken.map(t => sso.sessionStatus(SsoAccessToken(t)).map(_.sessionElevation).map {
-      case SsoTokenElevation.Critical => Elevation.Critical
-      case SsoTokenElevation.None => Elevation.Unelevated
+      case Some(SsoTokenElevation.Critical) => Elevation.Critical
+      case _ => Elevation.Unelevated
     }).getOrElse(Future.successful(Elevation.Unelevated))
 }

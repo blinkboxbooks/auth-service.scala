@@ -14,7 +14,7 @@ class SessionStatusSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     whenReady(sso.sessionStatus(SsoAccessToken("an-acces-token")))(_ should matchPattern {
-      case SessionStatus(SsoTokenStatus.Valid, issued, expiry, "refresh", SsoTokenElevation.Critical, 300) if checkDates(issued, expiry) =>
+      case TokenStatus(SsoTokenStatus.Valid, issued, expiry, "refresh", Some(SsoTokenElevation.Critical), Some(300)) if checkDates(issued, expiry) =>
     })
   }
 
@@ -22,7 +22,7 @@ class SessionStatusSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None)
 
     whenReady(sso.sessionStatus(SsoAccessToken("an-access-token")))(_ should matchPattern {
-      case SessionStatus(SsoTokenStatus.Valid, issued, expiry, "refresh", SsoTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case TokenStatus(SsoTokenStatus.Valid, issued, expiry, "refresh", Some(SsoTokenElevation.None), Some(300)) if checkDates(issued, expiry) =>
     })
   }
 
@@ -30,7 +30,7 @@ class SessionStatusSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Revoked, SsoTokenElevation.None)
 
     whenReady(sso.sessionStatus(SsoAccessToken("an-access-token")))(_ should matchPattern {
-      case SessionStatus(SsoTokenStatus.Revoked, issued, expiry, "refresh", SsoTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case TokenStatus(SsoTokenStatus.Revoked, issued, expiry, "refresh", Some(SsoTokenElevation.None), Some(300)) if checkDates(issued, expiry) =>
     })
   }
 
@@ -38,7 +38,7 @@ class SessionStatusSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Expired, SsoTokenElevation.None)
 
     whenReady(sso.sessionStatus(SsoAccessToken("an-access-token")))(_ should matchPattern {
-      case SessionStatus(SsoTokenStatus.Expired, issued, expiry, "refresh", SsoTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case TokenStatus(SsoTokenStatus.Expired, issued, expiry, "refresh", Some(SsoTokenElevation.None), Some(300)) if checkDates(issued, expiry) =>
     })
   }
 
@@ -46,7 +46,7 @@ class SessionStatusSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Invalid, SsoTokenElevation.None)
 
     whenReady(sso.sessionStatus(SsoAccessToken("an-access-token")))(_ should matchPattern {
-      case SessionStatus(SsoTokenStatus.Invalid, issued, expiry, "refresh", SsoTokenElevation.None, 300) if checkDates(issued, expiry) =>
+      case TokenStatus(SsoTokenStatus.Invalid, issued, expiry, "refresh", Some(SsoTokenElevation.None), Some(300)) if checkDates(issued, expiry) =>
     })
   }
 }
