@@ -47,12 +47,12 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
 
   private def querySessionWithSSO(token: SsoAccessToken) = sso.sessionStatus(token).map { s =>
     val status = TokenStatus.fromSSOValidity(s.status)
-    val elevation = if (status == TokenStatus.Valid) Some(elevationFromSessionElevation(s.sessionElevation)) else None
+    val elevation = if (status == TokenStatus.Valid) s.sessionElevation.map(e => elevationFromSessionElevation(e)) else None
 
     SessionInfo(
       token_status = status,
       token_elevation = elevation,
-      token_elevation_expires_in = elevation.flatMap(e => if (e != Elevation.Unelevated) Some(s.sessionElevationExpiresIn) else None)
+      token_elevation_expires_in = elevation.flatMap(e => if (e != Elevation.Unelevated) s.sessionElevationExpiresIn else None)
       // TODO: Roles
     )
   }

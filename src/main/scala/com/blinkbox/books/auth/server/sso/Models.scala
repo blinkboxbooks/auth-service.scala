@@ -52,22 +52,13 @@ object SsoTokenElevation extends EnumContainer[SsoTokenElevation] {
   )
 }
 
-case class SessionStatus(
-  status: SsoTokenStatus,
-  issuedAt: DateTime,
-  expiresAt: DateTime,
-  tokenType: String,
-  sessionElevation: SsoTokenElevation,
-  sessionElevationExpiresIn: Int)
-
 case class TokenStatus(
   status: SsoTokenStatus,
   issuedAt: DateTime,
   expiresAt: DateTime,
   tokenType: String,
   sessionElevation: Option[SsoTokenElevation],
-  sessionElevationExpiresIn: Option[Int]
-)
+  sessionElevationExpiresIn: Option[Long])
 
 case class LinkedAccount(service: String, serviceUserId: String, serviceAllowMarketing: Boolean)
 
