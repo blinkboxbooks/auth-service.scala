@@ -4,7 +4,7 @@ import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode.InvalidToken
 import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason.UnverifiedIdentity
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import com.blinkbox.books.auth.server.{SessionInfo, TokenStatus, ZuulAuthorizationException}
-import com.blinkbox.books.auth.{Elevation, User}
+import com.blinkbox.books.auth.{UserRole, Elevation, User}
 import spray.http.StatusCodes
 
 class DefaultSessionServiceSpecs extends SpecBase {
@@ -88,5 +88,16 @@ class DefaultSessionServiceSpecs extends SpecBase {
     failingWith[ZuulAuthorizationException](sessionService.extendSession()) should matchPattern {
       case ZuulAuthorizationException(_, InvalidToken, Some(UnverifiedIdentity)) =>
     }
+  }
+
+  it should "return roles for an user that has roles" in {
+    ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
+
+    val u = user.copy(claims = user.claims + ("bb/rol" -> Array(UserRole.ContentManager, UserRole.Marketing)))
+
+    whenReady(sessionService.querySession()(u))(_ should matchPattern {
+      case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), Some(roles))
+        if roles == UserRole.ContentManager.toString :: UserRole.Marketing.toString :: Nil =>
+    })
   }
 }

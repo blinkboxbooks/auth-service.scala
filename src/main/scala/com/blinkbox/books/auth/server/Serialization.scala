@@ -1,6 +1,7 @@
 package com.blinkbox.books.auth.server
 
-import com.blinkbox.books.auth.Elevation
+import com.blinkbox.books.auth.{UserRole, Elevation}
+import com.blinkbox.books.auth.UserRole.UserRole
 import com.blinkbox.books.json.DefaultFormats
 import org.json4s.JsonAST.{JField, JObject, JString}
 import org.json4s.JsonDSL._
@@ -30,7 +31,7 @@ object ZuulRequestExceptionSerializer extends Serializer[ZuulRequestException] {
 
 class Serialization extends Json4sJacksonSupport {
   implicit def json4sJacksonFormats: Formats = DefaultFormats + ZuulRequestExceptionSerializer +
-    new EnumNameSerializer(TokenStatus) + new EnumNameSerializer(Elevation)
+    new EnumNameSerializer(TokenStatus) + new EnumNameSerializer(Elevation) + new EnumNameSerializer(UserRole)
 }
 
 object Serialization extends Serialization

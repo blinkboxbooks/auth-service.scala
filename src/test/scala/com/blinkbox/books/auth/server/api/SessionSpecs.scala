@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.Elevation
+import com.blinkbox.books.auth.{UserRole, Elevation}
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import com.blinkbox.books.auth.server.{SessionInfo, TokenStatus}
 import spray.http.HttpHeaders.`WWW-Authenticate`
@@ -12,7 +12,6 @@ class SessionSpecs extends ApiSpecBase {
     env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical, tokenType = "access")
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
-      println(response)
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
@@ -29,6 +28,19 @@ class SessionSpecs extends ApiSpecBase {
 
       jsonResponseAs[SessionInfo] should matchPattern {
         case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(Nil)) =>
+      }
+    }
+  }
+
+  it should "return session information including roles for a token that has associated roles" in {
+    env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None, tokenType = "access")
+
+    Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoC.access_token)) ~> route ~> check {
+      status should equal(StatusCodes.OK)
+
+      jsonResponseAs[SessionInfo] should matchPattern {
+        case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(roles))
+          if roles.toSet == Set(UserRole.ContentManager.toString, UserRole.Employee.toString) =>
       }
     }
   }

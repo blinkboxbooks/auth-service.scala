@@ -28,8 +28,8 @@ class DefaultTokenBuilder[DB <: DatabaseSupport](
     db: DB#Database,
     roleRepo: RoleRepository[DB#Profile]) extends TokenBuilder {
 
-  private def fetchRoles(u: User): Array[UserRole] = db.withSession { implicit session =>
-    roleRepo.fetchRoles(u.id).map(_.name).toArray
+  private def fetchRoles(u: User): Array[String] = db.withSession { implicit session =>
+    roleRepo.fetchRoles(u.id).map(_.name.toString).toArray
   }
 
   private def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: Option[SsoCredentials]): (Long, String) = {

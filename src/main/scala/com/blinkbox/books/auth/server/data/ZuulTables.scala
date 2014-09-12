@@ -56,6 +56,8 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def createdAt = column[DateTime]("created_at", O.NotNull)
     def userId = column[UserId]("user_id", O.NotNull)
     def roleId = column[RoleId]("user_roler_id", O.NotNull)
+    def user = foreignKey("fk_privileges_to_users", userId, users)(_.id)
+    def role = foreignKey("fk_privileges_to_roles", roleId, roles)(_.id)
 
     def * = (id, createdAt, userId, roleId) <> (Privilege.tupled, Privilege.unapply)
   }
