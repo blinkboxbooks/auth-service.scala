@@ -53,3 +53,23 @@ def validate_access_token_info_response
     expect(token_info["token_elevation_expires_in"]).to be_nil
   end
 end
+
+def validate_sso_user_response
+  expect(last_response.status).to eq(200)
+  user_info = last_response_json[0]["user"]
+  expect(user_info["user_id"]).to_not be_nil
+  expect(user_info["username"]).to eq(@me.username)
+  expect(user_info["email"]).to eq(@me.username)
+  expect(user_info["first_name"]).to eq(@me.first_name)
+  expect(user_info["last_name"]).to eq(@me.last_name)
+  expect(user_info["gender"]).to eq('U')
+  expect(user_info["validated"]).to eq(false)
+  expect(user_info["group_allow_marketing"]).to eq(false)
+
+  linked_accounts = user_info["linked_accounts"][0]
+  expect(linked_accounts["service"]).to eq('books')
+  expect(linked_accounts["service_user_id"]).to eq(@me.id)
+  expect(linked_accounts["service_linked_on"]).to_not be_nil
+  expect(linked_accounts["service_allow_marketing"]).to eq(@me.allow_marketing_communications)
+  expect(linked_accounts["service_tc_accepted_version"]).to eq('1.0')
+end
