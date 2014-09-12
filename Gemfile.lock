@@ -33,12 +33,12 @@ GEM
       gherkin (~> 2.12)
       multi_json (>= 1.7.5, < 2.0)
       multi_test (>= 0.1.1)
-    cucumber-blinkbox (0.2.3)
+    cucumber-blinkbox (0.3.0)
       activesupport (>= 4.0)
       cucumber (~> 1.3)
       http_capture
       httpclient
-    cucumber-helpers (0.0.5)
+    cucumber-helpers (0.0.6)
       activesupport (~> 4.0)
     cucumber-rest (0.0.9)
       activesupport (>= 3.2)
