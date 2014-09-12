@@ -67,14 +67,15 @@ trait DefaultDatabaseComponent extends DatabaseComponent {
   override val tables = ZuulTables[DB.Profile](driver)
 }
 
+// TODO: Track usage of this and remove it as it should not be used any more
 trait DefaultPasswordHasherComponent extends PasswordHasherComponent {
   override val passwordHasher = PasswordHasher.default
 }
 
 trait DefaultTokenBuilderComponent extends TokenBuilderComponent {
-  this: ConfigComponent =>
+  this: ConfigComponent with DatabaseComponent with RepositoriesComponent =>
 
-  override val tokenBuilder = new DefaultTokenBuilder(config.authServer.keysConfig)
+  override lazy val tokenBuilder = new DefaultTokenBuilder(config.authServer.keysConfig, db ,roleRepository)
 }
 
 trait DefaultRepositoriesComponent extends RepositoriesComponent {
@@ -83,6 +84,7 @@ trait DefaultRepositoriesComponent extends RepositoriesComponent {
   override val authRepository = new DefaultAuthRepository(tables)
   override val userRepository = new DefaultUserRepository(tables, passwordHasher)
   override val clientRepository = new DefaultClientRepository(tables)
+  override val roleRepository = new DefaultRoleRepository(tables)
 }
 
 trait DefaultGeoIPComponent extends GeoIPComponent {

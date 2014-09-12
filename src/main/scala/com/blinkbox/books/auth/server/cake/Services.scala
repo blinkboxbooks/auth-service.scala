@@ -53,6 +53,7 @@ trait RepositoriesComponent extends slick.RepositoriesComponent {
   def authRepository: AuthRepository[DB.Profile]
   def userRepository: UserRepository[DB.Profile]
   def clientRepository: ClientRepository[DB.Profile]
+  def roleRepository: RoleRepository[DB.Profile]
 }
 
 trait GeoIPComponent {

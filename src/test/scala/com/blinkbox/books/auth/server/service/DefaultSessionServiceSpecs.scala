@@ -21,7 +21,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     whenReady(sessionService.querySession())(_ should matchPattern {
-      case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), None) =>
+      case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), Some(Nil)) =>
     })
   }
 
@@ -29,7 +29,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.None)
 
     whenReady(sessionService.querySession())(_ should matchPattern {
-      case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, None) =>
+      case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(Nil)) =>
     })
   }
 
@@ -61,7 +61,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
     val u = user.copy(claims = user.claims - "sso/at")
 
     whenReady(sessionService.querySession()(u))(_ should matchPattern {
-      case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, None) =>
+      case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(Nil)) =>
     })
   }
 
@@ -70,7 +70,7 @@ class DefaultSessionServiceSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     whenReady(sessionService.extendSession())(_ should matchPattern {
-      case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), None) =>
+      case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), Some(Nil)) =>
     })
   }
 

@@ -12,10 +12,11 @@ class SessionSpecs extends ApiSpecBase {
     env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical, tokenType = "access")
 
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
+      println(response)
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
-        case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), None) =>
+        case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), Some(Nil)) =>
       }
     }
   }
@@ -27,7 +28,7 @@ class SessionSpecs extends ApiSpecBase {
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
-        case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, None) =>
+        case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(Nil)) =>
       }
     }
   }
@@ -37,7 +38,7 @@ class SessionSpecs extends ApiSpecBase {
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
-        case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, None) =>
+        case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(Nil)) =>
       }
     }
   }
@@ -50,7 +51,7 @@ class SessionSpecs extends ApiSpecBase {
       status should equal(StatusCodes.OK)
 
       jsonResponseAs[SessionInfo] should matchPattern {
-        case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), None) =>
+        case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), Some(Nil)) =>
       }
     }
   }

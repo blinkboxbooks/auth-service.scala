@@ -4,8 +4,10 @@ import java.nio.file.Files
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
-import com.blinkbox.books.auth.server.data.{Client, RefreshToken, User}
+import com.blinkbox.books.auth.UserRole.UserRole
+import com.blinkbox.books.auth.server.data.{RoleRepository, Client, RefreshToken, User}
 import com.blinkbox.books.auth.server.sso.SsoCredentials
+import com.blinkbox.books.slick.DatabaseSupport
 import com.blinkbox.security.jwt.TokenEncoder
 import com.blinkbox.security.jwt.encryption.{A128GCM, RSA_OAEP}
 import com.blinkbox.security.jwt.signatures.ES256
@@ -21,7 +23,15 @@ trait TokenBuilder {
       includeClientSecret: Boolean = false): TokenInfo
 }
 
-class DefaultTokenBuilder(config: KeysConfig) extends TokenBuilder {
+class DefaultTokenBuilder[DB <: DatabaseSupport](
+    config: KeysConfig,
+    db: DB#Database,
+    roleRepo: RoleRepository[DB#Profile]) extends TokenBuilder {
+
+  private def fetchRoles(u: User): Array[UserRole] = db.withSession { implicit session =>
+    roleRepo.fetchRoles(u.id).map(_.name).toArray
+  }
+
   private def buildAccessToken(user: User, client: Option[Client], token: RefreshToken, ssoCredentials: Option[SsoCredentials]): (Long, String) = {
 
     // Expires our token 1 minute before the SSO ones, or in 30 minutes if no SSO credentials are provided
@@ -35,7 +45,7 @@ class DefaultTokenBuilder(config: KeysConfig) extends TokenBuilder {
     ssoCredentials.foreach(c => claims.put("sso/at", c.accessToken.value))
 
     client.foreach(c => claims.put("bb/cid", c.id.external))
-    // TODO: Roles
+    claims.put("bb/rol", fetchRoles(user))
     claims.put("zl/rti", Int.box(token.id.value))
 
     val signingKeyData = Files.readAllBytes(config.signingKeyPath)

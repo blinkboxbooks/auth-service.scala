@@ -165,11 +165,6 @@ class TestEnv extends
 
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
-  val tokenInfoA1 = tokenBuilder.issueAccessToken(
-    userA, None, refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
-
-  val tokenInfoA1WithoutSSO = tokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
-
   val resetCredentials = ResetTokenCredentials(SsoPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
 
   def removeSSOTokens(): Unit = {
@@ -188,7 +183,8 @@ class TestEnv extends
     import tables.driver.simple._
 
     db.withSession { implicit session =>
-      val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl
+      val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl ++
+        tables.roles.ddl ++ tables.privileges.ddl
 
       try {
         ddl.drop
@@ -208,4 +204,9 @@ class TestEnv extends
   }
 
   cleanup()
+
+  val tokenInfoA1 = tokenBuilder.issueAccessToken(
+    userA, None, refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
+
+  val tokenInfoA1WithoutSSO = tokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 }
