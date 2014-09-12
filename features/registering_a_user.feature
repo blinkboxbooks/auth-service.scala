@@ -15,7 +15,8 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
-    Then I receive a welcome email
+    And my details are correct in the SSO system
+    And I receive a welcome email
 
   @smoke
   Scenario: Registering a client with the user registration
@@ -29,8 +30,9 @@ Feature: Registration
     Then the response contains client information, including a client secret
     And it contains basic user information matching my details
     And the client details match the provided details
-    And I receive a welcome email
     And the response contains an access token and a refresh token
+    And my details are correct in the SSO system
+    And I receive a welcome email
 
   Scenario Outline: Trying to register client and user simultaneously with missing user details
     When I provide valid registration details, except <user_registration_detail> which is missing
@@ -72,6 +74,7 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
+    And my details are correct in the SSO system
     And I receive a welcome email
 
   Scenario: Registering without allowing marketing communications
@@ -81,6 +84,7 @@ Feature: Registration
     Then the response contains an access token and a refresh token
     And it contains basic user information matching my details
     And it is not cacheable
+    And my details are correct in the SSO system
     And I receive a welcome email
 
   Scenario: Trying to register without accepting the terms and conditions
@@ -154,6 +158,7 @@ Feature: Registration
     Given my IP address would geolocate me in <country>
     When I try to register an account
     Then the request succeeds
+    And my details are correct in the SSO system
 
     Examples:
       | country |
