@@ -7,12 +7,9 @@ import com.blinkbox.books.time.{Clock, TimeSupport}
 
 import scala.slick.driver.JdbcProfile
 import scala.slick.profile.BasicProfile
+import scala.util.Random
 
 trait UserRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
-  // TODO: We shouldn't need this any more, check usages
-  val passwordHasher: PasswordHasher
-
-  def userWithUsernameAndPassword(username: String, password: String)(implicit session: Session): Option[User]
   def userWithUsername(username: String)(implicit session: Session): Option[User]
   def updateUser(user: User)(implicit session: Session): Unit
   def createUser(registration: UserRegistration)(implicit session: Session): User
@@ -29,19 +26,11 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
   override def userWithUsername(username: String)(implicit session: Session): Option[User] =
     users.filter(_.username === username).firstOption
 
-  override def userWithUsernameAndPassword(username: String, password: String)(implicit session: Session): Option[User] = {
-    val user = users.filter(_.username === username).firstOption
-
-    // even if the user isn't found we still need to perform an scrypt hash of something to help
-    // prevent timing attacks as this hashing process is the bulk of the request time
-    if (user.isEmpty) passwordHasher.hash("random string")
-
-    user.filter(u => passwordHasher.check(password, u.passwordHash))
-  }
-
   override def createUser(reg: UserRegistration)(implicit session: Session): User = {
     val now = clock.now()
-    val passwordHash = passwordHasher.hash(reg.password)
+
+    // TODO: This is not needed any more as SSO is handling password checks; after the migration is done remove this field
+    val passwordHash = Random.alphanumeric.take(12).mkString
     val user = User(UserId.Invalid, now, now, reg.username, reg.firstName, reg.lastName, passwordHash, reg.allowMarketing)
 
     val id = (users returning users.map(_.id)) += user
@@ -54,5 +43,5 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
   override def userWithSsoId(id: SsoUserId)(implicit session: Session) = users.filter(_.ssoId === id).firstOption
 }
 
-class DefaultUserRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile], val passwordHasher: PasswordHasher)(implicit val clock: Clock)
+class DefaultUserRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile])(implicit val clock: Clock)
   extends TimeSupport with JdbcUserRepository[Profile]

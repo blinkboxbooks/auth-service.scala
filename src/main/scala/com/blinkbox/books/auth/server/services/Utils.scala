@@ -9,7 +9,7 @@ import com.maxmind.geoip2.exception.GeoIp2Exception
 import spray.http.RemoteAddress
 
 import scala.slick.profile.BasicProfile
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 trait ClientAuthenticator[Profile <: BasicProfile] {
   protected def authenticateClient(

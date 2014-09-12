@@ -22,7 +22,6 @@ object WebAppComponents extends
   DefaultGeoIPComponent with
   DefaultEventsComponent with
   DefaultDatabaseComponent with
-  DefaultPasswordHasherComponent with
   DefaultTokenBuilderComponent with
   DefaultRepositoriesComponent with
   DefaultUserServiceComponent with

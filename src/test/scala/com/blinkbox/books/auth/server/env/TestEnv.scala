@@ -60,10 +60,6 @@ trait TestEventsComponent extends EventsComponent {
   override val publisher = publisherSpy
 }
 
-trait TestPasswordHasherComponent extends PasswordHasherComponent {
-  override val passwordHasher = PasswordHasher(identity, (s1, s2) => s1 == s2)
-}
-
 trait TestSsoComponent extends SsoComponent {
   this: ConfigComponent with AsyncComponent =>
 
@@ -90,7 +86,6 @@ class TestEnv extends
     DefaultGeoIPComponent with
     TestEventsComponent with
     TestDatabaseComponent with
-    TestPasswordHasherComponent with
     DefaultTokenBuilderComponent with
     DefaultRepositoriesComponent with
     DefaultUserServiceComponent with

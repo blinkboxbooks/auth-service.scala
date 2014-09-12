@@ -40,10 +40,6 @@ trait DatabaseComponent extends slick.DatabaseComponent {
   type Tables = ZuulTables[DB.Profile]
 }
 
-trait PasswordHasherComponent {
-  def passwordHasher: PasswordHasher
-}
-
 trait TokenBuilderComponent {
   def tokenBuilder: TokenBuilder
 }
