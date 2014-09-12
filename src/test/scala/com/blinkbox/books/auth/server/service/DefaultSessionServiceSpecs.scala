@@ -4,7 +4,7 @@ import com.blinkbox.books.auth.server.ZuulAuthorizationErrorCode.InvalidToken
 import com.blinkbox.books.auth.server.ZuulAuthorizationErrorReason.UnverifiedIdentity
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import com.blinkbox.books.auth.server.{SessionInfo, TokenStatus, ZuulAuthorizationException}
-import com.blinkbox.books.auth.{UserRole, Elevation, User}
+import com.blinkbox.books.auth.{Elevation, User, UserRole}
 import spray.http.StatusCodes
 
 class DefaultSessionServiceSpecs extends SpecBase {

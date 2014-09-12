@@ -4,8 +4,7 @@ import java.nio.file.Files
 import java.security.KeyFactory
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 
-import com.blinkbox.books.auth.UserRole.UserRole
-import com.blinkbox.books.auth.server.data.{RoleRepository, Client, RefreshToken, User}
+import com.blinkbox.books.auth.server.data.{Client, RefreshToken, RoleRepository, User}
 import com.blinkbox.books.auth.server.sso.SsoCredentials
 import com.blinkbox.books.slick.DatabaseSupport
 import com.blinkbox.security.jwt.TokenEncoder

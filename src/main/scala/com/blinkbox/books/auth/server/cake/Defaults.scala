@@ -70,7 +70,7 @@ trait DefaultDatabaseComponent extends DatabaseComponent {
 trait DefaultTokenBuilderComponent extends TokenBuilderComponent {
   this: ConfigComponent with DatabaseComponent with RepositoriesComponent =>
 
-  override lazy val tokenBuilder = new DefaultTokenBuilder(config.authServer.keysConfig, db ,roleRepository)
+  override lazy val tokenBuilder = new DefaultTokenBuilder(config.authServer.keysConfig, db, roleRepository)
 }
 
 trait DefaultRepositoriesComponent extends RepositoriesComponent {
