@@ -95,9 +95,14 @@ class DefaultSessionServiceSpecs extends SpecBase {
 
     val u = user.copy(claims = user.claims + ("bb/rol" -> Array(UserRole.ContentManager, UserRole.Marketing)))
 
-    whenReady(sessionService.querySession()(u))(_ should matchPattern {
-      case SessionInfo(TokenStatus.Valid, Some(Elevation.Critical), Some(300), Some(roles))
-        if roles == UserRole.ContentManager.toString :: UserRole.Marketing.toString :: Nil =>
-    })
+    whenReady(sessionService.querySession()(u)) { res =>
+      res should equal(
+        SessionInfo(
+          TokenStatus.Valid,
+          Some(Elevation.Critical),
+          Some(300),
+          Some(UserRole.ContentManager.toString :: UserRole.Marketing.toString :: Nil))
+      )
+    }
   }
 }
