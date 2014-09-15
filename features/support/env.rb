@@ -15,6 +15,7 @@ require "blinkbox/zuul/server/reporting"
 TEST_CONFIG = {}
 TEST_CONFIG[:server] = URI.parse(ENV["AUTH_SERVER"] || "http://127.0.0.1:9393/")
 TEST_CONFIG[:proxy] = ENV["PROXY_SERVER"] ? URI.parse(ENV["PROXY_SERVER"]) : nil
+TEST_CONFIG[:sso_server] = URI.parse(ENV["SSO_SERVER"] || "https://books-csv-sso1.cloudapp.net")
 TEST_CONFIG[:in_proc] = if /^(false|no)$/i === ENV["IN_PROC"]
                           false
                         else
@@ -46,6 +47,7 @@ ELEVATION_CONFIG = {
 
 Before do
   $zuul = ZuulClient.new(TEST_CONFIG[:server], TEST_CONFIG[:proxy])
+  $sso = SSOClient.new(TEST_CONFIG[:sso_server])
 end
 
 After do
