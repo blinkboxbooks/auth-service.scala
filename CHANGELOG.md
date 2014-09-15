@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.21.1 ([#55](https://git.mobcastdev.com/Zuul/auth-service/pull/55) 2014-09-15 13:49:45)
+
+Improve configuration for deployment
+
+This patch moves as much of the configuration out of application.conf as possible and either puts it into reference.conf where possible or just deletes it if it’s redundant or duplicated.
+
 ## 0.21.0 ([#52](https://git.mobcastdev.com/Zuul/auth-service/pull/52) 2014-09-12 13:11:17)
 
 Implement role support
