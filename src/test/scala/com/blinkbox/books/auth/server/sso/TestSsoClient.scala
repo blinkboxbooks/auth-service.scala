@@ -11,6 +11,8 @@ class TestSsoClient(
     config: SsoConfig,
     nextResponse: () => Future[HttpResponse])(implicit ec: ExecutionContext, sys: ActorSystem) extends DefaultClient(config) {
 
+  var requests: List[HttpRequest] = Nil
+
   private val commonAssertions: HttpRequest => Unit = { req =>
     req.headers.find(_.name.toLowerCase == "x-csrf-protection") shouldBe defined
 
@@ -22,8 +24,11 @@ class TestSsoClient(
 
   override def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = { req: HttpRequest =>
     commonAssertions(req)
+    requests = req :: requests
     nextResponse()
   }
+
+  def reset(): Unit = { requests = Nil }
 }
 
 class SsoResponseMocker {

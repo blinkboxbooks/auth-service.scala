@@ -14,6 +14,7 @@ import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import com.typesafe.config.ConfigFactory
 import org.h2.jdbc.JdbcSQLException
 import org.joda.time.Duration
+import spray.http.HttpRequest
 
 import scala.slick.driver.H2Driver
 import scala.slick.jdbc.JdbcBackend.Database
@@ -65,7 +66,7 @@ trait TestSsoComponent extends SsoComponent {
 
   val ssoResponse = new SsoResponseMocker
 
-  private val client = withSsoClientContext { implicit ec =>
+  protected val ssoClient = withSsoClientContext { implicit ec =>
     new TestSsoClient(config.sso, ssoResponse.nextResponse)
   }
 
@@ -74,7 +75,7 @@ trait TestSsoComponent extends SsoComponent {
   }
 
   override val sso = withSsoClientContext { implicit ec =>
-    new DefaultSso(config.sso, client, tokenDecoder)
+    new DefaultSso(config.sso, ssoClient, tokenDecoder)
   }
 }
 
@@ -180,6 +181,8 @@ class TestEnv extends
     users.filter(_.id === id).map(_.ssoId).update(Some(SsoUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
   }
 
+  def ssoRequests: List[HttpRequest] = ssoClient.requests
+
   def cleanup(): Unit = {
     import tables.driver.simple._
 
@@ -204,6 +207,7 @@ class TestEnv extends
 
     publisher.events = Nil
     ssoResponse.reset()
+    ssoClient.reset()
   }
 
   cleanup()

@@ -3,7 +3,7 @@ package com.blinkbox.books.auth.server.api
 import java.lang.reflect.InvocationTargetException
 
 import com.blinkbox.books.auth.Elevation
-import com.blinkbox.books.auth.server.{TokenStatus, ZuulRequestExceptionSerializer, env}
+import com.blinkbox.books.auth.server.{FormUnicodeSupport, TokenStatus, ZuulRequestExceptionSerializer, env}
 import com.blinkbox.books.json.DefaultFormats
 import com.blinkbox.books.spray.BearerTokenAuthenticator
 import com.typesafe.config.ConfigFactory
@@ -70,7 +70,8 @@ abstract class ApiSpecBase extends FlatSpec
   with BeforeAndAfterEach
   with FormDataUnmarshallers
   with JsonUnmarshallers
-  with AuthorisationTestHelpers {
+  with AuthorisationTestHelpers
+  with FormUnicodeSupport {
 
   implicit val routeTestTimeout = RouteTestTimeout(3.seconds)
 
