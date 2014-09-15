@@ -1,5 +1,8 @@
 package com.blinkbox.books.auth.server.data
 
+import com.blinkbox.books.auth.UserRole
+import com.blinkbox.books.auth.UserRole.UserRole
+import com.blinkbox.books.auth.UserRole.UserRole
 import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, SsoUserId}
 import com.blinkbox.books.slick.TablesContainer
 import org.joda.time.DateTime
@@ -13,12 +16,18 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
   lazy val clients = TableQuery[Clients]
   lazy val refreshTokens = TableQuery[RefreshTokens]
   lazy val loginAttempts = TableQuery[LoginAttempts]
+  lazy val privileges = TableQuery[Privileges]
+  lazy val roles = TableQuery[Roles]
 
   implicit lazy val userIdColumnType = MappedColumnType.base[UserId, Int](_.value, UserId(_))
   implicit lazy val clientIdColumnType = MappedColumnType.base[ClientId, Int](_.value, ClientId(_))
   implicit lazy val refreshTokenIdColumnType = MappedColumnType.base[RefreshTokenId, Int](_.value, RefreshTokenId(_))
   implicit lazy val ssoIdColumnType = MappedColumnType.base[SsoUserId, String](_.value, SsoUserId(_))
   implicit lazy val ssoRefreshTokenColumnType = MappedColumnType.base[SsoRefreshToken, String](_.value, SsoRefreshToken(_))
+  implicit lazy val roleIdColumnType = MappedColumnType.base[RoleId, Int](_.value, RoleId(_))
+  implicit lazy val privilegeIdColumnType = MappedColumnType.base[PrivilegeId, Int](_.value, PrivilegeId(_))
+  implicit lazy val userRoleColumnType = MappedColumnType.base[UserRole, String](
+    _.toString, s => UserRole.values.find(_.toString == s.toString).getOrElse(UserRole.NotUnderstood))
 
   class Users(tag: Tag) extends Table[User](tag, "users") {
     def id = column[UserId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
@@ -32,6 +41,25 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def ssoId = column[Option[SsoUserId]]("sso_id", O.Default(None))
     def * = (id, createdAt, updatedAt, username, firstName, lastName, passwordHash, allowMarketing, ssoId) <> (User.tupled, User.unapply)
     def indexOnUsername = index("index_users_on_username", username, unique = true)
+  }
+
+  class Roles(tag: Tag) extends Table[Role](tag, "user_roles") {
+    def id = column[RoleId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
+    def name = column[UserRole]("name", O.NotNull)
+    def description = column[String]("description", O.NotNull)
+
+    def * = (id, name, description) <> (Role.tupled, Role.unapply)
+  }
+
+  class Privileges(tag: Tag) extends Table[(Privilege)](tag, "user_privileges") {
+    def id = column[PrivilegeId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
+    def createdAt = column[DateTime]("created_at", O.NotNull)
+    def userId = column[UserId]("user_id", O.NotNull)
+    def roleId = column[RoleId]("user_role_id", O.NotNull)
+    def user = foreignKey("fk_privileges_to_users", userId, users)(_.id)
+    def role = foreignKey("fk_privileges_to_roles", roleId, roles)(_.id)
+
+    def * = (id, createdAt, userId, roleId) <> (Privilege.tupled, Privilege.unapply)
   }
 
   class Clients(tag: Tag) extends Table[Client](tag, "clients") {

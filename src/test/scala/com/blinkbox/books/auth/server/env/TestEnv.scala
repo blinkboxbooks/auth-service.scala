@@ -7,7 +7,7 @@ import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data.{Client, _}
 import com.blinkbox.books.auth.server.sso._
-import com.blinkbox.books.auth.{User => AuthenticatedUser}
+import com.blinkbox.books.auth.{User => AuthenticatedUser, UserRole}
 import com.blinkbox.books.slick.H2DatabaseSupport
 import com.blinkbox.books.testkit.PublisherSpy
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
@@ -60,10 +60,6 @@ trait TestEventsComponent extends EventsComponent {
   override val publisher = publisherSpy
 }
 
-trait TestPasswordHasherComponent extends PasswordHasherComponent {
-  override val passwordHasher = PasswordHasher(identity, (s1, s2) => s1 == s2)
-}
-
 trait TestSsoComponent extends SsoComponent {
   this: ConfigComponent with AsyncComponent =>
 
@@ -90,7 +86,6 @@ class TestEnv extends
     DefaultGeoIPComponent with
     TestEventsComponent with
     TestDatabaseComponent with
-    TestPasswordHasherComponent with
     DefaultTokenBuilderComponent with
     DefaultRepositoriesComponent with
     DefaultUserServiceComponent with
@@ -117,6 +112,9 @@ class TestEnv extends
   val userA = User(userIdA, now, now, "user.a@test.tst", "A First", "A Last", "a-password", true, Some(SsoUserId("sso-a")))
   val userB = User(userIdB, now, now, "user.b@test.tst", "B First", "B Last", "b-password", true, Some(SsoUserId("sso-b")))
   val userC = User(userIdC, now, now, "user.c@test.tst", "C First", "C Last", "c-password", true, None)
+
+  val privilegeC1 = Privilege(PrivilegeId(1), now, userIdC, RoleId(UserRole.ContentManager.id))
+  val privilegeC2 = Privilege(PrivilegeId(2), now, userIdC, RoleId(UserRole.Employee.id))
 
   def fullUserPatch = UserPatch(Some("Updated First"), Some("Updated Last"), Some("updated@test.tst"), Some(false), None)
 
@@ -145,6 +143,9 @@ class TestEnv extends
   val refreshTokenNoClientDeregisteredA = RefreshToken(
     RefreshTokenId(5), now, now, userIdA, None, "some-token-a-deregistered", Some(SsoRefreshToken("some-sso-token-a-deregistered")), true, now, now, now)
 
+  val refreshTokenNoClientC = RefreshToken(
+    RefreshTokenId(6), now, now, userIdC, None, "some-token-c", Some(SsoRefreshToken("some-sso-token")), false, now, now, now)
+
   val clientsC =
     for (id <- 4 until 16)
     yield Client(ClientId(id), now, now, userIdC, s"Client C$id", s"Test brand C$id", s"Test model C$id", s"Test OS C$id", s"test-secret-c$id", false)
@@ -165,11 +166,6 @@ class TestEnv extends
 
   val clientRegistration = ClientRegistration("Test name", "Test brand", "Test model", "Test OS")
 
-  val tokenInfoA1 = tokenBuilder.issueAccessToken(
-    userA, None, refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
-
-  val tokenInfoA1WithoutSSO = tokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
-
   val resetCredentials = ResetTokenCredentials(SsoPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
 
   def removeSSOTokens(): Unit = {
@@ -188,7 +184,8 @@ class TestEnv extends
     import tables.driver.simple._
 
     db.withSession { implicit session =>
-      val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl
+      val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl ++
+        tables.roles.ddl ++ tables.privileges.ddl
 
       try {
         ddl.drop
@@ -201,6 +198,8 @@ class TestEnv extends
       tables.users ++= Seq(userA, userB, userC)
       tables.clients ++= Seq(clientA1, clientA2, clientA3) ++ clientsC
       tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
+      tables.roles.forceInsertAll(UserRole.values.map(r => Role(RoleId(r.id), r, r.toString + " description")).toSeq: _*)
+      tables.privileges ++= Seq(privilegeC1, privilegeC2)
     }
 
     publisher.events = Nil
@@ -208,4 +207,12 @@ class TestEnv extends
   }
 
   cleanup()
+
+  val tokenInfoA1 = tokenBuilder.issueAccessToken(
+    userA, None, refreshTokenNoClientA, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
+
+  val tokenInfoC = tokenBuilder.issueAccessToken(
+    userC, None, refreshTokenNoClientC, Some(SsoCredentials(SsoAccessToken("some-access-token"), "bearer", 300, SsoRefreshToken("some-refresh-token"))))
+
+  val tokenInfoA1WithoutSSO = tokenBuilder.issueAccessToken(userA, None, refreshTokenNoClientA, None)
 }

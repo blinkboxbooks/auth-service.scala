@@ -3,6 +3,7 @@ package com.blinkbox.books.auth.server.data
 import java.util.concurrent.TimeUnit
 
 import com.blinkbox.books.auth.Elevation
+import com.blinkbox.books.auth.UserRole.UserRole
 import com.blinkbox.books.auth.server.TokenStatus
 import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, SsoUserId}
 import com.blinkbox.books.time.Clock
@@ -41,6 +42,14 @@ object ExternalClientId {
 case class RefreshTokenId(value: Int) extends AnyVal
 
 object RefreshTokenId { val Invalid = RefreshTokenId(-1) }
+
+case class RoleId(value: Int) extends AnyVal
+
+case class Role(id: RoleId, name: UserRole, description: String)
+
+case class PrivilegeId(value: Int) extends AnyVal
+
+case class Privilege(id: PrivilegeId, createdAt: DateTime, userId: UserId, roleId: RoleId)
 
 case class User(id: UserId,
     createdAt: DateTime,

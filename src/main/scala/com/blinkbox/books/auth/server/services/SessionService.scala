@@ -1,5 +1,6 @@
 package com.blinkbox.books.auth.server.services
 
+import com.blinkbox.books.auth.server.TokenStatus.TokenStatus
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events._
@@ -25,8 +26,12 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
   extends SessionService with UserInfoFactory with ClientInfoFactory with ClientAuthenticator[Profile] {
 
+  private def roles(status: TokenStatus, user: AuthenticatedUser) =
+    if (status == TokenStatus.Valid) Option(user.roles.map(_.toString).toList)
+    else None
+
   private def sessionInfoFromUser(user: AuthenticatedUser) = fetchRefreshToken(user).map { token =>
-    val elevation = (token.isValid, user.ssoAccessToken.isDefined)match {
+    val elevation = (token.isValid, user.ssoAccessToken.isDefined) match {
       case (false, _) => None
       case (true, true) => Some(token.elevation)
       case (true, false) => Some(Elevation.Unelevated)
@@ -35,8 +40,8 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     SessionInfo(
       token_status = token.status,
       token_elevation = elevation,
-      token_elevation_expires_in = if (token.isValid && elevation != Some(Elevation.Unelevated)) Some(token.elevationDropsIn.toSeconds) else None
-      // TODO: Roles
+      token_elevation_expires_in = if (token.isValid && elevation != Some(Elevation.Unelevated)) Some(token.elevationDropsIn.toSeconds) else None,
+      user_roles = roles(token.status, user)
     )
   }
 
@@ -45,15 +50,15 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
     case SsoTokenElevation.None => Elevation.Unelevated
   }
 
-  private def querySessionWithSSO(token: SsoAccessToken) = sso.sessionStatus(token).map { s =>
+  private def querySessionWithSSO(user: AuthenticatedUser)(token: SsoAccessToken) = sso.sessionStatus(token).map { s =>
     val status = TokenStatus.fromSSOValidity(s.status)
     val elevation = if (status == TokenStatus.Valid) s.sessionElevation.map(e => elevationFromSessionElevation(e)) else None
 
     SessionInfo(
       token_status = status,
       token_elevation = elevation,
-      token_elevation_expires_in = elevation.flatMap(e => if (e != Elevation.Unelevated) s.sessionElevationExpiresIn else None)
-      // TODO: Roles
+      token_elevation_expires_in = elevation.flatMap(e => if (e != Elevation.Unelevated) s.sessionElevationExpiresIn else None),
+      user_roles = roles(status, user)
     )
   }
 
@@ -64,7 +69,7 @@ class DefaultSessionService[Profile <: BasicProfile, Database <: Profile#Backend
   }
 
   override def querySession()(implicit user: AuthenticatedUser): Future[SessionInfo] =
-    user.ssoAccessToken.map(SsoAccessToken.apply).fold(sessionInfoFromUser(user))(querySessionWithSSO)
+    user.ssoAccessToken.map(SsoAccessToken.apply).fold(sessionInfoFromUser(user))(querySessionWithSSO(user))
 
   override def extendSession()(implicit user: AuthenticatedUser): Future[SessionInfo] =
     user.ssoAccessToken.map(SsoAccessToken.apply).map { at =>
