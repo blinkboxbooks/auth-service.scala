@@ -7,7 +7,9 @@ import org.json4s.JsonAST.{JField, JObject, JString}
 import org.json4s.JsonDSL._
 import org.json4s._
 import org.json4s.ext.EnumNameSerializer
+import spray.http._
 import spray.httpx.Json4sJacksonSupport
+import spray.httpx.marshalling.Marshaller
 
 object ZuulRequestExceptionSerializer extends Serializer[ZuulRequestException] {
   override def deserialize(implicit format: Formats): PartialFunction[(TypeInfo, JValue), ZuulRequestException] = {
@@ -27,6 +29,13 @@ object ZuulRequestExceptionSerializer extends Serializer[ZuulRequestException] {
         ("error_reason" -> e.reason.map(ZuulRequestErrorReason.toString)) ~
         ("error_description" -> e.message)
   }
+}
+
+trait FormUnicodeSupport {
+  implicit val FormDataMarshaller: Marshaller[FormData] =
+    Marshaller.delegate[FormData, String](MediaTypes.`application/x-www-form-urlencoded`) { (formData, contentType) ⇒
+      Uri.Query(formData.fields: _*).render(new StringRendering, HttpCharsets.`UTF-8`.nioCharset).get
+    }
 }
 
 class Serialization extends Json4sJacksonSupport {

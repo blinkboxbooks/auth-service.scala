@@ -35,6 +35,32 @@ class RegistrationSpecs extends ApiSpecBase {
     }
   }
 
+  it should "allow the registration of a new user without a client and preserve non-ASCII characters" in {
+    env.ssoSuccessfulRegistrationAndLink()
+
+    val firstName = "Iñtërnâtiônàlizætiøn"
+    val lastName = "中国扬声器可以阅读本"
+
+    val regDataNonAscii = regDataSimple.updated("first_name", firstName).updated("last_name", lastName)
+
+    Post("/oauth2/token", FormData(regDataNonAscii)) ~> route ~> check {
+      status should equal(StatusCodes.OK)
+
+      val resp = jsonResponseAs[TokenInfo]
+
+      import env.driver.simple._
+      val regUser = env.db.withSession { implicit session =>
+        env.tables.users.sortBy(_.id).list.last
+      }
+
+      regUser.firstName should equal(firstName)
+      regUser.lastName should equal(lastName)
+
+      resp.user_first_name should equal(firstName)
+      resp.user_last_name should equal(lastName)
+    }
+  }
+
   it should "allow the registration of a new user with a client" in {
     env.ssoSuccessfulRegistrationAndLink()
 
