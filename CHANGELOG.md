@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.21.0 ([#52](https://git.mobcastdev.com/Zuul/auth-service/pull/52) 2014-09-12 13:11:17)
+
+Implement role support
+
+### New feature
+
+* Introduce roles entities for Slick
+* Introduce roles in the responses from the API
+* Upgrade common-spray-auth to support role-checking
+
 ## 0.20.1 ([#51](https://git.mobcastdev.com/Zuul/auth-service/pull/51) 2014-09-11 14:46:37)
 
 CP-1826 Fix failure for unelevated token and unify TokenStatus with SessionStatus
