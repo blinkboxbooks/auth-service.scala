@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.21.2 ([#56](https://git.mobcastdev.com/Zuul/auth-service/pull/56) 2014-09-15 16:36:08)
+
+CP-1837 Fix serialization when sending SSO data containing non-ascii characters
+
+### Bugfix
+
+This patch adds some tests around unicode character handing and fixes an issue where SSO was receiving incorrectly encoded data.
+
 ## 0.21.1 ([#55](https://git.mobcastdev.com/Zuul/auth-service/pull/55) 2014-09-15 13:49:45)
 
 Improve configuration for deployment
