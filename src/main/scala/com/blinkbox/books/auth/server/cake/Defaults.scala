@@ -230,7 +230,7 @@ trait DefaultApiComponent extends ApiComponent {
 
   val authenticator: ElevatedContextAuthenticator[User] = withApiContext { implicit ec =>
     new BearerTokenAuthenticator(
-      new ZuulTokenDeserializer(new ZuulTokenDecoder(config.authClient.keysDir.getAbsolutePath)),
+      new ZuulTokenDeserializer(new ZuulTokenDecoder(config.authServer.keysConfig.path.toString)),
       withSsoClientContext(ssoContext => new SsoElevationChecker(sso)(ssoContext)))
   }
 

@@ -2,7 +2,6 @@ package com.blinkbox.books.auth.server
 
 import java.nio.file.{Files, Path, Paths}
 import java.util.Properties
-import java.util.concurrent.TimeUnit
 
 import com.blinkbox.books.config._
 import com.blinkbox.books.rabbitmq.RabbitMqConfig
@@ -15,17 +14,15 @@ import scala.concurrent.duration._
 
 case class AppConfig(
     service: ApiConfig,
-    swagger: SwaggerConfig,
     db: DatabaseConfig,
     hikari: HikariConfig,
     rabbit: RabbitMqConfig,
-    authClient: AuthClientConfig,
     sso: SsoConfig,
     authServer: AuthServerConfig)
 
-case class KeysConfig(path: String, signingKeyId: String, encryptionKeyId: String) {
-  val signingKeyPath: Path = Paths.get(path, signingKeyId, "private.key")
-  val encryptionKeyPath: Path = Paths.get(path, encryptionKeyId, "public.key")
+case class KeysConfig(path: Path, signingKeyId: String, encryptionKeyId: String) {
+  val signingKeyPath = path.resolve(signingKeyId).resolve("private.key")
+  val encryptionKeyPath = path.resolve(encryptionKeyId).resolve("public.key")
 
   require(Files.exists(signingKeyPath), s"Auth service signing key not found: $signingKeyPath")
   require(Files.exists(encryptionKeyPath), s"Auth service signing key not found: $encryptionKeyPath")
@@ -127,7 +124,7 @@ object HikariConfig {
 
 object KeysConfig {
   def apply(config: Config, prefix: String): KeysConfig = KeysConfig(
-    path = config.getString(s"$prefix.path"),
+    path = Paths.get(config.getString(s"$prefix.path")),
     signingKeyId = config.getString(s"$prefix.signing"),
     encryptionKeyId = config.getString(s"$prefix.encryption")
   )
@@ -157,13 +154,11 @@ object SsoConfig {
 object AppConfig {
   def apply(config: Config): AppConfig = AppConfig(
     ApiConfig(config, "service.auth.api.public"),
-    SwaggerConfig(config, 1),
     DatabaseConfig(config, "service.auth.db"),
     HikariConfig(config, "service.auth.hikari"),
     RabbitMqConfig(config),
-    AuthClientConfig(config),
     SsoConfig(config),
     AuthServerConfig(config, "service.auth"))
 
-  lazy val default: AppConfig = AppConfig((new Configuration {}).config)
+  lazy val default: AppConfig = AppConfig(new Configuration {}.config)
 }
