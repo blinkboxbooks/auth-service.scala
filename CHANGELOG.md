@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.21.3 ([#57](https://git.mobcastdev.com/Zuul/auth-service/pull/57) 2014-09-16 11:24:43)
+
+Move more settings into reference.conf
+
+### Improvements
+
+Move more settings from `application.conf` into `reference.conf`
+
 ## 0.21.2 ([#56](https://git.mobcastdev.com/Zuul/auth-service/pull/56) 2014-09-15 16:36:08)
 
 CP-1837 Fix serialization when sending SSO data containing non-ascii characters
