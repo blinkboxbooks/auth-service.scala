@@ -22,7 +22,7 @@ class TestSsoClient(
     }
   }
 
-  override def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = { req: HttpRequest =>
+  override def doSendReceive: HttpRequest => Future[HttpResponse] = { req: HttpRequest =>
     commonAssertions(req)
     requests = req :: requests
     nextResponse()

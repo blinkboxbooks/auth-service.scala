@@ -54,8 +54,6 @@ class DefaultRefreshTokenServiceSpecs extends SpecBase {
   }
 
   it should "not refresh a valid refresh token and signal an error if wrong client credentials are provided" in {
-    ssoSuccessfulAuthentication()
-
     val refreshFuture = refreshTokenService.refreshAccessToken(
       RefreshTokenCredentials(refreshTokenClientA2.token, Some(clientInfoA1.client_id), Some("test-secret-a2")))
 
