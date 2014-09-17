@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.21.4 ([#58](https://git.mobcastdev.com/Zuul/auth-service/pull/58) 2014-09-17 12:41:14)
+
+CP-1833 Fix time-out happening after the server was idle for a while
+
+### Bugfix
+
+This patch will fix an issue where, if left idle for a while, the auth-server would not be able to re-connect to the SSO service. There is also included a change to the refresh-token service as it became clear with the new pipeline that it was making a request to SSO before knowing if that request was actually needed (i.e. before client credentials have been checked).
+
 ## 0.21.3 ([#57](https://git.mobcastdev.com/Zuul/auth-service/pull/57) 2014-09-16 11:24:43)
 
 Move more settings into reference.conf
