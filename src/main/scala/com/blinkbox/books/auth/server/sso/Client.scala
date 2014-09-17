@@ -36,7 +36,7 @@ trait SprayClient extends Client {
   }
 
   protected val addHost = { req: HttpRequest =>
-    req.withEffectiveUri(true, Host(config.host, config.port))
+    req.withEffectiveUri(securedConnection = true, Host(config.host, config.port))
   }
 
   protected def basePipeline(credentials: HttpCredentials): SendReceive = {
