@@ -55,7 +55,6 @@ trait Sso {
   // Admin
   // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
   // def adminUserDetails(req: GetUserDetails): Future[UserDetail]
-  // def adminUpdateUser(req: UpdateUser): Future[UserDetail]
   // Health-check
   // def systemStatus(): Future[SystemStatus]
 }

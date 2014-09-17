@@ -60,27 +60,30 @@ class DefaultRefreshTokenService[DB <: DatabaseSupport](
   }
 
   def refreshAccessToken(credentials: RefreshTokenCredentials): Future[TokenInfo] = {
-    val tokenFuture = fetchRefreshToken(credentials).flatMap { token =>
+    val tokenAndClient = for {
+      t <- fetchRefreshToken(credentials)
+      c <- fetchClient(credentials, t)
+      _ <- checkAuthorization(t, c)
+    } yield (t, c)
+
+    val freshToken = tokenAndClient.flatMap { case (token, client) =>
       val ssoFuture = fetchSSOCredentials(token)
       val userFuture = fetchUser(token.userId)
-      val clientFuture = fetchClient(credentials, token)
 
       for {
-        client    <- clientFuture
-        _         <- checkAuthorization(token, client)
         ssoCreds  <- ssoFuture
         user      <- userFuture
       } yield (token, user, client, ssoCreds, tokenBuilder.issueAccessToken(user, client, token, ssoCreds))
     }
 
-    tokenFuture.onSuccess {
+    freshToken.onSuccess {
       case (token, user, client, ssoCreds, _) =>
         // TODO: The result of this Future is just discarded, there should be better tracking of errors
         extendTokenLifetime(token, ssoCreds.map(_.refreshToken))
         events.publish(UserAuthenticated(user, client))
     }
 
-    tokenFuture.map(_._5)
+    freshToken.map(_._5)
   }
 
   override def revokeRefreshToken(token: String): Future[Unit] = {

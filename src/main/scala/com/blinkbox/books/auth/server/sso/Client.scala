@@ -7,6 +7,7 @@ import akka.util.Timeout
 import com.blinkbox.books.auth.server.SsoConfig
 import spray.can.Http
 import spray.client.pipelining._
+import spray.http.HttpHeaders.Host
 import spray.http._
 import spray.httpx.UnsuccessfulResponseException
 import spray.httpx.unmarshalling.FromResponseUnmarshaller
@@ -28,32 +29,35 @@ trait SprayClient extends Client {
   implicit lazy val _system = system
   implicit lazy val _ec = ec
 
-  protected def doSendReceive(transport: ActorRef): HttpRequest => Future[HttpResponse] = sendReceive(transport)
+  protected def doSendReceive: HttpRequest => Future[HttpResponse] = sendReceive
 
   protected lazy val unitIfSuccessful = { resp: HttpResponse =>
     if (resp.status.isSuccess) () else throw new UnsuccessfulResponseException(resp)
   }
 
-  protected def basePipeline(credentials: HttpCredentials): Future[SendReceive] = for {
-    Http.HostConnectorInfo(connector, _) <- IO(Http) ? Http.HostConnectorSetup(config.host, port = config.port, sslEncryption = true)
-  } yield {
-    addCredentials(credentials) ~>
-    addHeader("X-CSRF-Protection", "Foobar") ~> // see SSO API doc.
-    doSendReceive(connector)
+  protected val addHost = { req: HttpRequest =>
+    req.withEffectiveUri(true, Host(config.host, config.port))
   }
 
-  protected def unitPipeline(credentials: HttpCredentials) = basePipeline(credentials) map { _ ~> unitIfSuccessful }
+  protected def basePipeline(credentials: HttpCredentials): SendReceive = {
+    addHost ~>
+    addCredentials(credentials) ~>
+    addHeader("X-CSRF-Protection", "Foobar") ~> // see SSO API doc.
+    doSendReceive
+  }
+
+  protected def unitPipeline(credentials: HttpCredentials) = basePipeline(credentials) ~> unitIfSuccessful
 
   protected def dataPipeline[T : FromResponseUnmarshaller](credentials: HttpCredentials) =
-    basePipeline(credentials) map { _ ~> unmarshal[T] }
+    basePipeline(credentials) ~> unmarshal[T]
 
   override val defaultCredentials = config.credentials
 
   override def unitRequest(req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[Unit] =
-    unitPipeline(credentials).flatMap(_(req))
+    req ~> unitPipeline(credentials)
 
   override def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[T] =
-    dataPipeline[T](credentials).flatMap(_(req))
+    req ~> dataPipeline[T](credentials)
 }
 
 class DefaultClient(val config: SsoConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient
