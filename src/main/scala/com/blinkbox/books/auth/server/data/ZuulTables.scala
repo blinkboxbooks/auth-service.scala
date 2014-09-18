@@ -2,7 +2,6 @@ package com.blinkbox.books.auth.server.data
 
 import com.blinkbox.books.auth.UserRole
 import com.blinkbox.books.auth.UserRole.UserRole
-import com.blinkbox.books.auth.UserRole.UserRole
 import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, SsoUserId}
 import com.blinkbox.books.slick.TablesContainer
 import org.joda.time.DateTime
@@ -18,6 +17,7 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
   lazy val loginAttempts = TableQuery[LoginAttempts]
   lazy val privileges = TableQuery[Privileges]
   lazy val roles = TableQuery[Roles]
+  lazy val previousUsernames = TableQuery[PreviousUsernames]
 
   implicit lazy val userIdColumnType = MappedColumnType.base[UserId, Int](_.value, UserId(_))
   implicit lazy val clientIdColumnType = MappedColumnType.base[ClientId, Int](_.value, ClientId(_))
@@ -28,6 +28,7 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
   implicit lazy val privilegeIdColumnType = MappedColumnType.base[PrivilegeId, Int](_.value, PrivilegeId(_))
   implicit lazy val userRoleColumnType = MappedColumnType.base[UserRole, String](
     _.toString, s => UserRole.values.find(_.toString == s.toString).getOrElse(UserRole.NotUnderstood))
+  implicit lazy val previousUsernameIdColumnType = MappedColumnType.base[PreviousUsernameId, Int](_.value, PreviousUsernameId(_))
 
   class Users(tag: Tag) extends Table[User](tag, "users") {
     def id = column[UserId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
@@ -101,6 +102,15 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def clientIP = column[String]("client_ip", O.NotNull)
     def * = (createdAt, username, successful, clientIP) <> (LoginAttempt.tupled, LoginAttempt.unapply)
     def indexOnUsernameAndCreatedAt = index("index_login_attempts_on_username_and_created_at", (username, createdAt))
+  }
+
+  class PreviousUsernames(tag: Tag) extends Table[PreviousUsername](tag, "user_previous_usernames") {
+    def id = column[PreviousUsernameId]("id", O.PrimaryKey, O.AutoInc, O.NotNull)
+    def createdAt = column[DateTime]("created_at", O.NotNull)
+    def userId = column[UserId]("user_id", O.NotNull)
+    def username = column[String]("username", O.NotNull)
+    def * = (id, createdAt, userId, username) <> (PreviousUsername.tupled, PreviousUsername.unapply)
+    def user = foreignKey("fk_user_previous_username_to_users", userId, users)(_.id)
   }
 }
 

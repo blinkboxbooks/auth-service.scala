@@ -188,7 +188,7 @@ class TestEnv extends
 
     db.withSession { implicit session =>
       val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl ++
-        tables.roles.ddl ++ tables.privileges.ddl
+        tables.roles.ddl ++ tables.privileges.ddl ++ tables.previousUsernames.ddl
 
       try {
         ddl.drop

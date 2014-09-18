@@ -90,3 +90,11 @@ case class RefreshToken(
 }
 
 case class LoginAttempt(createdAt: DateTime, username: String, successful: Boolean, clientIP: String)
+
+case class PreviousUsernameId(value: Int) extends AnyVal
+
+object PreviousUsernameId {
+  val invalid: PreviousUsernameId = PreviousUsernameId(-1)
+}
+
+case class PreviousUsername(id: PreviousUsernameId, createdAt: DateTime, userId: UserId, username: String)

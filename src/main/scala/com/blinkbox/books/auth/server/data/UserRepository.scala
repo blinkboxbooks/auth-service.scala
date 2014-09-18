@@ -15,6 +15,7 @@ trait UserRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def createUser(registration: UserRegistration)(implicit session: Session): User
   def userWithId(id: UserId)(implicit session: Session): Option[User]
   def userWithSsoId(id: SsoUserId)(implicit session: Session): Option[User]
+  def registerUsernameUpdate(oldUsername: String, updatedUser: User)(implicit session: Session): Unit
 }
 
 trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile] with TablesSupport[Profile, ZuulTables[Profile]] {
@@ -41,6 +42,10 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
   override def userWithId(id: UserId)(implicit session: Session) = users.filter(_.id === id).firstOption
   override def updateUser(user: User)(implicit session: Session): Unit = users.filter(_.id === user.id).update(user)
   override def userWithSsoId(id: SsoUserId)(implicit session: Session) = users.filter(_.ssoId === id).firstOption
+
+  override def registerUsernameUpdate(oldUsername: String, updatedUser: User)(implicit session: Session): Unit = {
+    previousUsernames += PreviousUsername(PreviousUsernameId.invalid, clock.now(), updatedUser.id, oldUsername)
+  }
 }
 
 class DefaultUserRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile])(implicit val clock: Clock)

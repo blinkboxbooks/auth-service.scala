@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.data.{User, UserId}
+import com.blinkbox.books.auth.server.data.{PreviousUsernameId, PreviousUsername, User, UserId}
 import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.auth.server.sso.SsoUserId
 import com.blinkbox.books.auth.server.{Failures, ZuulAuthorizationException, ZuulUnknownException}
@@ -56,6 +56,21 @@ class DefaultUserServiceSpecs extends SpecBase {
     failingWith[ZuulUnknownException](userService.getUserInfo()(authenticatedUserA))
   }
 
+  it should "not create a previous-username record for an update that doesn't involve username" in {
+    ssoSuccessfulJohnDoeInfo()
+    ssoNoContent()
+
+    whenReady(userService.updateUser(fullUserPatch.copy(username = None))(authenticatedUserA)) { infoOpt =>
+      infoOpt shouldBe defined
+
+      val previousUsername = db.withSession { implicit session =>
+        tables.previousUsernames.list.headOption
+      }
+
+      previousUsername shouldBe empty
+    }
+  }
+
   it should "update an user given new details and return updated user information" in {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
@@ -79,6 +94,14 @@ class DefaultUserServiceSpecs extends SpecBase {
       val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, Some(SsoUserId("6E41CB9F")))
 
       updated should equal(Some(expectedUpdatedUser))
+
+      val previousUsername = db.withSession { implicit session =>
+        tables.previousUsernames.list.headOption
+      }
+
+      previousUsername should matchPattern {
+        case Some(PreviousUsername(PreviousUsernameId(_), _, UserId(1), "john.doe+blinkbox@example.com")) =>
+      }
 
       publisherSpy.events shouldEqual(
         UserUpdated(ssoSynced, expectedUpdatedUser) ::

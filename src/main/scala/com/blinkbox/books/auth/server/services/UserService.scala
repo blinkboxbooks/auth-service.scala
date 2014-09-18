@@ -33,6 +33,10 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
       events.publish(UserUpdated(user, updatedUser))
     }
 
+    if (updatedUser.username != user.username) {
+      db.withSession { implicit session => repo.registerUsernameUpdate(user.username, updatedUser) }
+    }
+
     userInfoFromUser(updatedUser)
   }
 
