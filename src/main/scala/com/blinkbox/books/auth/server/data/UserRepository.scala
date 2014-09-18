@@ -16,6 +16,9 @@ trait UserRepository[Profile <: BasicProfile] extends SlickTypes[Profile] {
   def userWithId(id: UserId)(implicit session: Session): Option[User]
   def userWithSsoId(id: SsoUserId)(implicit session: Session): Option[User]
   def registerUsernameUpdate(oldUsername: String, updatedUser: User)(implicit session: Session): Unit
+  def userWithHistoryById(id: UserId)(implicit session: Session): Option[(User, List[PreviousUsername])]
+  def userWithHistoryByUsername(username: String)(implicit session: Session): List[(User, List[PreviousUsername])]
+  def userWithHistoryByName(firstName: String, lastName: String)(implicit session: Session): List[(User, List[PreviousUsername])]
 }
 
 trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile] with TablesSupport[Profile, ZuulTables[Profile]] {
@@ -46,6 +49,25 @@ trait JdbcUserRepository[Profile <: JdbcProfile] extends UserRepository[Profile]
   override def registerUsernameUpdate(oldUsername: String, updatedUser: User)(implicit session: Session): Unit = {
     previousUsernames += PreviousUsername(PreviousUsernameId.invalid, clock.now(), updatedUser.id, oldUsername)
   }
+
+  private def groupByUser(l: List[(User, PreviousUsername)]): List[(User, List[PreviousUsername])] =
+    (l.groupBy(_._1).collect {
+      case (user, pairs) => (user, pairs.map(_._2))
+    }).toList
+
+  private def userWithHistoryQuery = for {
+    u <- users
+    p <- previousUsernames if u.id === p.userId
+  } yield (u, p)
+
+  override def userWithHistoryById(id: UserId)(implicit session: Session): Option[(User, List[PreviousUsername])] =
+    groupByUser(userWithHistoryQuery.filter(_._1.id === id).list).headOption
+
+  def userWithHistoryByUsername(username: String)(implicit session: Session): List[(User, List[PreviousUsername])] =
+    groupByUser(userWithHistoryQuery.filter(_._1.username === username).list)
+
+  def userWithHistoryByName(firstName: String, lastName: String)(implicit session: Session): List[(User, List[PreviousUsername])] =
+    groupByUser(userWithHistoryQuery.filter({ case (u, _) => u.firstName === firstName && u.lastName === lastName }).list)
 }
 
 class DefaultUserRepository[Profile <: JdbcProfile](val tables: ZuulTables[Profile])(implicit val clock: Clock)

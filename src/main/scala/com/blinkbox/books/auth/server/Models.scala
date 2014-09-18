@@ -84,6 +84,21 @@ case class UserInfo(
   user_allow_marketing_communications: Boolean
 )
 
+case class PreviousUsernameInfo(
+  user_username: String,
+  user_username_changed_at: DateTime
+)
+
+case class AdminUserInfo(
+  user_id: String,
+  user_uri: String,
+  user_username: String,
+  user_first_name: String,
+  user_last_name: String,
+  user_allow_marketing_communications: Boolean,
+  user_previous_usernames: List[PreviousUsernameInfo]
+)
+
 case class TokenInfo(
   access_token: String,
   token_type: String,
