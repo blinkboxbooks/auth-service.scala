@@ -97,6 +97,7 @@ class TestEnv extends
     DefaultRefreshTokenServiceComponent with
     DefaultSsoSyncComponent with
     DefaultPasswordUpdatedServiceComponent with
+    DefaultAdminUserServiceComponent with
     DefaultApiComponent with
     SsoResponder {
 

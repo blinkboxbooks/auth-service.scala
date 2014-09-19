@@ -207,6 +207,16 @@ trait DefaultPasswordUpdatedServiceComponent extends PasswordUpdateServiceCompon
   }
 }
 
+trait DefaultAdminUserServiceComponent extends AdminUserServiceComponent {
+  this: AsyncComponent
+    with DatabaseComponent
+    with RepositoriesComponent =>
+
+  val adminUserService = withServiceContext { implicit ec =>
+    new DefaultAdminUserService(db, userRepository)
+  }
+}
+
 trait DefaultSsoComponent extends SsoComponent {
   this: ConfigComponent with AsyncComponent =>
 
@@ -225,6 +235,7 @@ trait DefaultApiComponent extends ApiComponent {
     with PasswordAuthenticationServiceComponent
     with RefreshTokenServiceComponent
     with PasswordUpdateServiceComponent
+    with AdminUserServiceComponent
     with SsoComponent
     with ConfigComponent
     with AsyncComponent =>

@@ -32,6 +32,7 @@ object WebAppComponents extends
   DefaultPasswordAuthenticationServiceComponent with
   DefaultSsoSyncComponent with
   DefaultPasswordUpdatedServiceComponent with
+  DefaultAdminUserServiceComponent with
   DefaultApiComponent
 
 class WebService extends HttpServiceActor {

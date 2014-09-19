@@ -18,7 +18,6 @@ trait AdminUserService {
 
 class DefaultAdminUserService[DB <: DatabaseSupport](
     db: DB#Database,
-    profile: DB#Profile,
     userRepo: UserRepository[DB#Profile])(implicit ec: ExecutionContext) extends AdminUserService {
 
   def info(u: (User, List[PreviousUsername])): AdminUserInfo = {
