@@ -109,9 +109,7 @@ trait SsoResponder extends SsoResponseFixtures {
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes)))
     )
   
-  def ssoUnsuccessfulAuthentication(): Unit = ssoResponse.complete(
-      _.success(HttpResponse(StatusCodes.Unauthorized, HttpEntity.Empty))
-    )
+  def ssoUnsuccessfulAuthentication(): Unit = ssoInvalidRequest("invalid username or password", "invalid_grant")
 
   def ssoSuccessfulJohnDoeInfo(): Unit = ssoResponse.complete(
       _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, johnDoeInfoJson.getBytes)))
