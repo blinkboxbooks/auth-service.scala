@@ -76,12 +76,15 @@ class DefaultSso(config: SsoConfig, client: Client, tokenDecoder: SsoAccessToken
     SsoUserCredentials(id, cred)
   }
 
-  private def extractInvalidRequest(e: UnsuccessfulResponseException): SsoException = {
+  private def parseBadRequest(e: UnsuccessfulResponseException): SsoException = {
     import org.json4s.jackson.JsonMethods._
     parseOpt(e.response.entity.asString).collect {
       case JObject(
         JField("error", JString("invalid_request")) ::
         JField("error_description", JString(s)) :: Nil) => SsoInvalidRequest(s)
+      case JObject(
+        JField("error", JString("invalid_grant")) ::
+        JField("error_description", JString(_)) :: Nil) => SsoUnauthorized
     } getOrElse(SsoUnknownException(e))
   }
 
@@ -100,7 +103,7 @@ class DefaultSso(config: SsoConfig, client: Client, tokenDecoder: SsoAccessToken
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Unauthorized => SsoUnauthorized
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Forbidden => SsoForbidden
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.Conflict => SsoConflict
-    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => extractInvalidRequest(e)
+    case e: UnsuccessfulResponseException if e.response.status == StatusCodes.BadRequest => parseBadRequest(e)
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.TooManyRequests => extractTooManyRequests(e)
     case e: UnsuccessfulResponseException if e.response.status == StatusCodes.NotFound => SsoNotFound
     case e: Throwable => SsoUnknownException(e)
