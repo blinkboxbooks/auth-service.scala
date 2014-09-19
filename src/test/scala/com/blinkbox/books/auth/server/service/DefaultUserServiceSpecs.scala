@@ -60,6 +60,8 @@ class DefaultUserServiceSpecs extends SpecBase {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
+    setUsername(userIdA, "john.doe+blinkbox@example.com")
+
     whenReady(userService.updateUser(fullUserPatch.copy(username = None))(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
 
@@ -71,7 +73,7 @@ class DefaultUserServiceSpecs extends SpecBase {
     }
   }
 
-  it should "update an user given new details and return updated user information" in {
+  it should "update an user given new details, populate previous-username records and return updated user information" in {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
@@ -96,11 +98,12 @@ class DefaultUserServiceSpecs extends SpecBase {
       updated should equal(Some(expectedUpdatedUser))
 
       val previousUsername = db.withSession { implicit session =>
-        tables.previousUsernames.list.headOption
+        tables.previousUsernames.list
       }
 
       previousUsername should matchPattern {
-        case Some(PreviousUsername(PreviousUsernameId(_), _, UserId(1), "john.doe+blinkbox@example.com")) =>
+        case PreviousUsername(PreviousUsernameId(_), _, UserId(1), "user.a@test.tst") ::
+          PreviousUsername(PreviousUsernameId(_), _, UserId(1), "john.doe+blinkbox@example.com") :: Nil =>
       }
 
       publisherSpy.events shouldEqual(

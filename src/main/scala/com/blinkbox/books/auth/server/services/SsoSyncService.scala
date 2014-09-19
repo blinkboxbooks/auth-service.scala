@@ -5,7 +5,7 @@ import java.util.NoSuchElementException
 import com.blinkbox.books.auth.server.UserRegistration
 import com.blinkbox.books.auth.server.data.{UserRepository, User}
 import com.blinkbox.books.auth.server.events.{UserUpdated, Publisher, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{Sso, SsoAccessToken}
+import com.blinkbox.books.auth.server.sso.{UserInformation, Sso, SsoAccessToken}
 import com.blinkbox.books.slick.DatabaseSupport
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,6 +13,7 @@ import scala.util.Random
 
 trait SsoSyncService extends ((Option[User], SsoAccessToken) => Future[User]) {
   def apply(maybeUser: Option[User], ssoAccessToken: SsoAccessToken): Future[User]
+  def apply(ourUser: User, u: UserInformation): Future[User]
 }
 
 class DefaultSsoSyncService[DB <: DatabaseSupport](
@@ -45,21 +46,16 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
     } yield linkedUser
   }
 
-  private def syncExistingUser(ssoAccessToken: SsoAccessToken, user: User): Future[User] = {
-    val userFuture = sso.userInfo(ssoAccessToken).map { u =>
-      user.copy(
-        firstName = u.firstName,
-        lastName = u.lastName,
-        username = u.username,
-        ssoId = Some(u.userId))
+  private def checkUsernameUpdate(oldUser: User, newUser: User): Future[Unit] =
+    if (oldUser.username == newUser.username) Future.successful(())
+    else Future {
+      db.withSession { implicit session =>
+        userRepo.registerUsernameUpdate(oldUser.username, newUser)
+      }
     }
 
-    (for {
-      updatedUser <- userFuture if updatedUser != user
-      _           <- updateUser(updatedUser)
-      _           <- events.publish(UserUpdated(user, updatedUser))
-    } yield updatedUser) recover { case _: NoSuchElementException => user }
-  }
+  private def syncExistingUser(ssoAccessToken: SsoAccessToken, user: User): Future[User] =
+    sso.userInfo(ssoAccessToken).flatMap(apply(user, _))
 
   override def apply(maybeUser: Option[User], ssoAccessToken: SsoAccessToken): Future[User] =
     maybeUser.fold(syncNewUser(ssoAccessToken)) { user =>
@@ -69,4 +65,20 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
         updatedUser <- syncExistingUser(ssoAccessToken, user)
       } yield updatedUser
     }
+
+  override def apply(ourUser: User, ssoUser: UserInformation): Future[User] = {
+    val updatedUser = ourUser.copy(
+        firstName = ssoUser.firstName,
+        lastName = ssoUser.lastName,
+        username = ssoUser.username,
+        ssoId = Some(ssoUser.userId))
+   
+    if (updatedUser != ourUser) {
+      for {
+        _ <- checkUsernameUpdate(ourUser, updatedUser)
+        _ <- updateUser(updatedUser)
+        _ <- events.publish(UserUpdated(ourUser, updatedUser))
+      } yield updatedUser
+    } else Future.successful(ourUser)
+  }
 }

@@ -123,10 +123,11 @@ trait DefaultUserServiceComponent extends UserServiceComponent {
     with EventsComponent
     with AsyncComponent
     with TimeSupport
-    with SsoComponent =>
+    with SsoComponent
+    with SsoSyncComponent =>
 
   val userService = withServiceContext { implicit ec =>
-    new DefaultUserService(db, userRepository, sso, publisher)
+    new DefaultUserService(db, userRepository, ssoSync, sso, publisher)
   }
 }
 

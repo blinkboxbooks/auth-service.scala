@@ -181,6 +181,11 @@ class TestEnv extends
     users.filter(_.id === id).map(_.ssoId).update(Some(SsoUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
   }
 
+  def setUsername(id: UserId, username: String): Unit = db.withSession { implicit session =>
+    import tables._
+    users.filter(_.id === id).map(_.username).update(username)
+  }
+
   def ssoRequests: List[HttpRequest] = ssoClient.requests
 
   def cleanup(): Unit = {
