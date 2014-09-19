@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.21.5 ([#59](https://git.mobcastdev.com/Zuul/auth-service/pull/59) 2014-09-19 09:16:28)
+
+Fix interpretation of SSO authentication error
+
+### Bugfix
+
+This patch fixes the interpretation of authentication errors from SSO as, when provided wrong credentials, it responds with a 400 and a specific error field.
+
 ## 0.21.4 ([#58](https://git.mobcastdev.com/Zuul/auth-service/pull/58) 2014-09-17 12:41:14)
 
 CP-1833 Fix time-out happening after the server was idle for a while
