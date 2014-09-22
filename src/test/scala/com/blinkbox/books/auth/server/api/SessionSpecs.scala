@@ -38,10 +38,8 @@ class SessionSpecs extends ApiSpecBase {
     Get("/session") ~> addCredentials(OAuth2BearerToken(env.tokenInfoC.access_token)) ~> route ~> check {
       status should equal(StatusCodes.OK)
 
-      jsonResponseAs[SessionInfo] should matchPattern {
-        case SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(roles))
-          if roles.toSet == Set(UserRole.ContentManager.toString, UserRole.Employee.toString) =>
-      }
+      jsonResponseAs[SessionInfo] should equal(
+        SessionInfo(TokenStatus.Valid, Some(Elevation.Unelevated), None, Some(UserRole.CustomerServicesRep.toString :: UserRole.Employee.toString :: Nil)))
     }
   }
 

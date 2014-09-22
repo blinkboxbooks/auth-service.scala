@@ -65,8 +65,10 @@ class DefaultUserServiceSpecs extends SpecBase {
     whenReady(userService.updateUser(fullUserPatch.copy(username = None))(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
 
+      import tables._
+
       val previousUsername = db.withSession { implicit session =>
-        tables.previousUsernames.list.headOption
+        previousUsernames.filter(_.userId === userIdA).list.headOption
       }
 
       previousUsername shouldBe empty
@@ -97,8 +99,9 @@ class DefaultUserServiceSpecs extends SpecBase {
 
       updated should equal(Some(expectedUpdatedUser))
 
+      import tables._
       val previousUsername = db.withSession { implicit session =>
-        tables.previousUsernames.list
+        previousUsernames.filter(_.userId === userIdA).list
       }
 
       previousUsername should matchPattern {
