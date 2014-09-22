@@ -20,7 +20,7 @@ class DefaultAdminUserService[DB <: DatabaseSupport](
     db: DB#Database,
     userRepo: UserRepository[DB#Profile])(implicit ec: ExecutionContext) extends AdminUserService {
 
-  def info(u: (User, List[PreviousUsername])): AdminUserInfo = {
+  protected def info(u: (User, List[PreviousUsername])): AdminUserInfo = {
     val (user, history) = u
     AdminUserInfo(
       user_id = user.id.external,

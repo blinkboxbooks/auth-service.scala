@@ -6,7 +6,9 @@ import com.blinkbox.books.auth.server.sso.{SsoRefreshToken, SsoUserId}
 import com.blinkbox.books.slick.TablesContainer
 import org.joda.time.DateTime
 
+import scala.reflect.ClassTag
 import scala.slick.driver.JdbcProfile
+import scala.slick.lifted.{MappedProjection, ProvenShape}
 
 trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
   import driver.simple._
@@ -111,6 +113,17 @@ trait ZuulTables[Profile <: JdbcProfile] extends TablesContainer[Profile] {
     def username = column[String]("username", O.NotNull)
     def * = (id, createdAt, userId, username) <> (PreviousUsername.tupled, PreviousUsername.unapply)
     def user = foreignKey("fk_user_previous_username_to_users", userId, users)(_.id)
+
+    type OptionColumns = (Option[PreviousUsernameId], Option[DateTime], Option[UserId], Option[String])
+
+    def ? =
+      (id.?, createdAt.?, userId.?, username.?).<>[Option[PreviousUsername], OptionColumns](
+        {
+          case (Some(id), Some(createdAt), Some(userId), Some(username)) => Option(PreviousUsername(id, createdAt, userId, username))
+          case _ => None
+        },
+        { x: Option[PreviousUsername] => Option((x.map(_.id), x.map(_.createdAt), x.map(_.userId), x.map(_.username))) }
+      )
   }
 }
 

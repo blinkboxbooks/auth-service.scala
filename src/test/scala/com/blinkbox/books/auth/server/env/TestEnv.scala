@@ -170,6 +170,9 @@ class TestEnv extends
 
   val resetCredentials = ResetTokenCredentials(SsoPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
 
+  val userBPreviousUsername1 = PreviousUsername(PreviousUsernameId(1), now.minusDays(4), userIdB, "previous.userb.1@test.tst")
+  val userBPreviousUsername2 = PreviousUsername(PreviousUsernameId(2), now.minusDays(2), userIdB, "previous.userb.2@test.tst")
+
   def removeSSOTokens(): Unit = {
     import driver.simple._
     db.withSession { implicit session =>
@@ -209,6 +212,7 @@ class TestEnv extends
       tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
       tables.roles.forceInsertAll(UserRole.values.map(r => Role(RoleId(r.id), r, r.toString + " description")).toSeq: _*)
       tables.privileges ++= Seq(privilegeC1, privilegeC2)
+      tables.previousUsernames ++= Seq(userBPreviousUsername1, userBPreviousUsername2)
     }
 
     publisher.events = Nil
