@@ -7,12 +7,6 @@ import com.blinkbox.books.auth.server.services.{IdSearch, NameSearch, UsernameSe
 class DefaultAdminUserServiceSpecs extends SpecBase {
   import env._
 
-  val adminInfoUserA = AdminUserInfo(userIdA.external, userIdA.uri, userA.username, userA.firstName, userA.lastName, userA.allowMarketing, Nil)
-  val adminInfoUserB = AdminUserInfo(
-    userIdB.external, userIdB.uri, userB.username, userB.firstName, userB.lastName, userB.allowMarketing,
-    PreviousUsernameInfo(userBPreviousUsername2.username, userBPreviousUsername2.createdAt) ::
-    PreviousUsernameInfo(userBPreviousUsername1.username, userBPreviousUsername1.createdAt) :: Nil)
-
   "The admin search service" should "retrieve users by username" in {
     whenReady(adminUserService.userSearch(UsernameSearch("user.a@test.tst"))) { res =>
       res should equal(adminInfoUserA :: Nil)

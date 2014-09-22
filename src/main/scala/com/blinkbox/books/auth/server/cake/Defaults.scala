@@ -254,6 +254,7 @@ trait DefaultApiComponent extends ApiComponent {
     passwordAuthenticationService,
     refreshTokenService,
     passwordUpdateService,
+    adminUserService,
     authenticator)
 
   private val healthApi = new HealthCheckHttpService {

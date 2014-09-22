@@ -115,7 +115,7 @@ class TestEnv extends
   val userB = User(userIdB, now, now, "user.b@test.tst", "B First", "B Last", "b-password", true, Some(SsoUserId("sso-b")))
   val userC = User(userIdC, now, now, "user.c@test.tst", "C First", "C Last", "c-password", true, None)
 
-  val privilegeC1 = Privilege(PrivilegeId(1), now, userIdC, RoleId(UserRole.ContentManager.id))
+  val privilegeC1 = Privilege(PrivilegeId(1), now, userIdC, RoleId(UserRole.CustomerServicesRep.id))
   val privilegeC2 = Privilege(PrivilegeId(2), now, userIdC, RoleId(UserRole.Employee.id))
 
   def fullUserPatch = UserPatch(Some("Updated First"), Some("Updated Last"), Some("updated@test.tst"), Some(false), None)
@@ -172,6 +172,12 @@ class TestEnv extends
 
   val userBPreviousUsername1 = PreviousUsername(PreviousUsernameId(1), now.minusDays(4), userIdB, "previous.userb.1@test.tst")
   val userBPreviousUsername2 = PreviousUsername(PreviousUsernameId(2), now.minusDays(2), userIdB, "previous.userb.2@test.tst")
+
+  val adminInfoUserA = AdminUserInfo(userIdA.external, userIdA.uri, userA.username, userA.firstName, userA.lastName, userA.allowMarketing, Nil)
+  val adminInfoUserB = AdminUserInfo(
+    userIdB.external, userIdB.uri, userB.username, userB.firstName, userB.lastName, userB.allowMarketing,
+    PreviousUsernameInfo(userBPreviousUsername2.username, userBPreviousUsername2.createdAt) ::
+    PreviousUsernameInfo(userBPreviousUsername1.username, userBPreviousUsername1.createdAt) :: Nil)
 
   def removeSSOTokens(): Unit = {
     import driver.simple._
