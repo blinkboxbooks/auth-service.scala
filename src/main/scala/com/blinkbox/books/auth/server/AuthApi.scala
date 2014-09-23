@@ -282,9 +282,6 @@ class AuthApi(
     case ZuulUnknownException(msg, inner) =>
       log.error(s"Unknown error: $msg", inner)
       complete(InternalServerError, HttpEntity.Empty)
-    case e =>
-      e.printStackTrace()
-      complete(InternalServerError, HttpEntity.Empty)
   }
 
   def rejectionHandler = RejectionHandler {
