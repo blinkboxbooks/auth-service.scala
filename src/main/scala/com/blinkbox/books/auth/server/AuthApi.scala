@@ -253,12 +253,14 @@ class AuthApi(
     }
   }
 
-  val routes: Route = monitor() {
-    handleExceptions(exceptionHandler) {
-      handleRejections(rejectionHandler) {
-        querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
-          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange ~
-          validatePasswordResetToken ~ generatePasswordResetToken ~ admin
+  val routes: Route = rootPath(config.localUrl.path) {
+    monitor() {
+      handleExceptions(exceptionHandler) {
+        handleRejections(rejectionHandler) {
+          querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
+            updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange ~
+            validatePasswordResetToken ~ generatePasswordResetToken ~ admin
+        }
       }
     }
   }
