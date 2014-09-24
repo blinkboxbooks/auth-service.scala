@@ -1,5 +1,16 @@
 # Zuul Server Change Log
 
+## 0.22.0 ([#60](https://git.mobcastdev.com/Zuul/auth-service/pull/60) 2014-09-22 17:18:12)
+
+Implement administrative APIs
+
+### New features
+
+* Tracking of username change
+* User search admin endpoint
+* User details admin endpoint
+* Reduce logging on the connection pool to have clearer logs 
+
 ## 0.21.5 ([#59](https://git.mobcastdev.com/Zuul/auth-service/pull/59) 2014-09-19 09:16:28)
 
 Fix interpretation of SSO authentication error
