@@ -1,9 +1,3 @@
-// This is needed due to a bug in the scala reflection that makes tests intermittently fail.
-// See: https://issues.scala-lang.org/browse/SI-6240
-val testSettings = Seq(
-  parallelExecution in Test := true
-)
-
 val buildSettings = Seq(
   name := "auth-service-public",
   organization := "com.blinkbox.books.zuul",
@@ -23,6 +17,7 @@ val dependencySettings = Seq(
       "commons-lang"              %   "commons-lang"          % "2.6",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
       "com.maxmind.geoip2"        %   "geoip2"                % "0.9.0",
+      "com.blinkbox.books"        %%  "common-config"         % "1.3.0",
       "com.blinkbox.books"        %%  "common-slick"          % "0.1.1",
       "com.blinkbox.books"        %%  "common-spray"          % "0.16.2",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.7.0",
@@ -38,5 +33,4 @@ val dependencySettings = Seq(
 val root = (project in file(".")).
   settings(rpmPrepSettings: _*).
   settings(buildSettings: _*).
-  settings(dependencySettings: _*).
-  settings(testSettings: _*)
+  settings(dependencySettings: _*)

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <logger name="scala.slick" level="INFO" />
-    <logger name="scala.slick.jdbc.JdbcBackend.statement" level="DEBUG" />
-    <logger name="com.zaxxer.hikari.pool.HikariPool" level="INFO" />
-</configuration>
