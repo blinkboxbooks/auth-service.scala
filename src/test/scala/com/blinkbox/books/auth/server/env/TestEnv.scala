@@ -97,6 +97,7 @@ class TestEnv extends
     DefaultRefreshTokenServiceComponent with
     DefaultSsoSyncComponent with
     DefaultPasswordUpdatedServiceComponent with
+    DefaultAdminUserServiceComponent with
     DefaultApiComponent with
     SsoResponder {
 
@@ -114,7 +115,7 @@ class TestEnv extends
   val userB = User(userIdB, now, now, "user.b@test.tst", "B First", "B Last", "b-password", true, Some(SsoUserId("sso-b")))
   val userC = User(userIdC, now, now, "user.c@test.tst", "C First", "C Last", "c-password", true, None)
 
-  val privilegeC1 = Privilege(PrivilegeId(1), now, userIdC, RoleId(UserRole.ContentManager.id))
+  val privilegeC1 = Privilege(PrivilegeId(1), now, userIdC, RoleId(UserRole.CustomerServicesRep.id))
   val privilegeC2 = Privilege(PrivilegeId(2), now, userIdC, RoleId(UserRole.Employee.id))
 
   def fullUserPatch = UserPatch(Some("Updated First"), Some("Updated Last"), Some("updated@test.tst"), Some(false), None)
@@ -169,6 +170,15 @@ class TestEnv extends
 
   val resetCredentials = ResetTokenCredentials(SsoPasswordResetToken("res3tt0ken"), "new-password", Some(clientIdA1.external), Some("test-secret-a1"))
 
+  val userBPreviousUsername1 = PreviousUsername(PreviousUsernameId(1), now.minusDays(4), userIdB, "previous.userb.1@test.tst")
+  val userBPreviousUsername2 = PreviousUsername(PreviousUsernameId(2), now.minusDays(2), userIdB, "previous.userb.2@test.tst")
+
+  val adminInfoUserA = AdminUserInfo(userIdA.external, userIdA.uri, userA.username, userA.firstName, userA.lastName, userA.allowMarketing, Nil)
+  val adminInfoUserB = AdminUserInfo(
+    userIdB.external, userIdB.uri, userB.username, userB.firstName, userB.lastName, userB.allowMarketing,
+    PreviousUsernameInfo(userBPreviousUsername2.username, userBPreviousUsername2.createdAt) ::
+    PreviousUsernameInfo(userBPreviousUsername1.username, userBPreviousUsername1.createdAt) :: Nil)
+
   def removeSSOTokens(): Unit = {
     import driver.simple._
     db.withSession { implicit session =>
@@ -181,6 +191,11 @@ class TestEnv extends
     users.filter(_.id === id).map(_.ssoId).update(Some(SsoUserId("B0E8428E-7DEB-40BF-BFBE-5D0927A54F65")))
   }
 
+  def setUsername(id: UserId, username: String): Unit = db.withSession { implicit session =>
+    import tables._
+    users.filter(_.id === id).map(_.username).update(username)
+  }
+
   def ssoRequests: List[HttpRequest] = ssoClient.requests
 
   def cleanup(): Unit = {
@@ -188,7 +203,7 @@ class TestEnv extends
 
     db.withSession { implicit session =>
       val ddl = tables.users.ddl ++ tables.clients.ddl ++ tables.refreshTokens.ddl ++ tables.loginAttempts.ddl ++
-        tables.roles.ddl ++ tables.privileges.ddl
+        tables.roles.ddl ++ tables.privileges.ddl ++ tables.previousUsernames.ddl
 
       try {
         ddl.drop
@@ -203,6 +218,7 @@ class TestEnv extends
       tables.refreshTokens ++= Seq(refreshTokenClientA1, refreshTokenClientA2, refreshTokenClientA3, refreshTokenNoClientA, refreshTokenNoClientDeregisteredA)
       tables.roles.forceInsertAll(UserRole.values.map(r => Role(RoleId(r.id), r, r.toString + " description")).toSeq: _*)
       tables.privileges ++= Seq(privilegeC1, privilegeC2)
+      tables.previousUsernames ++= Seq(userBPreviousUsername1, userBPreviousUsername2)
     }
 
     publisher.events = Nil

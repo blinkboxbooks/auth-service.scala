@@ -27,7 +27,7 @@ trait ClientAuthenticator[Profile <: BasicProfile] {
 trait UserInfoFactory {
   def userInfoFromUser(user: User) = UserInfo(
     user_id = user.id.external,
-    user_uri = s"/users/${user.id.value}",
+    user_uri = user.id.uri,
     user_username = user.username,
     user_first_name = user.firstName,
     user_last_name = user.lastName,
@@ -38,7 +38,7 @@ trait UserInfoFactory {
 trait ClientInfoFactory {
   def clientInfo(client: Client, includeClientSecret: Boolean = false) = ClientInfo(
     client_id = client.id.external,
-    client_uri = s"/clients/${client.id.value}",
+    client_uri = client.id.uri,
     client_name = client.name,
     client_brand = client.brand,
     client_model = client.model,

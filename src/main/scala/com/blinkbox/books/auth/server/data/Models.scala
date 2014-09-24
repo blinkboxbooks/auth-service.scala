@@ -13,6 +13,7 @@ import scala.concurrent.duration.FiniteDuration
 
 case class UserId(value: Int) extends AnyVal {
   def external = s"urn:blinkbox:zuul:user:$value"
+  def uri = s"/users/$value"
 }
 
 object UserId { val Invalid = UserId(-1) }
@@ -27,6 +28,7 @@ object ExternalUserId {
 
 case class ClientId(value: Int) extends AnyVal {
   def external = s"urn:blinkbox:zuul:client:$value"
+  def uri = s"/clients/$value"
 }
 
 object ClientId { val Invalid = ClientId(-1) }
@@ -90,3 +92,11 @@ case class RefreshToken(
 }
 
 case class LoginAttempt(createdAt: DateTime, username: String, successful: Boolean, clientIP: String)
+
+case class PreviousUsernameId(value: Int) extends AnyVal
+
+object PreviousUsernameId {
+  val invalid: PreviousUsernameId = PreviousUsernameId(-1)
+}
+
+case class PreviousUsername(id: PreviousUsernameId, createdAt: DateTime, userId: UserId, username: String)

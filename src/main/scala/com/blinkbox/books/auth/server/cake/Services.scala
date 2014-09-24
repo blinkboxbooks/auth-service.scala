@@ -88,6 +88,10 @@ trait PasswordUpdateServiceComponent {
   def passwordUpdateService: PasswordUpdateService
 }
 
+trait AdminUserServiceComponent {
+  def adminUserService: AdminUserService
+}
+
 trait SsoComponent {
   def sso: Sso
 }

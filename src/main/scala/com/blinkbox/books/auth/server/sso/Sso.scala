@@ -52,9 +52,6 @@ trait Sso {
   def extendSession(token: SsoAccessToken): Future[Unit]
   def userInfo(token: SsoAccessToken): Future[UserInformation]
   def updateUser(token: SsoAccessToken, req: UserPatch): Future[Unit]
-  // Admin
-  // def adminSearchUser(req: SearchUser): Future[SearchUserResult]
-  // def adminUserDetails(req: GetUserDetails): Future[UserDetail]
   // Health-check
   // def systemStatus(): Future[SystemStatus]
 }

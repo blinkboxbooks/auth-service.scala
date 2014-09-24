@@ -9,7 +9,7 @@ import com.blinkbox.books.time.Clock
 
 import scala.concurrent.{Promise, ExecutionContext, Future}
 import scala.slick.profile.BasicProfile
-import scala.util.{Failure, Success}
+import scala.util.{Try, Failure, Success}
 
 trait UserService {
   def updateUser(patch: UserPatch)(implicit user: AuthenticatedUser): Future[Option[UserInfo]]
@@ -17,7 +17,7 @@ trait UserService {
 }
 
 class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Database]
-  (db: Database, repo: UserRepository[Profile], sso: Sso, events: Publisher)
+  (db: Database, repo: UserRepository[Profile], ssoSync: SsoSyncService, sso: Sso, events: Publisher)
   (implicit ec: ExecutionContext, clock: Clock) extends UserService with UserInfoFactory {
 
   private def updateLocalUser(user: User, patch: UserPatch): UserInfo = {
@@ -31,6 +31,10 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     if (updatedUser != user) {
       db.withSession { implicit session => repo.updateUser(updatedUser)}
       events.publish(UserUpdated(user, updatedUser))
+    }
+
+    if (updatedUser.username != user.username) {
+      db.withSession { implicit session => repo.registerUsernameUpdate(user.username, updatedUser) }
     }
 
     userInfoFromUser(updatedUser)
@@ -60,6 +64,13 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
   private def userFromSso(token: SsoAccessToken): Future[Option[UserInformation]] =
     sso.userInfo(token).map(Option.apply).recover { case SsoUnauthorized => None }
 
+  private def optionSync(dbUser: Option[User], ssoUser: Option[UserInformation]): Future[User] =
+    (dbUser, ssoUser) match {
+      case (None, Some(_)) => Future.failed(Failures.unverifiedIdentity)
+      case (Some(dbU), Some(ssoU)) => ssoSync(dbU, ssoU)
+      case (_, None) => Future.failed(Failures.unknownError("The user doesn't exist on the SSO service"))
+    }
+
   private def getSyncedUser(id: UserId, token: SsoAccessToken): Future[Option[User]] = {
     val dbFutureOption = userFromDb(id)
     val ssoFutureOption = userFromSso(token)
@@ -67,27 +78,8 @@ class DefaultUserService[Profile <: BasicProfile, Database <: Profile#Backend#Da
     for {
       dbOption <- dbFutureOption
       ssoOption <- ssoFutureOption
-    } yield {
-
-      (dbOption, ssoOption) match {
-        case (None, Some(_)) => throw Failures.unverifiedIdentity
-        case (Some(dbU), Some(ssoU)) =>
-          val updatedUser = dbU.copy(
-            firstName = ssoU.firstName,
-            lastName = ssoU.lastName,
-            username = ssoU.username,
-            ssoId = Some(ssoU.userId)
-          )
-
-          if (dbU != updatedUser) {
-            db.withSession { implicit session => repo.updateUser(updatedUser)}
-            events.publish(UserUpdated(dbU, updatedUser))
-          }
-
-          Option(updatedUser)
-        case (_, None) => throw Failures.unknownError("The user doesn't exist on the SSO service")
-      }
-    }
+      synced <- optionSync(dbOption, ssoOption)
+    } yield Option(synced)
   }
 
   override def getUserInfo()(implicit user: AuthenticatedUser): Future[Option[UserInfo]] =

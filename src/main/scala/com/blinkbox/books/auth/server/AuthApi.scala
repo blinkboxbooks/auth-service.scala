@@ -3,12 +3,13 @@ package com.blinkbox.books.auth.server
 import akka.actor.ActorRefFactory
 import akka.util.Timeout
 import com.blinkbox.books.auth.Elevation._
-import com.blinkbox.books.auth.User
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server.services._
 import com.blinkbox.books.auth.server.sso.{SsoPasswordResetToken, SsoUnknownException}
+import com.blinkbox.books.auth.{Constraints, User, UserRole}
 import com.blinkbox.books.config.ApiConfig
 import com.blinkbox.books.logging.DiagnosticExecutionContext
+import com.blinkbox.books.spray.AuthDirectives._
 import com.blinkbox.books.spray.{Directives, _}
 import org.slf4j.LoggerFactory
 import spray.http.HttpEntity
@@ -26,6 +27,7 @@ class AuthApi(
     passwordAuthenticationService: PasswordAuthenticationService,
     refreshTokenService: RefreshTokenService,
     passwordUpdateService: PasswordUpdateService,
+    adminUserService: AdminUserService,
     authenticator: ElevatedContextAuthenticator[User])(implicit val actorRefFactory: ActorRefFactory)
   extends HttpService with Directives with FormDataUnmarshallers {
 
@@ -38,7 +40,13 @@ class AuthApi(
   val UserId = IntNumber.map(data.UserId(_))
   val ClientId = IntNumber.map(data.ClientId(_))
   val RefreshTokenId = IntNumber.map(data.RefreshTokenId(_))
-  val ResetToken = Deserializer.fromFunction2Converter((s: String) => SsoPasswordResetToken(s))
+
+  val resetTokenDeserializer = Deserializer.fromFunction2Converter((s: String) => SsoPasswordResetToken(s))
+  val userIdDeserializer = Deserializer.fromFunction2Converter((s: String) => data.UserId(s.toInt))
+
+  val withSearchCriteria = formFields('username).as[SearchCriteria](UsernameSearch) |
+    formField('first_name, 'last_name).as[SearchCriteria](NameSearch) |
+    formFields('user_id.as(userIdDeserializer)).as[SearchCriteria](IdSearch)
 
   val registerUser: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
     formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>
@@ -69,7 +77,7 @@ class AuthApi(
   }
 
   val resetPassword: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:password-reset-token") {
-    formFields('password_reset_token.as(ResetToken), 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
+    formFields('password_reset_token.as(resetTokenDeserializer), 'password, 'client_id.?, 'client_secret.?).as(ResetTokenCredentials) { credentials =>
       onSuccess(passwordUpdateService.resetPassword(credentials)) { tokenInfo =>
         uncacheable(OK, tokenInfo)
       }
@@ -228,12 +236,31 @@ class AuthApi(
     }
   }
 
-  val routes: Route = monitor() {
-    handleExceptions(exceptionHandler) {
-      handleRejections(rejectionHandler) {
-        querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
-          updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange ~
-          validatePasswordResetToken ~ generatePasswordResetToken
+  val admin: Route = pathPrefix("admin") {
+    authenticateAndAuthorize(authenticator, Constraints.hasAnyRole(UserRole.CustomerServicesManager, UserRole.CustomerServicesRep)) { _ =>
+      path("users") {
+        withSearchCriteria { criteria =>
+          onSuccess(adminUserService.userSearch(criteria)) { info =>
+            complete(OK, info)
+          }
+        }
+      } ~
+      path("users" / UserId) { id =>
+        onSuccess(adminUserService.userDetails(id)) { info =>
+          complete(OK, info)
+        }
+      }
+    }
+  }
+
+  val routes: Route = rootPath(config.localUrl.path) {
+    monitor() {
+      handleExceptions(exceptionHandler) {
+        handleRejections(rejectionHandler) {
+          querySession ~ renewSession ~ oAuthToken ~ registerClient ~ listClients ~ getClientById ~
+            updateClient ~ deleteClient ~ revokeRefreshToken ~ getUserInfo ~ updateUserInfo ~ passwordChange ~
+            validatePasswordResetToken ~ generatePasswordResetToken ~ admin
+        }
       }
     }
   }

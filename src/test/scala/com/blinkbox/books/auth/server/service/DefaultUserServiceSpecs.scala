@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.data.{User, UserId}
+import com.blinkbox.books.auth.server.data.{PreviousUsernameId, PreviousUsername, User, UserId}
 import com.blinkbox.books.auth.server.events.UserUpdated
 import com.blinkbox.books.auth.server.sso.SsoUserId
 import com.blinkbox.books.auth.server.{Failures, ZuulAuthorizationException, ZuulUnknownException}
@@ -56,7 +56,26 @@ class DefaultUserServiceSpecs extends SpecBase {
     failingWith[ZuulUnknownException](userService.getUserInfo()(authenticatedUserA))
   }
 
-  it should "update an user given new details and return updated user information" in {
+  it should "not create a previous-username record for an update that doesn't involve username" in {
+    ssoSuccessfulJohnDoeInfo()
+    ssoNoContent()
+
+    setUsername(userIdA, "john.doe+blinkbox@example.com")
+
+    whenReady(userService.updateUser(fullUserPatch.copy(username = None))(authenticatedUserA)) { infoOpt =>
+      infoOpt shouldBe defined
+
+      import tables._
+
+      val previousUsername = db.withSession { implicit session =>
+        previousUsernames.filter(_.userId === userIdA).list.headOption
+      }
+
+      previousUsername shouldBe empty
+    }
+  }
+
+  it should "update an user given new details, populate previous-username records and return updated user information" in {
     ssoSuccessfulJohnDoeInfo()
     ssoNoContent()
 
@@ -79,6 +98,16 @@ class DefaultUserServiceSpecs extends SpecBase {
       val expectedUpdatedUser = User(UserId(1), now, now, "updated@test.tst", "Updated First", "Updated Last", "a-password", false, Some(SsoUserId("6E41CB9F")))
 
       updated should equal(Some(expectedUpdatedUser))
+
+      import tables._
+      val previousUsername = db.withSession { implicit session =>
+        previousUsernames.filter(_.userId === userIdA).list
+      }
+
+      previousUsername should matchPattern {
+        case PreviousUsername(PreviousUsernameId(_), _, UserId(1), "user.a@test.tst") ::
+          PreviousUsername(PreviousUsernameId(_), _, UserId(1), "john.doe+blinkbox@example.com") :: Nil =>
+      }
 
       publisherSpy.events shouldEqual(
         UserUpdated(ssoSynced, expectedUpdatedUser) ::
