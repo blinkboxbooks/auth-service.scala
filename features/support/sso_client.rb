@@ -2,7 +2,9 @@ class SSOClient
   include HTTParty
 
   attr_accessor :headers
-  SSO_BASIC_TOKEN = 'Ym9va3M6NWdRaEcxZG14djJtZkFZ'
+  SSO_BASIC_BOOKS_TOKEN = 'Ym9va3M6NWdRaEcxZG14djJtZkFZ'
+  SSO_BASIC_MOVIES_TOKEN = 'bW92aWVzOkN6R0ZRVzdMVkN3NWxIeA=='
+  SSO_BASIC_MUSIC_TOKEN = 'bXVzaWM6aFBnaHo2SW9KR3lqTlRF'
   ADMIN_PORT = ':444'
 
   def initialize(server_uri)
@@ -12,6 +14,7 @@ class SSOClient
   end
 
   def authenticate(params)
+    headers["Authorization"] = "Basic #{SSO_BASIC_BOOKS_TOKEN}"
     http_post "/v1/oauth2/token", params
   end
 
@@ -23,9 +26,27 @@ class SSOClient
       first_name: user.first_name,
       last_name: user.last_name,
       accepted_terms_and_conditions: user.accepted_terms_and_conditions,
-      allow_marketing_communications: user.allow_marketing_communications
+      allow_marketing_communications: user.allow_marketing_communications,
+      scope: user.scope
     }
+    case user.scope
+      when 'sso:music'
+        headers["Authorization"] = "Basic #{SSO_BASIC_MUSIC_TOKEN}"
+      when 'sso:movies'
+        headers["Authorization"] = "Basic #{SSO_BASIC_MOVIES_TOKEN}"
+      else
+        headers["Authorization"] = "Basic #{SSO_BASIC_BOOKS_TOKEN}"
+    end
     http_post "/v1/oauth2/token", params
+  end
+
+  def link(access_token)
+    params = {
+      service_user_id: 'urn:blinkbox:zuul:user:00001',
+      service_allow_marketing: true,
+      service_tc_accepted_version: '1',
+    }
+    http_post "/v1/link", params, access_token
   end
 
   def admin_find_user(params = {}, access_token)
@@ -53,7 +74,7 @@ class SSOClient
 
   def http_send(verb, uri, body_params, access_token = nil)
     headers = { "Accept" => "application/json", "X-CSRF-Protection" => "engaged" }.merge(@headers)
-    access_token ? headers["Authorization"] = "Bearer #{access_token}" : headers["Authorization"] = "Basic #{SSO_BASIC_TOKEN}"
+    headers["Authorization"] = "Bearer #{access_token}" if access_token
     body_params.reject! { |_k, v| v.nil? }
     body_params = URI.encode_www_form(body_params) unless body_params.is_a?(String)
     self.class.send(verb, uri.to_s, headers: headers, body: body_params)
