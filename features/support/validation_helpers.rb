@@ -65,11 +65,10 @@ def validate_sso_user_response
   expect(user_info["gender"]).to eq('U')
   expect(user_info["validated"]).to eq(false)
   expect(user_info["group_allow_marketing"]).to eq(false)
+end
 
-  linked_accounts = user_info["linked_accounts"][0]
-  expect(linked_accounts["service"]).to eq('books')
-  expect(linked_accounts["service_user_id"]).to eq(@me.id)
-  expect(linked_accounts["service_linked_on"]).to_not be_nil
-  expect(linked_accounts["service_allow_marketing"]).to eq(@me.allow_marketing_communications)
-  expect(linked_accounts["service_tc_accepted_version"]).to eq('1.0')
+def validate_sso_linked_to_books
+  expect(last_response.status).to eq(200)
+  linked_accounts = last_response_json[0]["user"]["linked_accounts"]
+  expect(linked_accounts.find { |accts| accts["service"] == 'books' }["service_user_id"]).to eq(@me.id)
 end
