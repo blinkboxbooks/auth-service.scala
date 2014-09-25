@@ -10,7 +10,7 @@ class ResetPasswordSpecs extends SpecBase {
     ssoSuccessfulAuthentication()
 
     whenReady(sso.resetPassword(SsoPasswordResetToken("some-token"), "new-password"))(_ should matchPattern {
-      case cred: SsoUserCredentials =>
+      case cred: SsoAuthenticatedCredentials =>
     })
   }
 

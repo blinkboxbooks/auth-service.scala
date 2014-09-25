@@ -4,10 +4,13 @@ import java.io.File
 
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
+import com.blinkbox.books.auth.server.events.{PartialMigration, TotalMigration, ResetMigration, Publisher}
+import com.blinkbox.books.auth.server.sso.MigrationStatus
 import com.maxmind.geoip2.DatabaseReader.Builder
 import com.maxmind.geoip2.exception.GeoIp2Exception
 import spray.http.RemoteAddress
 
+import scala.concurrent.Future
 import scala.slick.profile.BasicProfile
 import scala.util.{Failure, Success, Try}
 
@@ -61,6 +64,22 @@ class MaxMindGeoIP extends GeoIP {
       case Success(r) => Some(r)
       case Failure(ex: GeoIp2Exception) => None
       case Failure(ex) => throw ex
+    }
+  }
+}
+
+trait SsoMigrationPublisher {
+  implicit class MigrationPublisher(val publisher: Publisher) {
+    import MigrationStatus._
+    import com.blinkbox.books.auth.server.events
+
+    def publishSsoMigration(user: User, status: MigrationStatus): Future[Unit] = {
+      status match {
+        case NoMigration => Future.successful(())
+        case TotalMatch => publisher.publish(TotalMigration(user))
+        case PartialMatch => publisher.publish(PartialMigration(user))
+        case ResetMatch => publisher.publish(ResetMigration(user))
+      }
     }
   }
 }

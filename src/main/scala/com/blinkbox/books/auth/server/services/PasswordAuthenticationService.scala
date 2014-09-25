@@ -39,7 +39,7 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
   }
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
-    val ssoAuthenticationFuture = sso authenticate (credentials)
+    val ssoAuthenticationFuture = sso authenticate (credentials) map (_.credentials)
 
     for {
       ssoCredentials  <- ssoAuthenticationFuture

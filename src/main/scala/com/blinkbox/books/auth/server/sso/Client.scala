@@ -11,10 +11,18 @@ import spray.httpx.unmarshalling.FromResponseUnmarshaller
 
 import scala.concurrent.{ExecutionContext, Future}
 
+sealed trait DecodedResponse { 
+  def status: StatusCode
+  def headers: List[HttpHeader] 
+}
+case class DataResponse[T](data: T, status: StatusCode, headers: List[HttpHeader]) extends DecodedResponse
+case class UnitResponse(status: StatusCode, headers: List[HttpHeader]) extends DecodedResponse
+
 trait Client {
   def defaultCredentials: HttpCredentials
   def unitRequest(req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[Unit]
   def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[T]
+  def request[T: FromResponseUnmarshaller](req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[DataResponse[T]]
 }
 
 trait SprayClient extends Client {
@@ -47,6 +55,12 @@ trait SprayClient extends Client {
 
   protected def dataPipeline[T : FromResponseUnmarshaller](credentials: HttpCredentials) =
     basePipeline(credentials) ~> unmarshal[T]
+  
+  protected def requestPipeline[T : FromResponseUnmarshaller](credentials: HttpCredentials) = {
+    basePipeline(credentials) ~> { resp: HttpResponse =>
+      DataResponse(resp ~> unmarshal[T], resp.status, resp.headers)
+    }
+  }
 
   override val defaultCredentials = config.credentials
 
@@ -55,6 +69,9 @@ trait SprayClient extends Client {
 
   override def dataRequest[T : FromResponseUnmarshaller](req: HttpRequest, credentials: HttpCredentials = defaultCredentials): Future[T] =
     req ~> dataPipeline[T](credentials)
+
+  override def request[T: FromResponseUnmarshaller](req: HttpRequest, credentials: HttpCredentials = defaultCredentials) =
+    req ~> requestPipeline[T](credentials)
 }
 
 class DefaultClient(val config: SsoConfig)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SprayClient
