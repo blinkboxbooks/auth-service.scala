@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.1 ([#61](https://git.mobcastdev.com/Zuul/auth-service/pull/61) 2014-09-24 11:59:42)
+
+Acceptance tests - sso updates
+
+### Test improvement
+- Remove PENDING from steps that are now implemented
+- Add tests to create SSO users linked to movies/music and attempt to log in via books
+
 ## 0.22.0 ([#60](https://git.mobcastdev.com/Zuul/auth-service/pull/60) 2014-09-22 17:18:12)
 
 Implement administrative APIs
