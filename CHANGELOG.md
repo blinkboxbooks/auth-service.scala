@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.2 ([#62](https://git.mobcastdev.com/Zuul/auth-service/pull/62) 2014-09-25 13:02:42)
+
+Deploy
+
+### Patch
+
+This PR fixes an issue with the DNS cache of the JVM and uses a unique configuration key for setting the path of the keys to use.
+
 ## 0.22.1 ([#61](https://git.mobcastdev.com/Zuul/auth-service/pull/61) 2014-09-24 11:59:42)
 
 Acceptance tests - sso updates
