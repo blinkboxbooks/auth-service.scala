@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.22.3 ([#63](https://git.mobcastdev.com/Zuul/auth-service/pull/63) 2014-09-26 10:30:29)
+
+Fix bugs preventing deploy
+
+### Bugfix
+
+* Fix configuration failure
+* Fix classpath resource resolution for GeoIP database in fatjar
+
 ## 0.22.2 ([#62](https://git.mobcastdev.com/Zuul/auth-service/pull/62) 2014-09-25 13:02:42)
 
 Deploy
