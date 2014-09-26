@@ -6,18 +6,29 @@ import akka.actor.ActorSystem
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.cake._
 import com.blinkbox.books.auth.server.data.{Client, _}
+import com.blinkbox.books.auth.server.env.PublisherSpy
+import com.blinkbox.books.auth.server.events.{Publisher, Event}
 import com.blinkbox.books.auth.server.sso._
 import com.blinkbox.books.auth.{User => AuthenticatedUser, UserRole}
 import com.blinkbox.books.slick.H2DatabaseSupport
-import com.blinkbox.books.testkit.PublisherSpy
 import com.blinkbox.books.time.{StoppedClock, TimeSupport}
 import com.typesafe.config.ConfigFactory
 import org.h2.jdbc.JdbcSQLException
 import org.joda.time.Duration
 import spray.http.HttpRequest
 
+import scala.concurrent.Future
 import scala.slick.driver.H2Driver
 import scala.slick.jdbc.JdbcBackend.Database
+
+class PublisherSpy extends Publisher {
+  var events = List.empty[Event]
+
+  override def publish(event: Event): Future[Unit] = {
+    events ::= event
+    Future.successful(())
+  }
+}
 
 trait StoppedClockSupport extends TimeSupport {
   override val clock = StoppedClock()
