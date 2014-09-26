@@ -13,6 +13,7 @@ import scala.collection.convert.Wrappers
 import scala.concurrent.duration._
 
 case class AppConfig(
+    raw: Config,
     service: ApiConfig,
     db: DatabaseConfig,
     hikari: HikariConfig,
@@ -153,6 +154,7 @@ object SsoConfig {
 
 object AppConfig {
   def apply(config: Config): AppConfig = AppConfig(
+    config,
     ApiConfig(config, "service.auth.api.public"),
     DatabaseConfig(config, "service.auth.db"),
     HikariConfig(config, "service.auth.hikari"),

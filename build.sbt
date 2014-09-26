@@ -9,7 +9,6 @@ val buildSettings = Seq(
 
 val dependencySettings = Seq(
   libraryDependencies ++= {
-    val akkaV = "2.3.6"
     val sprayV = "1.3.1"
     Seq(
       "io.spray"                  %%  "spray-client"          % sprayV,
@@ -17,15 +16,15 @@ val dependencySettings = Seq(
       "commons-lang"              %   "commons-lang"          % "2.6",
       "com.lambdaworks"           %   "scrypt"                % "1.4.0",
       "com.maxmind.geoip2"        %   "geoip2"                % "0.9.0",
-      "com.blinkbox.books"        %%  "common-config"         % "1.4.0",
+      "com.blinkbox.books"        %%  "common-config"         % "1.4.1",
       "com.blinkbox.books"        %%  "common-slick"          % "0.1.1",
       "com.blinkbox.books"        %%  "common-spray"          % "0.16.2",
       "com.blinkbox.books"        %%  "common-spray-auth"     % "0.7.0",
       "com.blinkbox.books.hermes" %%  "rabbitmq-ha"           % "6.0.5",
       "com.blinkbox.books.hermes" %%  "message-schemas"       % "0.6.2",
-      "com.blinkbox.books"        %%  "common-scala-test"     % "0.3.0"   % "test",
-      "io.spray"                  %%  "spray-testkit"         % sprayV    % "test",
-      "xmlunit"                   %   "xmlunit"               % "1.5"     % "test"
+      "com.blinkbox.books"        %%  "common-scala-test"     % "0.3.0"   % Test,
+      "io.spray"                  %%  "spray-testkit"         % sprayV    % Test,
+      "xmlunit"                   %   "xmlunit"               % "1.5"     % Test
     )
   }
 )

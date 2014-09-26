@@ -1,11 +1,8 @@
 package com.blinkbox.books.auth.server.sso
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.io.IO
-import akka.pattern.ask
+import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.blinkbox.books.auth.server.SsoConfig
-import spray.can.Http
 import spray.client.pipelining._
 import spray.http.HttpHeaders.Host
 import spray.http._

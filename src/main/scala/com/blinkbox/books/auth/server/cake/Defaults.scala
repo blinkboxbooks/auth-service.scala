@@ -28,7 +28,8 @@ trait DefaultConfigComponent extends ConfigComponent {
 }
 
 trait DefaultAsyncComponent extends AsyncComponent {
-  override val actorSystem: ActorSystem = ActorSystem("auth-server")
+  this: ConfigComponent =>
+  override val actorSystem: ActorSystem = ActorSystem("auth-server", config.raw)
   override val apiExecutionContext = DiagnosticExecutionContext(actorSystem.dispatcher)
   override val ssoClientExecutionContext = DiagnosticExecutionContext(ExecutionContext.fromExecutorService(new ForkJoinPool))
   override val serviceExecutionContext = DiagnosticExecutionContext(ExecutionContext.fromExecutorService(new ForkJoinPool))
