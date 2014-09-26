@@ -52,9 +52,7 @@ trait GeoIP {
 }
 
 class MaxMindGeoIP extends GeoIP {
-  private val geoIpDb = new File(getClass.getResource("/geoip/GeoIP2-Country.mmdb").toURI.getPath)
-
-  require(geoIpDb.exists(), "Cannot find GeoIP database")
+  private val geoIpDb = getClass.getResourceAsStream("/geoip/GeoIP2-Country.mmdb")
 
   private val db = new Builder(geoIpDb).build()
 

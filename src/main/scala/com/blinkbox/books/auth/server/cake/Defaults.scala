@@ -220,7 +220,7 @@ trait DefaultAdminUserServiceComponent extends AdminUserServiceComponent {
 trait DefaultSsoComponent extends SsoComponent {
   this: ConfigComponent with AsyncComponent =>
 
-  private val keyStore = new FileKeyStore(config.sso.keyStore)
+  private val keyStore = new FileKeyStore(config.sso.keyPath)
   private val tokenDecoder = new SsoAccessTokenDecoder(keyStore)
   override val sso = withSsoClientContext { implicit ec =>
     new DefaultSso(config.sso, new DefaultClient(config.sso), tokenDecoder)(ssoClientExecutionContext)

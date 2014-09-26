@@ -41,9 +41,9 @@ case class SsoConfig(
     version: String,
     credentials: HttpCredentials,
     timeout: FiniteDuration,
-    keyStore: String) {
+    keyPath: String) {
 
-  require(Files.exists(Paths.get(keyStore)), s"SSO key-store file not found: $keyStore")
+  require(Files.exists(Paths.get(keyPath)), s"SSO key file not found: $keyPath")
 }
 
 case class HikariConfig(
@@ -147,7 +147,7 @@ object SsoConfig {
     version = config.getString("sso.version"),
     credentials = BasicHttpCredentials(config.getString("sso.credentials.username"), config.getString("sso.credentials.password")),
     timeout = config.getFiniteDuration("sso.timeout"),
-    keyStore = config.getString("sso.keyStore")
+    keyPath = config.getString("sso.keyPath")
   )
 }
 
