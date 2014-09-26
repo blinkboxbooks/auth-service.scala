@@ -14,6 +14,14 @@ class ResetPasswordSpecs extends SpecBase {
     })
   }
 
+  it should "return the correct migration status if an user migrated to SSO while resetting his password" in {
+    ssoSuccessfulAuthentication(MigrationStatus.ResetMatch)
+
+    whenReady(sso.resetPassword(SsoPasswordResetToken("some-token"), "new-password")) {
+      _.migrationStatus should equal(MigrationStatus.ResetMatch)
+    }
+  }
+
   it should "signal a request failure if the SSO service replies with a 400" in {
     ssoInvalidRequest("Some error")
 

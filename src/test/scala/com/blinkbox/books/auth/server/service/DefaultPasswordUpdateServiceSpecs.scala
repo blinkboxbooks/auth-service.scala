@@ -1,7 +1,7 @@
 package com.blinkbox.books.auth.server.service
 
 import com.blinkbox.books.auth.server._
-import com.blinkbox.books.auth.server.events.UserPasswordResetRequested
+import com.blinkbox.books.auth.server.events.{ResetMigration, UserPasswordResetRequested}
 import com.blinkbox.books.auth.server.sso._
 import spray.http.StatusCodes
 
@@ -75,6 +75,15 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
     ssoUnsuccessfulAuthentication()
 
     failingWith[ZuulRequestException](passwordUpdateService.resetPassword(resetCredentials)) should equal(Failures.invalidPasswordResetToken)
+  }
+
+  it should "fire the correct event in case the user migrated to SSO while updating his password" in {
+    ssoSuccessfulAuthentication(MigrationStatus.ResetMatch)
+    ssoSuccessfulUserAInfo()
+
+    whenReady(passwordAuthenticationService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", None, None), None)) { _ =>
+      publisherSpy.events should contain(ResetMigration(userA.copy(ssoId = Some(SsoUserId(ssoUserId)))))
+    }
   }
 
   "The password reset token validation function" should "return a successful future if SSO validates the given reset token" in {

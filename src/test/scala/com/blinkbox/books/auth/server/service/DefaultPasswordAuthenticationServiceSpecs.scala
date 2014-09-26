@@ -3,7 +3,8 @@ package com.blinkbox.books.auth.server.service
 import com.blinkbox.books.auth.server.ZuulRequestErrorCode.{InvalidClient, InvalidGrant, InvalidRequest}
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data.{User, UserId}
-import com.blinkbox.books.auth.server.events.{UserAuthenticated, UserRegistered, UserUpdated}
+import com.blinkbox.books.auth.server.events._
+import com.blinkbox.books.auth.server.sso.{SsoUserId, MigrationStatus}
 import spray.http.{HttpEntity, HttpResponse, StatusCodes}
 
 class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
@@ -123,5 +124,22 @@ class DefaultPasswordAuthenticationServiceSpecs extends SpecBase {
         publisherSpy.events should equal(UserAuthenticated(u, None) :: UserUpdated(notLinkedUser, u) :: Nil)
       }
     }
+  }
+
+  def migrationTest(status: MigrationStatus, expected: UserToSsoMigration) = {
+    ssoSuccessfulAuthentication(status)
+    ssoSuccessfulUserAInfo()
+
+    whenReady(passwordAuthenticationService.authenticate(PasswordCredentials("user.a@test.tst", "a-password", None, None), None)) { _ =>
+      publisherSpy.events should contain(expected)
+    }
+  }
+
+  it should "fire the correct event in case of a total migration to SSO" in {
+    migrationTest(MigrationStatus.TotalMatch, TotalMigration(userA.copy(ssoId = Some(SsoUserId(ssoUserId)))))
+  }
+
+  it should "fire the correct event in case of a partial migration to SSO" in {
+    migrationTest(MigrationStatus.PartialMatch, PartialMigration(userA.copy(ssoId = Some(SsoUserId(ssoUserId)))))
   }
 }

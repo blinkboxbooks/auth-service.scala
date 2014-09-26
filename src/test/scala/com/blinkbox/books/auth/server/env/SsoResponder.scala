@@ -1,10 +1,11 @@
 package com.blinkbox.books.auth.server.env
 
-import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
+import com.blinkbox.books.auth.server.sso.{MigrationStatus, SsoTokenElevation, SsoTokenStatus}
 import spray.http.HttpHeaders.RawHeader
 import spray.http._
 
 trait SsoResponseFixtures {
+  val ssoUserId = "6E41CB9F"
   val validTokenSSOExpiry = 600
   val validTokenZuulExpiry = 540 // 1 minute before SSO token
   val validTokenJson = s"""{
@@ -20,7 +21,7 @@ trait SsoResponseFixtures {
   }"""
 
   val johnDoeInfoJson = s"""{
-    "user_id":"6E41CB9F",
+    "user_id":"${ssoUserId}",
     "username":"john.doe+blinkbox@example.com",
     "email":"john.doe@example.com",
     "first_name":"John",
@@ -41,7 +42,7 @@ trait SsoResponseFixtures {
   }"""
 
   val userAInfoJson = s"""{
-    "user_id":"6E41CB9F",
+    "user_id":"${ssoUserId}",
     "username":"user.a@test.tst",
     "email":"user.a@test.tst",
     "first_name":"A First",
@@ -105,9 +106,17 @@ trait SsoResponder extends SsoResponseFixtures {
       _.success(HttpResponse(StatusCodes.NoContent))
     )
 
-  def ssoSuccessfulAuthentication(): Unit = ssoResponse.complete(
-      _.success(HttpResponse(StatusCodes.OK, HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes)))
-    )
+  lazy val successfulAuthenticationEntity = HttpEntity(ContentTypes.`application/json`, validTokenJson.getBytes)
+
+  def ssoSuccessfulAuthentication(withMigration: MigrationStatus = MigrationStatus.NoMigration): Unit = withMigration match {
+    case MigrationStatus.NoMigration => ssoResponse.complete(
+        _.success(HttpResponse(StatusCodes.OK, successfulAuthenticationEntity))
+      )
+    case status => ssoResponse.complete(
+        _.success(HttpResponse(StatusCodes.Created, successfulAuthenticationEntity,
+          RawHeader("BB-Transition-Match", MigrationStatus.toString(status)) :: Nil))
+      )
+  }
   
   def ssoUnsuccessfulAuthentication(): Unit = ssoInvalidRequest("invalid username or password", "invalid_grant")
 
