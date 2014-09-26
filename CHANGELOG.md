@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.4 ([#64](https://git.mobcastdev.com/Zuul/auth-service/pull/64) 2014-09-26 13:34:33)
+
+Fixed Akka logging
+
+### Bugfix
+
+- Akka log messages now go to Graylog ([CP-1879](http://jira.blinkbox.local/jira/browse/CP-1879))
+
 ## 0.22.3 ([#63](https://git.mobcastdev.com/Zuul/auth-service/pull/63) 2014-09-26 10:30:29)
 
 Fix bugs preventing deploy
