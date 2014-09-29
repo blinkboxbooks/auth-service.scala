@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.7 ([#68](https://git.mobcastdev.com/Zuul/auth-service/pull/68) 2014-09-29 11:00:46)
+
+CP-1887 Fix error reasons for invalid password updates
+
+### Bugfix
+
+This patch fixes some wrong errors returned by the password update endpoint.
+
 ## 0.22.6 ([#67](https://git.mobcastdev.com/Zuul/auth-service/pull/67) 2014-09-29 10:29:07)
 
 CP-1886 Fix admin endpoint returning empty 200 for not found
