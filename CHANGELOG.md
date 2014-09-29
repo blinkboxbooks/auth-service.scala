@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.5 ([#66](https://git.mobcastdev.com/Zuul/auth-service/pull/66) 2014-09-29 10:08:39)
+
+CP-1885 Fix parameters for admin endpoints
+
+### Patch
+
+Fixes a bug not handling query parameters on the admin endpoints.
+
 ## 0.22.4 ([#64](https://git.mobcastdev.com/Zuul/auth-service/pull/64) 2014-09-26 13:34:33)
 
 Fixed Akka logging
