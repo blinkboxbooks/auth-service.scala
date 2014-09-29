@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.6 ([#67](https://git.mobcastdev.com/Zuul/auth-service/pull/67) 2014-09-29 10:29:07)
+
+CP-1886 Fix admin endpoint returning empty 200 for not found
+
+### Bugfix
+
+This patch fixes a wrong answer given for accessing details of a non-existing user trough the admin endpoint.
+
 ## 0.22.5 ([#66](https://git.mobcastdev.com/Zuul/auth-service/pull/66) 2014-09-29 10:08:39)
 
 CP-1885 Fix parameters for admin endpoints
