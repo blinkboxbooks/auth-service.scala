@@ -89,15 +89,7 @@ class TestEnv extends
     TestDatabaseComponent with
     DefaultTokenBuilderComponent with
     DefaultRepositoriesComponent with
-    DefaultUserServiceComponent with
-    DefaultClientServiceComponent with
-    DefaultAuthServiceComponent with
-    DefaultRegistrationServiceComponent with
-    DefaultPasswordAuthenticationServiceComponent with
-    DefaultRefreshTokenServiceComponent with
-    DefaultSsoSyncComponent with
-    DefaultPasswordUpdatedServiceComponent with
-    DefaultAdminUserServiceComponent with
+    DefaultServicesComponent with
     DefaultApiComponent with
     SsoResponder {
 
