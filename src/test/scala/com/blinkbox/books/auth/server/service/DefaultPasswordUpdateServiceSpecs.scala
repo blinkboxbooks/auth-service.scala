@@ -30,8 +30,6 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
   }
 
   it should "report a ZuulRequestException if a new password is not provided" in {
-    ssoInvalidRequest("form field new_password is required")
-
     failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "")(authenticatedUserA)) should equal(Failures.newPasswordMissing)
   }
 
