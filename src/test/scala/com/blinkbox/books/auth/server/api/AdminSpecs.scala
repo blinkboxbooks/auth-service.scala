@@ -80,8 +80,7 @@ class AdminSpecs extends ApiSpecBase with AuthorisationTestHelpers {
 
   it should "return a 404 if the user does not exist" in {
     details(UserId(100)) ~> check {
-      status should equal(StatusCodes.OK)
-      response.entity should equal (HttpEntity.Empty)
+      status should equal(StatusCodes.NotFound)
     }
   }
 

@@ -247,7 +247,7 @@ class AuthApi(
       } ~
       path("users" / UserId) { id =>
         onSuccess(adminUserService.userDetails(id)) { info =>
-          complete(OK, info)
+          info.fold(complete(NotFound))(complete(OK, _))
         }
       }
     }
