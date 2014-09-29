@@ -26,7 +26,13 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
   it should "report a ZuulRequestException if the SSO service doesn't accept the new password because it doesn't meet requirements" in {
     ssoInvalidRequest("Password does not meet minimum requirements")
 
-    failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) should equal(Failures.passwordTooShort)
+    failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "bar")(authenticatedUserA)) should equal(Failures.newPasswordTooShort)
+  }
+
+  it should "report a ZuulRequestException if a new password is not provided" in {
+    ssoInvalidRequest("form field new_password is required")
+
+    failingWith[ZuulRequestException](passwordUpdateService.updatePassword("foo", "")(authenticatedUserA)) should equal(Failures.newPasswordMissing)
   }
 
   it should "report a ZuulTooManyRequestException if the SSO service respond with a too-many-request response" in {
