@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.8 ([#69](https://git.mobcastdev.com/Zuul/auth-service/pull/69) 2014-09-29 15:10:08)
+
+Add note for OPS in the README.md
+
+### Improvements
+
+This patch adds some instructions for OPS at the top of the README.md
+
 ## 0.22.7 ([#68](https://git.mobcastdev.com/Zuul/auth-service/pull/68) 2014-09-29 11:00:46)
 
 CP-1887 Fix error reasons for invalid password updates
