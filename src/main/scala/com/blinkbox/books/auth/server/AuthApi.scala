@@ -44,9 +44,9 @@ class AuthApi(
   val resetTokenDeserializer = Deserializer.fromFunction2Converter((s: String) => SsoPasswordResetToken(s))
   val userIdDeserializer = Deserializer.fromFunction2Converter((s: String) => data.UserId(s.toInt))
 
-  val withSearchCriteria = formFields('username).as[SearchCriteria](UsernameSearch) |
-    formField('first_name, 'last_name).as[SearchCriteria](NameSearch) |
-    formFields('user_id.as(userIdDeserializer)).as[SearchCriteria](IdSearch)
+  val withSearchCriteria = parameters('username).as[SearchCriteria](UsernameSearch) |
+    parameters('first_name, 'last_name).as[SearchCriteria](NameSearch) |
+    parameters('user_id.as(userIdDeserializer)).as[SearchCriteria](IdSearch)
 
   val registerUser: Route = formField('grant_type ! "urn:blinkbox:oauth:grant-type:registration") {
     formFields('first_name, 'last_name, 'username, 'password, 'accepted_terms_and_conditions.as[Boolean], 'allow_marketing_communications.as[Boolean], 'client_name.?, 'client_brand.?, 'client_model.?, 'client_os.?).as(UserRegistration) { registration =>

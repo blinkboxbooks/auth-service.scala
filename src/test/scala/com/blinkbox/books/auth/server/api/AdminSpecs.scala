@@ -3,14 +3,17 @@ package com.blinkbox.books.auth.server.api
 import com.blinkbox.books.auth.server.AdminUserInfo
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
-import spray.http.{HttpEntity, FormData, OAuth2BearerToken, StatusCodes}
+import spray.http._
 
 class AdminSpecs extends ApiSpecBase with AuthorisationTestHelpers {
 
   val credentials = addCredentials(OAuth2BearerToken(env.tokenInfoC.access_token))
 
-  def search(params: (String, String)*): RouteResult =
-    Get("/admin/users", FormData(params.toMap)) ~> addCredentials(OAuth2BearerToken(env.tokenInfoC.access_token)) ~> route
+  def search(params: (String, String)*): RouteResult = {
+    val uri = Uri("/admin/users") withQuery(params : _*)
+
+    Get(uri) ~> addCredentials(OAuth2BearerToken(env.tokenInfoC.access_token)) ~> route
+  }
 
   def details(id: UserId): RouteResult =
     Get(s"/admin/users/${id.value.toString}") ~> addCredentials(OAuth2BearerToken(env.tokenInfoC.access_token)) ~> route
