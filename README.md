@@ -1,6 +1,16 @@
+# Authentication service
+
+**To run the authentication service in production please provide the following option to the JVM to avoid DNS caching issues:**
+
+```
+-Dnetworkaddress.cache.ttl=60
+```
+
+This example sets the TTL for the DNS cache to 60 seconds; it is up to OPS to decide the value that would best suite our environment (or maybe even disable the cache by setting the TTL to 0).
+
 # Beware!
 
-**This Readme is outdated as this repository contains the WIP for a new version of Zuul based on spray.**
+**This part of the Readme is outdated as this repository contains the WIP for a new version of Zuul based on spray.**
 
 # Zuul authentication server [![Build Status](http://teamcity01.mobcastdev.local:8111/app/rest/builds/buildType:%28id:Platform_ZuulServer_RakeBuild%29/statusIcon)](http://teamcity01.mobcastdev.local:8111/viewType.html?buildTypeId=Platform_ZuulServer_RakeBuild&guest=1)
 
