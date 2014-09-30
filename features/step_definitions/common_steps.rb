@@ -50,13 +50,13 @@ end
 
 Then(/^the response includes only expired token information$/) do
   expect(www_auth_header['error']).to eq('invalid_token')
-  expect(www_auth_header['error_description']).to eq('The access token expired')
+  expect(www_auth_header['error_description']).to eq('The access token is invalid')
 end
 
 Then(/^the response includes low elevation level information$/) do
   expect(www_auth_header['error']).to eq('invalid_token')
   expect(www_auth_header['error_reason']).to eq('unverified_identity')
-  expect(www_auth_header['error_description']).to eq('User identity must be reverified')
+  expect(www_auth_header['error_description']).to eq('You need to re-verify your identity')
 end
 
 Then(/^the response tells me I have to wait for between (#{CAPTURE_INTEGER}) and (#{CAPTURE_INTEGER}) seconds to retry$/) do |min_interval, max_interval|
