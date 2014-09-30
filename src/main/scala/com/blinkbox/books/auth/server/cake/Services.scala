@@ -56,39 +56,15 @@ trait GeoIPComponent {
   def geoIp: GeoIP
 }
 
-trait AuthServiceComponent {
+trait ServicesComponent {
   def sessionService: SessionService
-}
-
-trait ClientServiceComponent {
   def clientService: ClientService
-}
-
-trait UserServiceComponent {
   def userService: UserService
-}
-
-trait RegistrationServiceComponent {
   def registrationService: RegistrationService
-}
-
-trait PasswordAuthenticationServiceComponent {
   def passwordAuthenticationService: PasswordAuthenticationService
-}
-
-trait RefreshTokenServiceComponent {
   def refreshTokenService: RefreshTokenService
-}
-
-trait SsoSyncComponent {
   def ssoSync: SsoSyncService
-}
-
-trait PasswordUpdateServiceComponent {
   def passwordUpdateService: PasswordUpdateService
-}
-
-trait AdminUserServiceComponent {
   def adminUserService: AdminUserService
 }
 

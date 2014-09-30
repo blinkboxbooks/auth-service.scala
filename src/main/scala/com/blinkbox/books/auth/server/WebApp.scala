@@ -24,15 +24,7 @@ object WebAppComponents extends
   DefaultDatabaseComponent with
   DefaultTokenBuilderComponent with
   DefaultRepositoriesComponent with
-  DefaultUserServiceComponent with
-  DefaultClientServiceComponent with
-  DefaultAuthServiceComponent with
-  DefaultRefreshTokenServiceComponent with
-  DefaultRegistrationServiceComponent with
-  DefaultPasswordAuthenticationServiceComponent with
-  DefaultSsoSyncComponent with
-  DefaultPasswordUpdatedServiceComponent with
-  DefaultAdminUserServiceComponent with
+  DefaultServicesComponent with
   DefaultApiComponent
 
 class WebService extends HttpServiceActor {
