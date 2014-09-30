@@ -37,11 +37,11 @@ class DefaultAdminUserService[DB <: DatabaseSupport](
 
   override def userSearch(c: SearchCriteria): Future[AdminUserSearchInfo] = Future {
     db.withSession { implicit session =>
-      c match {
-        case IdSearch(id) => AdminUserSearchInfo(userRepo.userWithHistoryById(id).map(info).toList)
-        case NameSearch(firstName, lastName) => AdminUserSearchInfo(userRepo.userWithHistoryByName(firstName, lastName).map(info))
-        case UsernameSearch(username) => AdminUserSearchInfo(userRepo.userWithHistoryByUsername(username).map(info))
-      }
+      AdminUserSearchInfo(c match {
+        case IdSearch(id) => userRepo.userWithHistoryById(id).map(info).toList
+        case NameSearch(firstName, lastName) => userRepo.userWithHistoryByName(firstName, lastName).map(info)
+        case UsernameSearch(username) => userRepo.userWithHistoryByUsername(username).map(info)
+      })
     }
   }
 
