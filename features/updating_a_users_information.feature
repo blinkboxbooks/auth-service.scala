@@ -16,18 +16,13 @@ Feature: Updating a user's information
     And it is not cacheable
     And the critical elevation got extended
 
-  @extremely_slow
-  Scenario Outline: Updating email address, outside critical elevation period
-    Given I have <elevation_level> access token
+  @slow
+  Scenario: Updating email address, outside critical elevation period
+    Given I have a non-elevated access token
     When I change my email address
     And I request my user information be updated
     Then the request fails because I am unauthorised
     And the response includes low elevation level information
-
-    Examples:
-      | elevation_level |
-      | an elevated     |
-      | a non-elevated  |
 
   Scenario: Updating first name and last name, within critical elevation period
     Given I have a critically elevated access token
@@ -38,19 +33,14 @@ Feature: Updating a user's information
     And it is not cacheable
     And the critical elevation got extended
 
-  @extremely_slow
-  Scenario Outline: Updating first name and last name, outside critical elevation period
-    Given I have <elevation_level> access token
+  @slow
+  Scenario: Updating first name and last name, outside critical elevation period
+    Given I have a non-elevated access token
     When I change my first name to "Bob"
     And I change my last name to "Smith"
     And I request my user information be updated
     Then the request fails because I am unauthorised
     And the response includes low elevation level information
-
-    Examples:
-      | elevation_level |
-      | an elevated     |
-      | a non-elevated  |
 
   Scenario: Updating marketing preferences, within critical elevation period
     Given I have a critically elevated access token
@@ -60,18 +50,13 @@ Feature: Updating a user's information
     And it is not cacheable
     And the critical elevation got extended
 
-  @extremely_slow
-  Scenario Outline: Updating marketing preferences, outside critical elevation period
-    Given I have <elevation_level> access token
+  @slow
+  Scenario: Updating marketing preferences, outside critical elevation period
+    Given I have a non-elevated access token
     When I change whether I allow marketing communications
     And I request my user information be updated
     Then the request fails because I am unauthorised
     And the response includes low elevation level information
-
-    Examples:
-      | elevation_level |
-      | an elevated     |
-      | a non-elevated  |
 
   Scenario: Trying to change acceptance of terms and conditions
     When I change whether I accepted terms and conditions
