@@ -16,15 +16,12 @@ Given(/^(\w+) obtains? an access token using (?:my|his|her|their) refresh token 
   obtain_access_and_token_via_refresh_token(user, user.clients.last)
 end
 
-Given(/^I have an? (critically |non-)?elevated access token$/) do |elevation_level|
+Given(/^I have an? (critically |non-)elevated access token$/) do |elevation_level|
   obtain_access_and_token_via_username_and_password
   case elevation_level
   when "critically "
     sleep(10.seconds)
   when "non-"
-    sleep(ELEVATION_CONFIG[:elevated_timespan] + 10.seconds)
-    obtain_access_and_token_via_refresh_token
-  else
     sleep(ELEVATION_CONFIG[:critical_timespan] + 10.seconds)
     obtain_access_and_token_via_refresh_token
   end
@@ -63,11 +60,7 @@ Then(/^it( is not elevated|s elevation is critical)$/) do |elevation|
   expect(last_response_json['token_elevation']).to eql(elev)
 end
 
-When(/^it is elevated$/) do
-  expect(last_response_json['token_elevation']).to eql('ELEVATED')
-end
-
-When(/^I request that my elevated session be extended$/) do
+When(/^I request that my critically elevated session be extended$/) do
   $zuul.extend_elevated_session(@me.access_token)
 end
 
@@ -82,11 +75,8 @@ When(/^the elevation expires (#{CAPTURE_INTEGER}) (minutes|days?) from now(?: mi
   ensure_elevation_expires_in(time_period)
 end
 
-When(/^the (critical )?elevation got extended$/) do |elevation|
-  elev = elevation.include?('critical') ? 'CRITICAL' : 'ELEVATED'
-  time_period = elev == 'CRITICAL' ? ELEVATION_CONFIG[:critical_timespan] : ELEVATION_CONFIG[:elevated_timespan]
-
+When(/^the critical elevation got extended$/) do
   $zuul.get_access_token_info(@me.access_token)
-  expect(last_response_json["token_elevation"]).to eql(elev)
-  ensure_elevation_expires_in(time_period)
+  expect(last_response_json["token_elevation"]).to eql('CRITICAL')
+  ensure_elevation_expires_in(ELEVATION_CONFIG[:critical_timespan])
 end
