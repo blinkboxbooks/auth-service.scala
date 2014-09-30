@@ -100,26 +100,26 @@ trait DefaultServicesComponent extends ServicesComponent {
 
   private implicit val ec = serviceExecutionContext
 
-  val sessionService = new DefaultSessionService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
+  lazy val sessionService = new DefaultSessionService(db, authRepository, userRepository, clientRepository, geoIp, publisher, sso)
 
-  val registrationService = new DefaultRegistrationService(
+  lazy val registrationService = new DefaultRegistrationService(
       db, authRepository, userRepository, clientRepository, exceptionFilter, config.authServer.termsVersion, tokenBuilder, geoIp, publisher, sso)
 
-  val userService = new DefaultUserService(db, userRepository, ssoSync, sso, publisher)
+  lazy val userService = new DefaultUserService(db, userRepository, ssoSync, sso, publisher)
 
-  val clientService = new DefaultClientService(db, clientRepository, authRepository, userRepository, config.authServer.maxClients, publisher)
+  lazy val clientService = new DefaultClientService(db, clientRepository, authRepository, userRepository, config.authServer.maxClients, publisher)
 
-  val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, tokenBuilder, publisher, ssoSync, sso)
+  lazy val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, tokenBuilder, publisher, ssoSync, sso)
 
-  val refreshTokenService = new DefaultRefreshTokenService(db, authRepository, userRepository, clientRepository,
+  lazy val refreshTokenService = new DefaultRefreshTokenService(db, authRepository, userRepository, clientRepository,
     config.authServer.refreshTokenLifetimeExtension, tokenBuilder, publisher, sso)
 
-  val ssoSync = new DefaultSsoSyncService(db, userRepository, config.authServer.termsVersion, publisher, sso)
+  lazy val ssoSync = new DefaultSsoSyncService(db, userRepository, config.authServer.termsVersion, publisher, sso)
 
-  val passwordUpdateService = new DefaultPasswordUpdateService(db, userRepository, authRepository,
+  lazy val passwordUpdateService = new DefaultPasswordUpdateService(db, userRepository, authRepository,
     config.authServer.passwordResetBaseUrl, tokenBuilder, ssoSync, publisher, sso)
 
-  val adminUserService =  new DefaultAdminUserService(db, userRepository)
+  lazy val adminUserService =  new DefaultAdminUserService(db, userRepository)
 }
 
 trait DefaultSsoComponent extends SsoComponent {
