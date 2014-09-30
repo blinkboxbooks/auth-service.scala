@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.service
 
-import com.blinkbox.books.auth.server.{PreviousUsernameInfo, AdminUserInfo}
+import com.blinkbox.books.auth.server.{AdminUserSearchInfo, PreviousUsernameInfo, AdminUserInfo}
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.services.{IdSearch, NameSearch, UsernameSearch}
 
@@ -9,37 +9,37 @@ class DefaultAdminUserServiceSpecs extends SpecBase {
 
   "The admin search service" should "retrieve users by username" in {
     whenReady(adminUserService.userSearch(UsernameSearch("user.a@test.tst"))) { res =>
-      res should equal(adminInfoUserA :: Nil)
+      res should equal(AdminUserSearchInfo(adminInfoUserA :: Nil))
     }
   }
 
   it should "return an empty list if a username is not found" in {
     whenReady(adminUserService.userSearch(UsernameSearch("not-an-user@test.tst"))) { res =>
-      res should equal(Nil)
+      res should equal(AdminUserSearchInfo(Nil))
     }
   }
 
   it should "retrieve users by first name and last name being case-insensitive" in {
     whenReady(adminUserService.userSearch(NameSearch("a first", "a last"))) { res =>
-      res should equal(adminInfoUserA :: Nil)
+      res should equal(AdminUserSearchInfo(adminInfoUserA :: Nil))
     }
   }
 
   it should "return an empty list if the given first name and last name do not have any exact match" in {
     whenReady(adminUserService.userSearch(NameSearch("foo", "bar"))) { res =>
-      res should equal(Nil)
+      res should equal(AdminUserSearchInfo(Nil))
     }
   }
 
   it should "retrieve users by id" in {
     whenReady(adminUserService.userSearch(IdSearch(userIdA))) { res =>
-      res should equal(adminInfoUserA :: Nil)
+      res should equal(AdminUserSearchInfo(adminInfoUserA :: Nil))
     }
   }
 
   it should "return an empty list if an user with the given id is not found" in {
     whenReady(adminUserService.userSearch(IdSearch(UserId(-1)))) { res =>
-      res should equal(Nil)
+      res should equal(AdminUserSearchInfo(Nil))
     }
   }
 
@@ -61,7 +61,7 @@ class DefaultAdminUserServiceSpecs extends SpecBase {
     }
 
     whenReady(adminUserService.userSearch(NameSearch("b first", "b last"))) { res =>
-      res should equal(adminInfoUserB :: Nil)
+      res should equal(AdminUserSearchInfo(adminInfoUserB :: Nil))
     }
   }
 }

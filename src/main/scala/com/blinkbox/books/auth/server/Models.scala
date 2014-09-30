@@ -99,6 +99,8 @@ case class AdminUserInfo(
   user_previous_usernames: List[PreviousUsernameInfo]
 )
 
+case class AdminUserSearchInfo(items: List[AdminUserInfo])
+
 case class TokenInfo(
   access_token: String,
   token_type: String,
