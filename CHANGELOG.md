@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.10 ([#71](https://git.mobcastdev.com/Zuul/auth-service/pull/71) 2014-09-30 10:36:55)
+
+CP-1910 Catch and log exceptions during app initialization
+
+### Improvements
+
+This patch logs unrecoverable errors that happen during service initialisation to Graylog and stops the service with an error status code.
+
 ## 0.22.9 ([#70](https://git.mobcastdev.com/Zuul/auth-service/pull/70) 2014-09-29 17:07:04)
 
 Small fixes
