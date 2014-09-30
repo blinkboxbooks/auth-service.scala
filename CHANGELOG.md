@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.22.9 ([#70](https://git.mobcastdev.com/Zuul/auth-service/pull/70) 2014-09-29 17:07:04)
+
+Small fixes
+
+### Improvements
+
+* Introduce the setting for the DNS cache TTL on the JVM in the application.conf
+* Reduce some cake boilerplate by unifying some services in one module
+
 ## 0.22.8 ([#69](https://git.mobcastdev.com/Zuul/auth-service/pull/69) 2014-09-29 15:10:08)
 
 Add note for OPS in the README.md
