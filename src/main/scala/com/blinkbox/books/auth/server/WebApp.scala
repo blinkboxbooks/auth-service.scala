@@ -12,6 +12,7 @@ import spray.can.Http
 import spray.routing._
 
 import scala.concurrent.duration._
+import scala.util.control.ControlThrowable
 
 object WebAppComponents extends
   DefaultConfigComponent with
@@ -43,6 +44,7 @@ object WebApp extends App with Configuration with Loggers with StrictLogging {
 
     HttpServer(Http.Bind(service, localUrl.getHost, port = localUrl.effectivePort))
   } catch {
+    case ex: ControlThrowable => throw ex
     case ex: Throwable =>
       logger.error("Error during initialization of the service", ex)
       System.exit(1)
