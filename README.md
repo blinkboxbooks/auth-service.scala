@@ -112,8 +112,7 @@ $ mysql -e "CREATE DATABASE zuul"
 Then create a user and grant them permissions. For example the following creates a user called 'zuul' and grants the necessary permissions on the 'zuul' database:
 
 ```
-$ mysql -e "CREATE USER zuul IDENTIFIED BY 'M0bc45T'"
-$ mysql -e "GRANT SELECT, INSERT, UPDATE, DELETE ON zuul.* to 'zuul'@'localhost'"
+$ mysql -e "GRANT ALTER, INDEX, CREATE, SELECT, INSERT, UPDATE, DELETE ON zuul.* to 'zuul'@'localhost' IDENTIFIED BY 'M0bc45T'"
 ```
 
 To set up the database tables use the active record migrations:
