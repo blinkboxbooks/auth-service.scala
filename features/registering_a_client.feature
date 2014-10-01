@@ -21,9 +21,9 @@ Feature: Registering a client
     And it is not cacheable
     And the critical elevation got extended
 
-  @extremely_slow
-  Scenario Outline: Registering a client with all details, outside critical elevation period
-    Given I have <elevation_level> access token
+  @slow
+  Scenario: Registering a client with all details, outside critical elevation period
+    Given I have a non-elevated access token
     When I provide the client registration details:
       | name  | Test Device |
       | brand | Test Brand  |
@@ -32,11 +32,6 @@ Feature: Registering a client
     And I submit the client registration request
     Then the request fails because I am unauthorised
     And the response includes low elevation level information
-
-    Examples:
-      | elevation_level |
-      | an elevated     |
-      | a non-elevated  |
 
   Scenario: Registering a client with details containing international characters
     When I provide the client registration details:

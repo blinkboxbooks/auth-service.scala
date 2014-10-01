@@ -7,7 +7,7 @@ Given(/^I am authenticated as a user in the "employee" and "content manager" rol
 end
 
 Then(/^it does not contain any role information$/) do
-  expect(last_response_json["user_roles"]).to be_nil
+  expect(last_response_json["user_roles"]).to be_empty
 end
 
 Then(/^it indicates that I am in the "(.*?)" role$/) do |role_name|

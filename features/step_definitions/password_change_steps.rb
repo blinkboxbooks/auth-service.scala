@@ -59,13 +59,13 @@ Then(/^the reason is that the (old password is wrong|new password is too short|n
   case reason
   when "old password is wrong"
     expect(@response_json["error_reason"]).to eq("old_password_invalid")
-    expect(@response_json["error_description"]).to eq("Current password provided is incorrect.")
+    expect(@response_json["error_description"]).to eq("Old password is invalid")
   when "new password is too short"
     expect(@response_json["error_reason"]).to eq("new_password_too_short")
-    expect(@response_json["error_description"]).to eq("The new password is too short.")
+    expect(@response_json["error_description"]).to eq("Password must be at least 6 characters")
   when "new password is missing"
     expect(@response_json["error_reason"]).to eq("new_password_missing")
-    expect(@response_json["error_description"]).to eq("The new password is not provided.")
+    expect(@response_json["error_description"]).to eq("The new password is not provided")
   else
     raise("No error reason covered for #{reason}")
   end

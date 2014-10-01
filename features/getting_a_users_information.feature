@@ -32,14 +32,9 @@ Feature: Getting a user's information
     When I request user information for the other user
     Then the request fails because the user was not found
 
-  @extremely_slow
-  Scenario Outline: Access personal information outside critical elevation period
-    Given I have <elevation_level> access token
+  @slow
+  Scenario: Access personal information outside critical elevation period
+    Given I have a non-elevated access token
     When I request user information for myself
     Then the request fails because I am unauthorised
     And the response includes low elevation level information
-
-    Examples:
-      | elevation_level |
-      | a non-elevated  |
-      | an elevated     |

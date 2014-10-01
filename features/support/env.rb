@@ -41,8 +41,7 @@ end
 
 # TODO: parametrise these
 ELEVATION_CONFIG = {
-  critical_timespan: (Blinkbox::Zuul::Server::RefreshToken::LifeSpan::CRITICAL_ELEVATION_LIFETIME_IN_SECONDS.to_i rescue 600),
-  elevated_timespan: (Blinkbox::Zuul::Server::RefreshToken::LifeSpan::NORMAL_ELEVATION_LIFETIME_IN_SECONDS.to_i rescue 86400)
+  critical_timespan: (600)
 }
 
 Before do
