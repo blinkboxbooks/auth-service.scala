@@ -1,5 +1,15 @@
 # Zuul Server Change Log
 
+## 0.22.11 ([#72](https://git.mobcastdev.com/Zuul/auth-service/pull/72) 2014-09-30 14:27:22)
+
+Update tests to remove ELEVATED token tests
+
+### Test improvements
+- Removed scenarios that require an elevated token, since tokens now go from critally-elevated to non-elevated, there is no longer an elevated state.
+- Modified scenario to check that after 29 minutes of non-elevated activity, elevation drops to none (previously it was 24 hours)
+- Any previously @extremely_slow test that now finishes within half an hour is now tagged as @slow
+- Fixed some error messages that have slightly changed in the new scala auth-service
+
 ## 0.22.10 ([#71](https://git.mobcastdev.com/Zuul/auth-service/pull/71) 2014-09-30 10:36:55)
 
 CP-1910 Catch and log exceptions during app initialization
