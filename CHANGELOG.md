@@ -1,5 +1,11 @@
 # Zuul Server Change Log
 
+## 0.22.12 ([#77](https://git.mobcastdev.com/Zuul/auth-service/pull/77) 2014-10-01 11:06:05)
+
+Fix the documentation for creating mysql user.
+
+Improvement
+
 ## 0.22.11 ([#72](https://git.mobcastdev.com/Zuul/auth-service/pull/72) 2014-09-30 14:27:22)
 
 Update tests to remove ELEVATED token tests
