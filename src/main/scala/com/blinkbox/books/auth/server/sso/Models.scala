@@ -18,7 +18,23 @@ case class SsoCredentials(accessToken: SsoAccessToken, tokenType: String, expire
   require(tokenType.toLowerCase == "bearer", s"Unrecognized token type: $tokenType")
 }
 
-case class SsoUserCredentials(userId: SsoUserId, credentials: SsoCredentials)
+sealed trait MigrationStatus
+
+object MigrationStatus extends EnumContainer[MigrationStatus] {
+  case object NoMigration extends MigrationStatus
+  case object PartialMatch extends MigrationStatus
+  case object TotalMatch extends MigrationStatus
+  case object ResetMatch extends MigrationStatus
+
+  override val reprs: Map[MigrationStatus, String] = Map(
+    NoMigration -> "",
+    PartialMatch -> "Partial",
+    TotalMatch -> "Total",
+    ResetMatch -> "Reset"
+  )
+}
+
+case class SsoAuthenticatedCredentials(userId: SsoUserId, credentials: SsoCredentials, migrationStatus: MigrationStatus)
 
 case class SsoPasswordResetTokenResponse(resetToken: SsoPasswordResetToken, expiresIn: Long) {
   val expiresInDuration: FiniteDuration = expiresIn.seconds

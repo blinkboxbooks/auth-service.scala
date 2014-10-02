@@ -28,6 +28,12 @@ case class ClientRegistered(user: data.User, client: data.Client) extends Event
 case class ClientUpdated(user: data.User, oldClient: data.Client, newClient: data.Client) extends Event
 case class ClientDeregistered(user: data.User, client: data.Client) extends Event
 
+sealed trait UserToSsoMigration extends Event { def user: data.User }
+case class TotalMigration(user: data.User) extends UserToSsoMigration
+case class PartialMigration(user: data.User) extends UserToSsoMigration
+case class ResetMigration(user: data.User) extends UserToSsoMigration
+
+
 trait Publisher {
   def publish(event: Event): Future[Unit]
 }
@@ -147,6 +153,9 @@ class RabbitMqPublisher(channel: Channel)(implicit executionContext: ExecutionCo
     case UserPasswordResetRequested(user, token, link) => JsonEventBody(User.PasswordResetRequested(clock.now(), user, token.value, link))
     case UserRegistered(user) => JsonEventBody(User.Registered(user.createdAt, user))
     case UserUpdated(oldUser, newUser) => JsonEventBody(User.Updated(newUser.updatedAt, newUser, oldUser))
+    case TotalMigration(user) => JsonEventBody(User.TotalMigration(clock.now(), user))
+    case PartialMigration(user) => JsonEventBody(User.PartialMigration(clock.now(), user))
+    case ResetMigration(user) => JsonEventBody(User.ResetMigration(clock.now(), user))
   }
 
   private def basicProperties(body: EventBody) = new AMQP.BasicProperties(

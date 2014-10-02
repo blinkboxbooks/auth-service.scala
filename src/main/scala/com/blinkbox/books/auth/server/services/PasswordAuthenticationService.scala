@@ -24,7 +24,10 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
     tokenBuilder: TokenBuilder,
     events: Publisher,
     ssoSync: SsoSyncService,
-    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordAuthenticationService with ClientAuthenticator[Profile] {
+    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
+  extends PasswordAuthenticationService
+    with ClientAuthenticator[Profile]
+    with SsoMigrationPublisher {
 
   private def findUser(username: String): Future[Option[User]] = Future {
     db.withSession { implicit session => userRepo.userWithUsername(username) }
@@ -40,14 +43,17 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
     val ssoAuthenticationFuture = sso authenticate (credentials)
+    val findUserFuture = findUser(credentials.username)
 
     for {
-      ssoCredentials  <- ssoAuthenticationFuture
-      maybeUser       <- findUser(credentials.username)
-      user            <- ssoSync(maybeUser, ssoCredentials.accessToken)
-      client          <- getClient(credentials, user)
-      token           <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken)
-      _               <- events.publish(UserAuthenticated(user, client))
+      SsoAuthenticatedCredentials(
+        _, ssoCredentials, status)  <- ssoAuthenticationFuture
+      maybeUser                     <- findUserFuture
+      user                          <- ssoSync(maybeUser, ssoCredentials.accessToken)
+      client                        <- getClient(credentials, user)
+      ((token, _), _)               <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken).
+                                       zip(events.publish(UserAuthenticated(user, client))).
+                                       zip(events.publishSsoMigration(user, status))
     } yield tokenBuilder.issueAccessToken(user, client, token, Some(ssoCredentials), includeRefreshToken = true)
 
   } transform(identity, {

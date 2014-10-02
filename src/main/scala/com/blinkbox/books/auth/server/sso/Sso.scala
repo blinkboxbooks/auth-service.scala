@@ -21,6 +21,7 @@ case class SsoTooManyRequests(retryAfter: FiniteDuration) extends SsoException
 case class SsoInvalidRequest(message: String) extends SsoException
 case object SsoNotFound extends SsoException
 case class SsoUnknownException(e: Throwable) extends SsoException
+case class SsoInvalidHeaders(message: String) extends SsoException
 
 object SsoConstants {
   val TokenUri = "/oauth2/token"
@@ -40,9 +41,9 @@ object SsoConstants {
 
 trait Sso {
   def register(req: UserRegistration): Future[(SsoUserId, SsoCredentials)]
-  def authenticate(c: PasswordCredentials): Future[SsoCredentials]
+  def authenticate(c: PasswordCredentials): Future[SsoAuthenticatedCredentials]
   def refresh(ssoRefreshToken: SsoRefreshToken): Future[SsoCredentials]
-  def resetPassword(passwordToken: SsoPasswordResetToken, newPassword: String): Future[SsoUserCredentials]
+  def resetPassword(passwordToken: SsoPasswordResetToken, newPassword: String): Future[SsoAuthenticatedCredentials]
   def revokeToken(token: SsoRefreshToken): Future[Unit]
   def linkAccount(token: SsoAccessToken, id: UserId, allowMarketing: Boolean, termsVersion: String): Future[Unit]
   def generatePasswordResetToken(username: String): Future[SsoPasswordResetTokenResponse]
@@ -68,9 +69,17 @@ class DefaultSso(config: SsoConfig, client: Client, tokenDecoder: SsoAccessToken
     case Failure(_) => throw new SsoInvalidAccessToken(cred)
   }
 
-  private def userCredentials(cred: SsoCredentials): SsoUserCredentials = {
-    val (id, _) = extractUserId(cred)
-    SsoUserCredentials(id, cred)
+  private def userCredentials(resp: DataResponse[SsoCredentials]): SsoAuthenticatedCredentials = {
+    val (id, _) = extractUserId(resp.data)
+
+    val s = if (resp.status == StatusCodes.OK)
+      MigrationStatus.NoMigration
+    else resp.headers
+      .find(_.name == "BB-Transition-Match")
+      .map(h => MigrationStatus.fromString(h.value))
+      .getOrElse(throw SsoInvalidHeaders("Expected BB-Transition-Match header"))
+
+    SsoAuthenticatedCredentials(id, resp.data, s)
   }
 
   private def parseBadRequest(e: UnsuccessfulResponseException): SsoException = {
@@ -142,13 +151,13 @@ class DefaultSso(config: SsoConfig, client: Client, tokenDecoder: SsoAccessToken
     ))), oauthCredentials(token)) transform(identity, linkErrorsTransformer)
   }
 
-  def authenticate(c: PasswordCredentials): Future[SsoCredentials] = {
+ def authenticate(c: PasswordCredentials): Future[SsoAuthenticatedCredentials] = {
     logger.debug("Authenticating via password credentials")
-    client.dataRequest[SsoCredentials](Post(versioned(C.TokenUri), FormData(Map(
+    client.request[SsoCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.PasswordGrant,
       "username" -> c.username,
       "password" -> c.password
-    )))) map extractUserId transform(_._2, authenticationErrorsTransformer)
+    )))) map userCredentials transform(identity, authenticationErrorsTransformer)
   }
 
   def userInfo(token: SsoAccessToken): Future[UserInformation] = {
@@ -224,10 +233,10 @@ class DefaultSso(config: SsoConfig, client: Client, tokenDecoder: SsoAccessToken
     )))) transform(identity, generatePasswordTokenErrorTransformer)
   }
 
-  def resetPassword(passwordToken: SsoPasswordResetToken, newPassword: String): Future[SsoUserCredentials] = {
+  def resetPassword(passwordToken: SsoPasswordResetToken, newPassword: String): Future[SsoAuthenticatedCredentials] = {
     logger.debug("Reset password")
 
-    client.dataRequest[SsoCredentials](Post(versioned(C.TokenUri), FormData(Map(
+    client.request[SsoCredentials](Post(versioned(C.TokenUri), FormData(Map(
       "grant_type" -> C.PasswordResetTokenGrant,
       "password_reset_token" -> passwordToken.value,
       "password" -> newPassword

@@ -13,8 +13,24 @@ class AuthenticationSpecs extends SpecBase {
 
     whenReady(sso.authenticate(credentials)) { ssoCreds =>
       ssoCreds should matchPattern {
-        case SsoCredentials(_, "bearer", exp, _) if exp == validTokenSSOExpiry =>
+        case SsoAuthenticatedCredentials(_, SsoCredentials(_, "bearer", exp, _), MigrationStatus.NoMigration) if exp == validTokenSSOExpiry =>
       }
+    }
+  }
+
+  it should "return the correct migration status in case an user migrated with a partial-match to SSO while authenticating" in {
+    ssoSuccessfulAuthentication(MigrationStatus.PartialMatch)
+
+    whenReady(sso.authenticate(credentials)) { ssoCreds =>
+      ssoCreds.migrationStatus should equal(MigrationStatus.PartialMatch)
+    }
+  }
+
+  it should "return the correct migration status in case an user migrated with a total-match to SSO while authenticating" in {
+    ssoSuccessfulAuthentication(MigrationStatus.TotalMatch)
+
+    whenReady(sso.authenticate(credentials)) { ssoCreds =>
+      ssoCreds.migrationStatus should equal(MigrationStatus.TotalMatch)
     }
   }
 

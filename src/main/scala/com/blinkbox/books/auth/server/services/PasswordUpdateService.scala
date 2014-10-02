@@ -28,7 +28,8 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     tokenBuilder: TokenBuilder,
     ssoSync: SsoSyncService,
     events: Publisher,
-    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock) extends PasswordUpdateService with ClientAuthenticator[DB#Profile] {
+    sso: Sso)(implicit executionContext: ExecutionContext, clock: Clock)
+  extends PasswordUpdateService with ClientAuthenticator[DB#Profile] with SsoMigrationPublisher {
 
   private val trimmedBaseUrl = if (resetBaseUrl.endsWith("/")) resetBaseUrl.dropRight(1) else resetBaseUrl
 
@@ -66,11 +67,13 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
 
   override def resetPassword(credentials: ResetTokenCredentials): Future[TokenInfo] = {
     val tokenInfo = for {
-      SsoUserCredentials(ssoId, ssoCredentials) <- sso resetPassword(credentials.resetToken, credentials.newPassword)
-      user                                      <- userBySsoId(ssoId)
-      syncedUser                                <- ssoSync(user, ssoCredentials.accessToken)
-      client                                    <- authenticateClient(credentials, syncedUser.id)
-      refreshToken                              <- createRefreshToken(syncedUser.id, client.map(_.id), ssoCredentials.refreshToken)
+      SsoAuthenticatedCredentials(
+        ssoId, ssoCredentials, status) <- sso resetPassword(credentials.resetToken, credentials.newPassword)
+      user                             <- userBySsoId(ssoId)
+      syncedUser                       <- ssoSync(user, ssoCredentials.accessToken)
+      client                           <- authenticateClient(credentials, syncedUser.id)
+      refreshToken                     <- createRefreshToken(syncedUser.id, client.map(_.id), ssoCredentials.refreshToken)
+      _                                <- events.publishSsoMigration(syncedUser, status)
     } yield tokenBuilder.issueAccessToken(syncedUser, client, refreshToken, Some(ssoCredentials), includeRefreshToken = true)
 
     tokenInfo transform(identity, { case SsoUnauthorized => Failures.invalidPasswordResetToken })

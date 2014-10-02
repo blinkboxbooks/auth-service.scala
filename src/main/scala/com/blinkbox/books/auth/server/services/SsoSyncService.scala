@@ -1,11 +1,9 @@
 package com.blinkbox.books.auth.server.services
 
-import java.util.NoSuchElementException
-
 import com.blinkbox.books.auth.server.UserRegistration
-import com.blinkbox.books.auth.server.data.{UserRepository, User}
-import com.blinkbox.books.auth.server.events.{UserUpdated, Publisher, UserRegistered}
-import com.blinkbox.books.auth.server.sso.{UserInformation, Sso, SsoAccessToken}
+import com.blinkbox.books.auth.server.data.{User, UserRepository}
+import com.blinkbox.books.auth.server.events.{Publisher, UserRegistered, UserUpdated}
+import com.blinkbox.books.auth.server.sso.{Sso, SsoAccessToken, UserInformation}
 import com.blinkbox.books.slick.DatabaseSupport
 
 import scala.concurrent.{ExecutionContext, Future}
