@@ -50,6 +50,19 @@ class DefaultSsoSyncServiceSpecs extends SpecBase {
     }
   }
 
+  it should "link and update an user if one not having an SSO id but already linked on SSO has been provided" in {
+    ssoConflict()
+    ssoSuccessfulJohnDoeInfo()
+
+    whenReady(ssoSync(Some(userC), SsoAccessToken("some-access-token"))){ user =>
+      user should matchPattern {
+        case User(id, _, _, "john.doe+blinkbox@example.com", "John", "Doe", _, true, Some(SsoUserId("6E41CB9F"))) if id == userIdC =>
+      }
+
+      publisher.events should equal(UserUpdated(userC, user) :: Nil)
+    }
+  }
+
   it should "update an user if one having SSO id has been provided" in {
     ssoSuccessfulJohnDoeInfo()
 

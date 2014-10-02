@@ -1,10 +1,11 @@
 package com.blinkbox.books.auth.server.services
 
 import com.blinkbox.books.auth.server.UserRegistration
-import com.blinkbox.books.auth.server.data.{User, UserRepository}
+import com.blinkbox.books.auth.server.data.{User, UserId, UserRepository}
 import com.blinkbox.books.auth.server.events.{Publisher, UserRegistered, UserUpdated}
-import com.blinkbox.books.auth.server.sso.{Sso, SsoAccessToken, UserInformation}
+import com.blinkbox.books.auth.server.sso.{Sso, SsoAccessToken, SsoConflict, UserInformation}
 import com.blinkbox.books.slick.DatabaseSupport
+import com.typesafe.scalalogging.slf4j.StrictLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -19,7 +20,7 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
     userRepo: UserRepository[DB#Profile],
     termsVersion: String,
     events: Publisher,
-    sso: Sso)(implicit ec: ExecutionContext) extends SsoSyncService {
+    sso: Sso)(implicit ec: ExecutionContext) extends SsoSyncService with StrictLogging {
 
   private def registerUser(reg: UserRegistration): Future[User] = Future {
     db.withSession { implicit session => userRepo.createUser(reg) }
@@ -55,11 +56,15 @@ class DefaultSsoSyncService[DB <: DatabaseSupport](
   private def syncExistingUser(ssoAccessToken: SsoAccessToken, user: User): Future[User] =
     sso.userInfo(ssoAccessToken).flatMap(apply(user, _))
 
+  private def logConflict(id: UserId): PartialFunction[Throwable, Unit] = {
+    case SsoConflict => logger.warn("User {} is already linked on SSO", id.external)
+  }
+
   override def apply(maybeUser: Option[User], ssoAccessToken: SsoAccessToken): Future[User] =
     maybeUser.fold(syncNewUser(ssoAccessToken)) { user =>
       if (user.ssoId.isDefined) syncExistingUser(ssoAccessToken, user)
       else for {
-        _           <- sso linkAccount(ssoAccessToken, user.id, user.allowMarketing, termsVersion)
+        _           <- sso linkAccount(ssoAccessToken, user.id, user.allowMarketing, termsVersion) recover(logConflict(user.id))
         updatedUser <- syncExistingUser(ssoAccessToken, user)
       } yield updatedUser
     }
