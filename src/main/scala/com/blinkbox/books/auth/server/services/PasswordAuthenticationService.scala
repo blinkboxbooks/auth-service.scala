@@ -43,16 +43,17 @@ class DefaultPasswordAuthenticationService[Profile <: BasicProfile, Database <: 
 
   def authenticate(credentials: PasswordCredentials, clientIP: Option[RemoteAddress]): Future[TokenInfo] = {
     val ssoAuthenticationFuture = sso authenticate (credentials)
+    val findUserFuture = findUser(credentials.username)
 
     for {
       SsoAuthenticatedCredentials(
         _, ssoCredentials, status)  <- ssoAuthenticationFuture
-      maybeUser                     <- findUser(credentials.username)
+      maybeUser                     <- findUserFuture
       user                          <- ssoSync(maybeUser, ssoCredentials.accessToken)
       client                        <- getClient(credentials, user)
-      token                         <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken)
-      _                             <- events.publish(UserAuthenticated(user, client))
-      _                             <- events.publishSsoMigration(user, status)
+      ((token, _), _)               <- getToken(user.id, client.map(_.id), ssoCredentials.refreshToken).
+                                       zip(events.publish(UserAuthenticated(user, client))).
+                                       zip(events.publishSsoMigration(user, status))
     } yield tokenBuilder.issueAccessToken(user, client, token, Some(ssoCredentials), includeRefreshToken = true)
 
   } transform(identity, {
