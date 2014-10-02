@@ -73,13 +73,11 @@ trait SsoMigrationPublisher {
     import MigrationStatus._
     import com.blinkbox.books.auth.server.events
 
-    def publishSsoMigration(user: User, status: MigrationStatus): Future[Unit] = {
-      status match {
-        case NoMigration => Future.successful(())
-        case TotalMatch => publisher.publish(TotalMigration(user))
-        case PartialMatch => publisher.publish(PartialMigration(user))
-        case ResetMatch => publisher.publish(ResetMigration(user))
-      }
+    def publishSsoMigration(user: User, status: MigrationStatus): Future[Unit] = status match {
+      case NoMigration => Future.successful(())
+      case TotalMatch => publisher.publish(TotalMigration(user))
+      case PartialMatch => publisher.publish(PartialMigration(user))
+      case ResetMatch => publisher.publish(ResetMigration(user))
     }
   }
 }
