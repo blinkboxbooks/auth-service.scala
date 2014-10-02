@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.23.0 ([#65](https://git.mobcastdev.com/Zuul/auth-service/pull/65) 2014-09-26 16:38:00)
+
+CP-1864 Implement "You have been migrated" event
+
+### New feature
+
+Introduce new messages that handles different responses by the SSO service when the user is being migrated from Silo to SSO. This messages should be used to send the migrated user an email about the new features introduced with SSO. 
+
 ## 0.22.13 ([#74](https://git.mobcastdev.com/Zuul/auth-service/pull/74) 2014-09-30 16:56:35)
 
 CP-1764 Fix validate-token failure for invalid tokens
