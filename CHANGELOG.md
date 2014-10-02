@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.22.13 ([#74](https://git.mobcastdev.com/Zuul/auth-service/pull/74) 2014-09-30 16:56:35)
+
+CP-1764 Fix validate-token failure for invalid tokens
+
+### Bugfix
+
+This patch fixes a failure where the SSO service does not return some fields on the token status if the token is not valid.
+
 ## 0.22.12 ([#77](https://git.mobcastdev.com/Zuul/auth-service/pull/77) 2014-10-01 11:06:05)
 
 Fix the documentation for creating mysql user.
