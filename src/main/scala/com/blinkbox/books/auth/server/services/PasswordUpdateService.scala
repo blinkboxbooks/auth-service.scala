@@ -79,7 +79,14 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
     tokenInfo transform(identity, { case SsoUnauthorized => Failures.invalidPasswordResetToken })
   }
 
-  override def validatePasswordResetToken(resetToken: SsoPasswordResetToken): Future[Unit] = sso.tokenStatus(resetToken) filter { s =>
-    s.tokenType == Some("password_reset") && s.status == SsoTokenStatus.Valid
-  } transform(_ => (), { case _: NoSuchElementException => Failures.invalidPasswordResetToken })
+  override def validatePasswordResetToken(resetToken: SsoPasswordResetToken): Future[Unit] =
+    sso.tokenStatus(resetToken).filter(_.tokenType == Some("password_reset")).flatMap(_.status match {
+      case SsoTokenStatus.Valid => Future.successful(())
+      case SsoTokenStatus.Invalid => Future.failed(Failures.passwordResetTokenNotValid)
+      case SsoTokenStatus.Expired => Future.failed(Failures.passwordResetTokenExpired)
+      case SsoTokenStatus.Revoked => Future.failed(Failures.passwordResetTokenRevoked)
+    }) transform(identity, {
+      case _: NoSuchElementException => Failures.passwordResetTokenNotValid
+      case e: Throwable => e
+    })
 }

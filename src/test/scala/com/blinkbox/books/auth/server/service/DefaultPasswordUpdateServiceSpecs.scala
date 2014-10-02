@@ -96,13 +96,27 @@ class DefaultPasswordUpdateServiceSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Invalid, SsoTokenElevation.None, "password_reset")
 
     val ex = failingWith[ZuulRequestException](passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken("res3tt0ken")))
-    ex should equal(Failures.invalidPasswordResetToken)
+    ex should equal(Failures.passwordResetTokenNotValid)
   }
 
   it should "raise a ZuulRequestException if the token is not a password_reset in SSO response" in {
     ssoSessionInfo(SsoTokenStatus.Invalid, SsoTokenElevation.None, "refresh")
 
     val ex = failingWith[ZuulRequestException](passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken("res3tt0ken")))
-    ex should equal(Failures.invalidPasswordResetToken)
+    ex should equal(Failures.passwordResetTokenNotValid)
+  }
+
+  it should "raise a ZuulRequestException if SSO signals an expired token" in {
+    ssoSessionInfo(SsoTokenStatus.Expired, SsoTokenElevation.None, "password_reset")
+
+    val ex = failingWith[ZuulRequestException](passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken("res3tt0ken")))
+    ex should equal(Failures.passwordResetTokenExpired)
+  }
+
+  it should "raise a ZuulRequestException if SSO signals a revoked token" in {
+    ssoSessionInfo(SsoTokenStatus.Revoked, SsoTokenElevation.None, "password_reset")
+
+    val ex = failingWith[ZuulRequestException](passwordUpdateService.validatePasswordResetToken(SsoPasswordResetToken("res3tt0ken")))
+    ex should equal(Failures.passwordResetTokenRevoked)
   }
 }
