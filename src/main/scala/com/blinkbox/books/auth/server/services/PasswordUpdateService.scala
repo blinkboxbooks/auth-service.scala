@@ -77,6 +77,6 @@ class DefaultPasswordUpdateService[DB <: DatabaseSupport](
   }
 
   override def validatePasswordResetToken(resetToken: SsoPasswordResetToken): Future[Unit] = sso.tokenStatus(resetToken) filter { s =>
-    s.tokenType == "password_reset" && s.status == SsoTokenStatus.Valid
+    s.tokenType == Some("password_reset") && s.status == SsoTokenStatus.Valid
   } transform(_ => (), { case _: NoSuchElementException => Failures.invalidPasswordResetToken })
 }

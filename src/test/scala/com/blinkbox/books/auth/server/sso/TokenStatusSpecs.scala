@@ -10,7 +10,7 @@ class TokenStatusSpecs extends SpecBase {
     ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical)
 
     whenReady(sso.tokenStatus(SsoRefreshToken("some-access-token")))(_ should matchPattern {
-      case TokenStatus(SsoTokenStatus.Valid, _, _, "refresh", Some(SsoTokenElevation.Critical), Some(300)) =>
+      case TokenStatus(SsoTokenStatus.Valid, _, _, Some("refresh"), Some(SsoTokenElevation.Critical), Some(300)) =>
     })
   }
 

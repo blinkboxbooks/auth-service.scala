@@ -54,9 +54,9 @@ object SsoTokenElevation extends EnumContainer[SsoTokenElevation] {
 
 case class TokenStatus(
   status: SsoTokenStatus,
-  issuedAt: DateTime,
-  expiresAt: DateTime,
-  tokenType: String,
+  issuedAt: Option[DateTime],
+  expiresAt: Option[DateTime],
+  tokenType: Option[String],
   sessionElevation: Option[SsoTokenElevation],
   sessionElevationExpiresIn: Option[Long])
 
