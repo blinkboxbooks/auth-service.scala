@@ -111,6 +111,18 @@ Feature: Registration
     And the reason is that the email address is already taken
     And no email is sent
 
+  Scenario Outline: Trying to register with an email address that is already registered in SSO
+    Given I have an SSO account registered by <account_type>
+    When I provide the same registration details I previously registered with
+    And I submit the registration request on the books website
+    Then the request fails because it is invalid
+    And the reason is that the email address is already taken
+
+  Examples:
+    | account_type |
+    | movies       |
+    | music        |
+
   Scenario Outline: Trying to register with missing details
     When I provide valid registration details, except <detail> which is missing
     And I submit the registration request
