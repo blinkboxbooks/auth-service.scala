@@ -13,8 +13,8 @@ class SSOClient
     @headers = {}
   end
 
-  def authenticate(params)
-    headers["Authorization"] = "Basic #{SSO_BASIC_BOOKS_TOKEN}"
+  def authenticate(params, scope = nil)
+    set_basic_auth(scope)
     http_post "/v1/oauth2/token", params
   end
 
@@ -29,14 +29,7 @@ class SSOClient
       allow_marketing_communications: user.allow_marketing_communications,
       scope: user.scope
     }
-    case user.scope
-      when 'sso:music'
-        headers["Authorization"] = "Basic #{SSO_BASIC_MUSIC_TOKEN}"
-      when 'sso:movies'
-        headers["Authorization"] = "Basic #{SSO_BASIC_MOVIES_TOKEN}"
-      else
-        headers["Authorization"] = "Basic #{SSO_BASIC_BOOKS_TOKEN}"
-    end
+    set_basic_auth(user.scope)
     http_post "/v1/oauth2/token", params
   end
 
@@ -44,9 +37,16 @@ class SSOClient
     params = {
       service_user_id: 'urn:blinkbox:zuul:user:00001',
       service_allow_marketing: true,
-      service_tc_accepted_version: '1',
+      service_tc_accepted_version: '1'
     }
     http_post "/v1/link", params, access_token
+  end
+
+  def password_update(new_password, access_token)
+    params = {
+      new_password: new_password
+    }
+    http_post "/v1/password/update", params, access_token
   end
 
   def admin_find_user(params = {}, access_token)
@@ -80,5 +80,16 @@ class SSOClient
     self.class.send(verb, uri.to_s, headers: headers, body: body_params)
     self.class.base_uri(TEST_CONFIG[:sso_server].to_s)
     HttpCapture::RESPONSES.last
+  end
+
+  def set_basic_auth(scope)
+    case scope
+    when /music/
+      headers["Authorization"] = "Basic #{SSO_BASIC_MUSIC_TOKEN}"
+    when /movies/
+      headers["Authorization"] = "Basic #{SSO_BASIC_MOVIES_TOKEN}"
+    else
+      headers["Authorization"] = "Basic #{SSO_BASIC_BOOKS_TOKEN}"
+    end
   end
 end
