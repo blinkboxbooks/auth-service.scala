@@ -85,7 +85,6 @@ Feature: Access token elevation
   Scenario: Requesting session information with an empty bearer token
     When I request information about my session, with an empty access token
     Then the request fails because I am unauthorised
-    And the response includes only empty access token information
 
   @slow
   Scenario: Requesting session information with an expired bearer token
