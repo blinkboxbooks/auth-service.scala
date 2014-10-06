@@ -11,6 +11,7 @@ class UserInfoSpecs extends ApiSpecBase with AuthorisationTestHelpers {
 
   "The service" should "return user info for an authenticated user that is present on SSO with a critically elevated access token" in {
     env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical, tokenType = "access")
+    env.ssoNoContent()
     env.ssoSuccessfulJohnDoeInfo()
 
     Get("/users/1") ~> addCredentials(OAuth2BearerToken(env.tokenInfoA1.access_token)) ~> route ~> check {
@@ -46,6 +47,7 @@ class UserInfoSpecs extends ApiSpecBase with AuthorisationTestHelpers {
 
   it should "return a 401 if the user is not present on our database but it is available on SSO" in {
     env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical, tokenType = "access")
+    env.ssoNoContent()
     env.ssoSuccessfulJohnDoeInfo()
 
     val token = env.tokenBuilder.issueAccessToken(
