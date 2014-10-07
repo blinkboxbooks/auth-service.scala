@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.services
 
-import com.blinkbox.books.auth.server.{PreviousUsernameInfo, AdminUserInfo}
+import com.blinkbox.books.auth.server.{AdminUserSearchInfo, PreviousUsernameInfo, AdminUserInfo}
 import com.blinkbox.books.auth.server.data.{PreviousUsername, User, UserRepository, UserId}
 import com.blinkbox.books.slick.DatabaseSupport
 
@@ -12,7 +12,7 @@ case class NameSearch(firstName: String, lastName: String) extends SearchCriteri
 case class UsernameSearch(username: String) extends SearchCriteria
 
 trait AdminUserService {
-  def userSearch(c: SearchCriteria): Future[List[AdminUserInfo]]
+  def userSearch(c: SearchCriteria): Future[AdminUserSearchInfo]
   def userDetails(id: UserId): Future[Option[AdminUserInfo]]
 }
 
@@ -35,13 +35,13 @@ class DefaultAdminUserService[DB <: DatabaseSupport](
     )
   }
 
-  override def userSearch(c: SearchCriteria): Future[List[AdminUserInfo]] = Future {
+  override def userSearch(c: SearchCriteria): Future[AdminUserSearchInfo] = Future {
     db.withSession { implicit session =>
-      c match {
+      AdminUserSearchInfo(c match {
         case IdSearch(id) => userRepo.userWithHistoryById(id).map(info).toList
         case NameSearch(firstName, lastName) => userRepo.userWithHistoryByName(firstName, lastName).map(info)
         case UsernameSearch(username) => userRepo.userWithHistoryByUsername(username).map(info)
-      }
+      })
     }
   }
 

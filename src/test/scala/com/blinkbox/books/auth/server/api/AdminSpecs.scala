@@ -1,6 +1,6 @@
 package com.blinkbox.books.auth.server.api
 
-import com.blinkbox.books.auth.server.AdminUserInfo
+import com.blinkbox.books.auth.server.{AdminUserSearchInfo, AdminUserInfo}
 import com.blinkbox.books.auth.server.data.UserId
 import com.blinkbox.books.auth.server.sso.{SsoTokenElevation, SsoTokenStatus}
 import spray.http._
@@ -26,42 +26,42 @@ class AdminSpecs extends ApiSpecBase with AuthorisationTestHelpers {
   "The admin search service" should "retrieve users by username" in {
     search("username" -> "user.a@test.tst") ~> check {
       status should equal(StatusCodes.OK)
-      responseAs[List[AdminUserInfo]] should equal(env.adminInfoUserA :: Nil)
+      responseAs[AdminUserSearchInfo] should equal(AdminUserSearchInfo(env.adminInfoUserA :: Nil))
     }
   }
 
   it should "return an empty list if a username is not found" in {
     search("username" -> "not.an.user@test.tst") ~> check {
       status should equal(StatusCodes.OK)
-      responseAs[List[AdminUserInfo]] should equal(Nil)
+      responseAs[AdminUserSearchInfo] should equal(AdminUserSearchInfo(Nil))
     }
   }
 
   it should "retrieve users by first name and last name being case-insensitive" in {
     search("first_name" -> "a first", "last_name" -> "a Last") ~> check {
       status should equal(StatusCodes.OK)
-      responseAs[List[AdminUserInfo]] should equal(env.adminInfoUserA :: Nil)
+      responseAs[AdminUserSearchInfo] should equal(AdminUserSearchInfo(env.adminInfoUserA :: Nil))
     }
   }
 
   it should "return an empty list if the given first name and last name do not have any exact match" in {
     search("first_name" -> "foo", "last_name" -> "bar") ~> check {
       status should equal(StatusCodes.OK)
-      responseAs[List[AdminUserInfo]] should equal(Nil)
+      responseAs[AdminUserSearchInfo] should equal(AdminUserSearchInfo(Nil))
     }
   }
 
   it should "retrieve users by id" in {
     search("user_id" -> env.userIdA.value.toString) ~> check {
       status should equal(StatusCodes.OK)
-      responseAs[List[AdminUserInfo]] should equal(env.adminInfoUserA :: Nil)
+      responseAs[AdminUserSearchInfo] should equal(AdminUserSearchInfo(env.adminInfoUserA :: Nil))
     }
   }
 
   it should "return an empty list if an user with the given id is not found" in {
     search("user_id" -> "100") ~> check {
       status should equal(StatusCodes.OK)
-      responseAs[List[AdminUserInfo]] should equal(Nil)
+      responseAs[AdminUserSearchInfo] should equal(AdminUserSearchInfo(Nil))
     }
   }
 
