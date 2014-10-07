@@ -1,5 +1,12 @@
 # Zuul Server Change Log
 
+## 0.23.1 ([#82](https://git.mobcastdev.com/Zuul/auth-service/pull/82) 2014-10-06 16:29:03)
+
+CP-1871: extend the elevation token when elevation critical
+
+bugfix
+
+
 ## 0.23.0 ([#65](https://git.mobcastdev.com/Zuul/auth-service/pull/65) 2014-09-26 16:38:00)
 
 CP-1864 Implement "You have been migrated" event
