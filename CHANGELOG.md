@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.23.3 ([#78](https://git.mobcastdev.com/Zuul/auth-service/pull/78) 2014-10-02 12:33:16)
+
+CP-1874 Ignore conflict on SSO link for existing users
+
+### Improvement
+
+Avoid a 500 response when an existing user is already linked on SSO but not on our database by ignoring (but logging) the conflict on SSO and completing the authentication request.
+
 ## 0.23.2 ([#79](https://git.mobcastdev.com/Zuul/auth-service/pull/79) 2014-10-02 14:55:35)
 
 CP-1883 Fix validation error response to comply with zuul
