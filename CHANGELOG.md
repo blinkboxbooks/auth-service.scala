@@ -1,5 +1,13 @@
 # Zuul Server Change Log
 
+## 0.23.2 ([#79](https://git.mobcastdev.com/Zuul/auth-service/pull/79) 2014-10-02 14:55:35)
+
+CP-1883 Fix validation error response to comply with zuul
+
+### Bugfix
+
+Use different errors responses in the password-reset-token validation endpoint to comply with the status quo.
+
 ## 0.23.1 ([#82](https://git.mobcastdev.com/Zuul/auth-service/pull/82) 2014-10-06 16:29:03)
 
 CP-1871: extend the elevation token when elevation critical
