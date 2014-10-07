@@ -14,6 +14,7 @@ class UpdateUserSpecs extends ApiSpecBase {
 
   "The service" should "update user info for an authenticated user that is present on SSO with a critically elevated access token" in {
     env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical, tokenType = "access")
+    env.ssoNoContent()
     env.ssoSuccessfulJohnDoeInfo()
     env.ssoNoContent()
 
@@ -50,6 +51,7 @@ class UpdateUserSpecs extends ApiSpecBase {
 
   it should "return a 401 if the user is not present on our database but it is available on SSO" in {
     env.ssoSessionInfo(SsoTokenStatus.Valid, SsoTokenElevation.Critical, tokenType = "access")
+    env.ssoNoContent()
     env.ssoSuccessfulJohnDoeInfo()
 
     val token = env.tokenBuilder.issueAccessToken(
