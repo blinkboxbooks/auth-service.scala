@@ -95,6 +95,10 @@ object Failures {
   def clientLimitReached = ZuulRequestException("Max clients ($MaxClients) already registered", InvalidRequest, Some(ClientLimitReached))
   def oldPasswordInvalid = ZuulRequestException("Old password is invalid", InvalidRequest, Some(OldPasswordInvalid))
 
+  def passwordResetTokenNotValid = ZuulRequestException("The password reset token is invalid", InvalidRequest)
+  def passwordResetTokenExpired = ZuulRequestException("The password reset token has expired", InvalidRequest)
+  def passwordResetTokenRevoked = ZuulRequestException("The password reset token has been revoked", InvalidRequest)
+
   def unknownError(msg: String, ex: Option[Throwable] = None) = ZuulUnknownException(msg, ex)
 
   def tooManyRequests(retryAfter: FiniteDuration) =

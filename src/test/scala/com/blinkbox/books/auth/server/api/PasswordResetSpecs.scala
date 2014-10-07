@@ -93,7 +93,7 @@ class PasswordResetSpecs extends ApiSpecBase {
       "password" -> "a-password"
     ))) ~> route ~> check {
       status should equal(StatusCodes.BadRequest)
-      responseAs[ZuulRequestException] should equal(Failures.invalidPasswordResetToken)
+      responseAs[ZuulRequestException] should equal(Failures.passwordResetTokenNotValid)
     }
   }
 }
