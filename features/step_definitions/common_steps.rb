@@ -43,11 +43,6 @@ Then(/^the response includes only authentication scheme information$/) do
   expect(last_response['WWW-Authenticate']).to eq('Bearer')
 end
 
-Then(/^the response includes only empty access token information$/) do
-  expect(www_auth_header['error']).to eq('invalid_token')
-  expect(www_auth_header['error_description']).to eq('A token is required')
-end
-
 Then(/^the response includes only expired token information$/) do
   expect(www_auth_header['error']).to eq('invalid_token')
   expect(www_auth_header['error_description']).to eq('The access token is invalid')

@@ -32,6 +32,18 @@ class SSOTestUser
     response
   end
 
+  def register_books
+    response = $zuul.register_user(self)
+    if response.status == 200
+      token_info = ::JSON.parse(response.body)
+      @access_token = token_info["access_token"]
+      @refresh_token = token_info["refresh_token"]
+      @id = token_info["user_id"]
+      @local_id = @id[/\d+$/]
+    end
+    response
+  end
+
   def authenticate(credentials)
     response = $sso.authenticate(credentials)
     if response.status == 200
