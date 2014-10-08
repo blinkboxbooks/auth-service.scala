@@ -1,5 +1,18 @@
 # Zuul Server Change Log
 
+## 0.23.4 ([#80](https://git.mobcastdev.com/Zuul/auth-service/pull/80) 2014-10-03 14:25:32)
+
+Adding SSO password change and more authenticate tests
+
+#### Test improvements
+* Add tests to ensure that when a password is changed in books, it is reflected in SSO and vice versa
+* Add test to ensure that someone cannot register on the books website with an email that has been registered in SSO already
+* Add tests to ensure that credentials from an account registered in books can be used to log into SSO (via movies/music/books)
+* Modified the wording of the features for clarity
+* CP-1883 Remove test step that checks WWW-Auth header to match spec see *Scenario: No attempt to provide bearer token* on http://jira.blinkbox.local/confluence/x/yYTi
+
+
+
 ## 0.23.3 ([#78](https://git.mobcastdev.com/Zuul/auth-service/pull/78) 2014-10-02 12:33:16)
 
 CP-1874 Ignore conflict on SSO link for existing users
