@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.23.5 ([#83](https://git.mobcastdev.com/Zuul/auth-service/pull/83) 2014-10-29 14:46:52)
+
+Updated dependencies and error messages
+
+### Improvements
+
+- Library and language dependencies updated
+- Error messages now match the ones on live
+
 ## 0.23.4 ([#80](https://git.mobcastdev.com/Zuul/auth-service/pull/80) 2014-10-03 14:25:32)
 
 Adding SSO password change and more authenticate tests
