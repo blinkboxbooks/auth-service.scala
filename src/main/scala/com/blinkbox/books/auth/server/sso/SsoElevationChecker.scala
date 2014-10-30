@@ -6,8 +6,8 @@ import com.blinkbox.books.spray.InvalidTokenStatusException
 import scala.concurrent.{ExecutionContext, Future}
 
 class SsoElevationChecker(sso: Sso)(implicit executionContext: ExecutionContext) extends ElevationChecker {
-  override def apply(user: User) =
-    user.ssoAccessToken.map{
+  override def apply(user: User): Future[Elevation.Value] =
+    user.ssoAccessToken.map {
       t =>
         val token = SsoAccessToken(t)
         val elevation = sso.sessionStatus(token).map(s => (s.status, s.sessionElevation)).map {
