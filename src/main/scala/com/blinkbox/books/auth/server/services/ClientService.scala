@@ -6,6 +6,7 @@ import com.blinkbox.books.auth.server.ZuulRequestErrorCode.InvalidRequest
 import com.blinkbox.books.auth.server._
 import com.blinkbox.books.auth.server.data._
 import com.blinkbox.books.auth.server.events.{ClientDeregistered, ClientRegistered, ClientUpdated, Publisher}
+import com.blinkbox.books.auth.server.sso.Sso
 import com.blinkbox.books.auth.{User => AuthenticatedUser}
 import com.blinkbox.books.time.Clock
 
@@ -27,6 +28,7 @@ class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#
     authRepo: AuthRepository[Profile],
     userRepo: UserRepository[Profile],
     maxClients: Int,
+    sso: Sso,
     events: Publisher)
     (implicit executionContext: ExecutionContext, clock: Clock) extends ClientService with ClientInfoFactory {
 
@@ -81,12 +83,13 @@ class DefaultClientService[Profile <: BasicProfile, Database <: Profile#Backend#
       for {
         c <- clientRepo.clientWithId(u.id, id).map(_.copy(updatedAt = clock.now(), isDeregistered = true))
         _ =  clientRepo.updateClient(c.userId, c) // TODO: Could remove userId from this method signature
-        _ =  authRepo.refreshTokensByClientId(c.id).foreach(authRepo.revokeRefreshToken)
+        t =  authRepo.refreshTokensByClientId(c.id)
+        _ =  t.foreach(authRepo.revokeRefreshToken)
+        _ =  t.foreach(_.ssoRefreshToken.foreach(sso.revokeToken))
         _ =  events.publish(ClientDeregistered(u, c))
       } yield c
     }
+
     client.map(clientInfo(_))
   }
-
-
 }

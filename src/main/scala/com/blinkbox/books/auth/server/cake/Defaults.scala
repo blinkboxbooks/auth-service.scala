@@ -107,7 +107,7 @@ trait DefaultServicesComponent extends ServicesComponent {
 
   lazy val userService = new DefaultUserService(db, userRepository, ssoSync, sso, publisher)
 
-  lazy val clientService = new DefaultClientService(db, clientRepository, authRepository, userRepository, config.authServer.maxClients, publisher)
+  lazy val clientService = new DefaultClientService(db, clientRepository, authRepository, userRepository, config.authServer.maxClients, sso, publisher)
 
   lazy val passwordAuthenticationService = new DefaultPasswordAuthenticationService(db, authRepository, userRepository, tokenBuilder, publisher, ssoSync, sso)
 

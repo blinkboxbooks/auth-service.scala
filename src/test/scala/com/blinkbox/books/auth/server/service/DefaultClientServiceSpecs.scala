@@ -42,6 +42,10 @@ class DefaultClientServiceSpecs extends SpecBase {
   }
 
   it should "delete clients and revoke their tokens by id given they are owned by the user and not already de-registered" in {
+    // Expects two tokens to be revoked on SSO
+    ssoNoContent()
+    ssoNoContent()
+
     whenReady(clientService.deleteClient(clientIdA1)(authenticatedUserA)) { infoOpt =>
       infoOpt shouldBe defined
       infoOpt.foreach { _ should equal(clientInfoA1) }
