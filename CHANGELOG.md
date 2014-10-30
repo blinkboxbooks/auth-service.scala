@@ -1,5 +1,14 @@
 # Zuul Server Change Log
 
+## 0.23.6 ([#81](https://git.mobcastdev.com/Zuul/auth-service/pull/81) 2014-10-06 15:13:57)
+
+CP-1926 - Revoke tokens when deregistering clients
+
+### Bugfix
+
+* Revoke SSO tokens bound to deleted clients
+* Force a 401 when checking elevation on SSO for a token that doesn't have a `Valid` status
+
 ## 0.23.5 ([#83](https://git.mobcastdev.com/Zuul/auth-service/pull/83) 2014-10-29 14:46:52)
 
 Updated dependencies and error messages
